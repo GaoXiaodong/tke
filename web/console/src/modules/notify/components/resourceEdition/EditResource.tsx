@@ -179,10 +179,8 @@ export class EditResource extends React.Component<Props, State> {
         });
         json.spec.webhook.headers = headersObj;
       }
-      if (urlParams.resourceName === 'template') {
-        json.spec.text = Object.assign({}, json.spec.webhook);
-        json.spec.webhook = undefined;
-      }
+      json.spec.text = Object.assign({}, json.spec.webhook);
+      json.spec.webhook = undefined;
     }
 
     let jsonData = JSON.stringify(json);
