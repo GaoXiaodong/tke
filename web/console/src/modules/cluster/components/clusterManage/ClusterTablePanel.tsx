@@ -406,7 +406,6 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
         {/* {cluster.status.phase !== 'Running' && cluster.status.phase !== 'Terminating' && renderConditions()} */}
         {renderDeleteButton()}
         {renderKuberctlButton()}
-        {/* {cluster.spec.type === 'Imported' && renderUpdateTokenButton()} */}
         {cluster.spec.type === 'Imported' && renderUpdateTokenButton()}
         {renderMoreButton()}
       </React.Fragment>
