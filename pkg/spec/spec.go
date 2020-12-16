@@ -40,7 +40,7 @@ var (
 		return "v" + s
 	}).([]string)
 
-	DockerVersions                 = []string{"19.03.14"}
+	DockerVersions                 = []string{"19.03.9"}
 	CNIPluginsVersions             = []string{"v0.8.6"}
 	ConntrackToolsVersions         = []string{"1.4.4"}
 	NvidiaDriverVersions           = []string{"440.31"}
