@@ -182,9 +182,10 @@ export class ResourcePodActionPanel extends React.Component<RootProps, ResourceP
     // tagSearch的过滤选项
     const attributes = [
       {
-        type: 'input',
+        type: 'single',
         key: 'podName',
-        name: t('Pod名称')
+        name: t('Pod名称'),
+        values: podNameValues
       },
       {
         type: 'single',

@@ -139,7 +139,7 @@ export const updateCluster = ({
           mode: autoMode ? 'Auto' : 'Manual',
           strategy: {
             drainNodeBeforeUpgrade,
-            maxUnready: autoMode ? maxUnready + '%' : undefined
+            maxUnready: maxUnready + '%'
           }
         }
       }
