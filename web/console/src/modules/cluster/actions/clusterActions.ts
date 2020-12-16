@@ -15,7 +15,6 @@ import { AddonStatus } from '../models/Addon';
 import { router } from '../router';
 import * as WebAPI from '../WebAPI';
 import { resourceActions } from './resourceActions';
-import { checkClusterIsNeedUpdate } from '@src/webApi/cluster';
 
 type GetState = () => RootState;
 const fetchOptions: FetchOptions = {
@@ -23,8 +22,8 @@ const fetchOptions: FetchOptions = {
 };
 
 const ReduceUniversalJsonData = (options: { resourceInfo: ResourceInfo; clusterId: string }) => {
-  const { resourceInfo, clusterId } = options;
-  const jsonData: AddonEditUniversalJsonYaml = {
+  let { resourceInfo, clusterId } = options;
+  let jsonData: AddonEditUniversalJsonYaml = {
     kind: resourceInfo.headTitle,
     apiVersion: 'monitor.tkestack.io/v1',
     metadata: {
@@ -49,15 +48,15 @@ const ReduceUniversalJsonData = (options: { resourceInfo: ResourceInfo; clusterI
 const fetchClusterInfoActions = generateFetcherActionCreator({
   actionType: ActionType.FetchClusterInfo,
   fetcher: async (getState: GetState, fetchOptions, dispatch) => {
-    const { clusterInfoQuery } = getState();
+    let { clusterInfoQuery } = getState();
 
-    const resourceInfo = resourceConfig()['cluster'];
-    const isClearData = fetchOptions && fetchOptions.noCache ? true : false;
-    const response = await WebAPI.fetchSpecificResourceList(clusterInfoQuery, resourceInfo, isClearData, true);
+    let resourceInfo = resourceConfig()['cluster'];
+    let isClearData = fetchOptions && fetchOptions.noCache ? true : false;
+    let response = await WebAPI.fetchSpecificResourceList(clusterInfoQuery, resourceInfo, isClearData, true);
     return response;
   },
   finish: async (dispatch, getState: GetState) => {
-    const { clusterInfoList, route } = getState(),
+    let { clusterInfoList, route } = getState(),
       urlParams = router.resolve(route);
 
     /**
@@ -65,15 +64,15 @@ const fetchClusterInfoActions = generateFetcherActionCreator({
      * 如果是从集群列表页进行 clusterInfo的拉取的话，则不需要进行下面的步骤，因为点击集群id，已经进行了resource数据的拉取，并且更快
      */
     if (clusterInfoList.data.recordCount) {
-      const version = clusterInfoList.data.records[0] && clusterInfoList.data.records[0].status.version;
+      let version = clusterInfoList.data.records[0] && clusterInfoList.data.records[0].status.version;
       version && dispatch(clusterActions.initClusterVersion(version));
 
       // 初始化当前资源的名称，是deployment | cronjob 还是其他
-      const { resourceName: resource } = urlParams;
+      let { resourceName: resource } = urlParams;
 
       // 如果不需要进行resource的拉取，则不拉取
       if (!TellIsNotNeedFetchResource(resource)) {
-        const isNeedFetchNamespace = TellIsNeedFetchNS(resource);
+        let isNeedFetchNamespace = TellIsNeedFetchNS(resource);
         // 进行相关资源的拉取
         dispatch(resourceActions.initResourceInfoAndFetchData(isNeedFetchNamespace, resource, false));
       }
@@ -93,42 +92,32 @@ const clusterInfoActions = extend(fetchClusterInfoActions, queryClusterInfoActio
 const FFModelClusterActions = createFFListActions<Cluster, ClusterFilter>({
   actionName: FFReduxActionName.CLUSTER,
   fetcher: async (query, getState: GetState) => {
-    const response = await WebAPI.fetchClusterList(query, query.filter.regionId);
-    // checkupdate
-    for (const cluster of response.records) {
-      const update = await checkClusterIsNeedUpdate({
-        clusterName: cluster.metadata.name,
-        clusterVersion: cluster.status.version
-      });
-
-      cluster.spec.updateInfo = update;
-    }
-
-    const ps = await WebAPI.fetchPrometheuses();
-    const clusterHasPs = {};
+    let response = await WebAPI.fetchClusterList(query, query.filter.regionId);
+    let ps = await WebAPI.fetchPrometheuses();
+    let clusterHasPs = {};
     const clusterPsInfo = {};
-    for (const p of ps.records) {
+    for (let p of ps.records) {
       clusterHasPs[p.spec.clusterName] = true;
 
       clusterPsInfo[p.spec.clusterName] = p;
     }
-    for (const record of response.records) {
+    for (let record of response.records) {
       record.spec.hasPrometheus = clusterHasPs[record.metadata.name];
 
       record.spec.promethus = clusterPsInfo[record.metadata.name];
     }
     if (window['modules'] && window['modules']['logagent']) {
       // 增加获取日志采集组件信息
-      const agents = await CommonAPI.fetchLogagents();
-      const clusterHasLogAgent = {};
+      let agents = await CommonAPI.fetchLogagents();
+      let clusterHasLogAgent = {};
       const clusterLogAgentInfo = {};
 
-      for (const agent of agents.records) {
+      for (let agent of agents.records) {
         clusterHasLogAgent[agent.spec.clusterName] = agent.metadata.name;
 
         clusterLogAgentInfo[agent.spec.clusterName] = agent;
       }
-      for (const cluster of response.records) {
+      for (let cluster of response.records) {
         cluster.spec.logAgentName = clusterHasLogAgent[cluster.metadata.name];
         cluster.spec.logAgent = clusterLogAgentInfo[cluster.metadata.name];
       }
@@ -142,12 +131,12 @@ const FFModelClusterActions = createFFListActions<Cluster, ClusterFilter>({
     let { route, dialogState, cluster } = getState(),
       urlParams = router.resolve(route);
 
-    const { sub } = urlParams;
+    let { sub } = urlParams;
 
     if (record.data.recordCount) {
-      const routeClusterId = route.queries['clusterId'];
-      const finder = routeClusterId ? record.data.records.find(c => c.metadata.name === routeClusterId) : undefined;
-      const defaultCluster = finder ? finder : record.data.records[0];
+      let routeClusterId = route.queries['clusterId'];
+      let finder = routeClusterId ? record.data.records.find(c => c.metadata.name === routeClusterId) : undefined;
+      let defaultCluster = finder ? finder : record.data.records[0];
       // 只有在资源列表页才选择具体的集群
       sub === 'sub' && dispatch(clusterActions.selectCluster([defaultCluster]));
 
@@ -155,15 +144,11 @@ const FFModelClusterActions = createFFListActions<Cluster, ClusterFilter>({
       if (!sub) {
         // 如果当前是打开了创建详情的话，需要选择具体的cluster
         if (dialogState[DialogNameEnum.clusterStatusDialog]) {
-          const clusterInfo = record.data.records.find(c => c.metadata.name === cluster.selection.metadata.name);
+          let clusterInfo = record.data.records.find(c => c.metadata.name === cluster.selection.metadata.name);
           clusterInfo && dispatch(clusterActions.selectCluster([clusterInfo]));
         }
 
-        if (
-          record.data.records.filter(
-            item => item.status.phase !== 'Running' || item.spec.updateInfo.worker.message === '有节点正在升级中'
-          ).length === 0
-        ) {
+        if (record.data.records.filter(item => item.status.phase !== 'Running').length === 0) {
           dispatch(clusterActions.clearPolling());
         }
       } else {
@@ -181,7 +166,7 @@ const restActions = {
 
   poll: () => {
     return async (dispatch: Redux.Dispatch, getState: GetState) => {
-      const { cluster, route } = getState();
+      let { cluster, route } = getState();
       dispatch(
         clusterActions.polling({
           filter: Object.assign({}, cluster.query.filter, { regionId: +route.queries['rid'] }),
@@ -191,7 +176,7 @@ const restActions = {
     };
   },
 
-  selectCluster(cluster: Cluster[], isNeedInitClusterVersion = false) {
+  selectCluster(cluster: Cluster[], isNeedInitClusterVersion: boolean = false) {
     return async (dispatch: Redux.Dispatch, getState: GetState) => {
       cluster[0] && dispatch(FFModelClusterActions.select(cluster[0]));
 
@@ -203,7 +188,7 @@ const restActions = {
   /** 初始化集群的版本 */
   initClusterVersion: (clusterVersion: string) => {
     return async (dispatch: Redux.Dispatch, getState: GetState) => {
-      const k8sVersion = clusterVersion.split('.').slice(0, 2).join('.');
+      let k8sVersion = clusterVersion.split('.').slice(0, 2).join('.');
       dispatch({
         type: ActionType.ClusterVersion,
         payload: k8sVersion
@@ -214,9 +199,9 @@ const restActions = {
   /** 获取当前集群开启的Addon */
   fetchClusterAddon: (clusterId, regionId) => {
     return async (dispatch: Redux.Dispatch, getState: GetState) => {
-      const { clusterVersion } = getState();
-      const clusterInfo: ResourceInfo = resourceConfig(clusterVersion).cluster;
-      const response = await WebAPI.fetchExtraResourceList(
+      let { clusterVersion } = getState();
+      let clusterInfo: ResourceInfo = resourceConfig(clusterVersion).cluster;
+      let response = await WebAPI.fetchExtraResourceList(
         {
           filter: {
             regionId: regionId,
@@ -227,7 +212,7 @@ const restActions = {
         false,
         'addons'
       );
-      const addons: AddonStatus = {};
+      let addons: AddonStatus = {};
       response.records.forEach(item => {
         addons[item.spec.type] = {
           status: item.status.phase,
@@ -242,7 +227,7 @@ const restActions = {
   },
   fetchClustercredential: (clusterId: string) => {
     return async (dispatch: Redux.Dispatch, getState: GetState) => {
-      const clustercredentialResourceInfo = resourceConfig().clustercredential;
+      let clustercredentialResourceInfo = resourceConfig().clustercredential;
       // 过滤条件
       let k8sQueryObj = {
         fieldSelector: {
@@ -250,7 +235,7 @@ const restActions = {
         }
       };
       k8sQueryObj = JSON.parse(JSON.stringify(k8sQueryObj));
-      const response = await WebAPI.fetchResourceList(
+      let response = await WebAPI.fetchResourceList(
         { filter: {}, search: '' },
         {
           resourceInfo: clustercredentialResourceInfo,
@@ -286,9 +271,9 @@ const restActions = {
   },
   initClusterAllocationRatio: (cluster: Cluster) => {
     return async (dispatch: Redux.Dispatch, getState: GetState) => {
-      const clusterAllocationRatioEdition = Object.assign({}, initAllcationRatioEdition, { id: uuid() });
+      let clusterAllocationRatioEdition = Object.assign({}, initAllcationRatioEdition, { id: uuid() });
       if (cluster.spec.properties && cluster.spec.properties.oversoldRatio) {
-        const oversoldRatio = cluster.spec.properties.oversoldRatio;
+        let oversoldRatio = cluster.spec.properties.oversoldRatio;
         clusterAllocationRatioEdition.isUseCpu = oversoldRatio.cpu ? true : false;
         clusterAllocationRatioEdition.isUseMemory = oversoldRatio.memory ? true : false;
         clusterAllocationRatioEdition.cpuRatio = clusterAllocationRatioEdition.isUseCpu ? oversoldRatio.cpu : '';
@@ -304,7 +289,7 @@ const restActions = {
   },
   updateClusterAllocationRatio: (object: any) => {
     return async (dispatch: Redux.Dispatch, getState: GetState) => {
-      const {
+      let {
         subRoot: { clusterAllocationRatioEdition }
       } = getState();
       dispatch({
@@ -315,20 +300,20 @@ const restActions = {
   },
   enableLogAgent: (cluster: Cluster) => {
     return async (dispatch: Redux.Dispatch, getState: GetState) => {
-      const resourceInfo = resourceConfig()['logagent'];
-      const resource: CreateResource = {
+      let resourceInfo = resourceConfig()['logagent'];
+      let resource: CreateResource = {
         id: uuid(),
         resourceInfo,
         clusterId: cluster.metadata.name
       };
-      const response = await CommonAPI.createLogAgent(resource);
+      let response = await CommonAPI.createLogAgent(resource);
     };
   },
 
   disableLogAgent: (cluster: Cluster) => {
     return async (dispatch: Redux.Dispatch, getState: GetState) => {
-      const resourceInfo = resourceConfig()['logagent'];
-      const resource: CreateResource = {
+      let resourceInfo = resourceConfig()['logagent'];
+      let resource: CreateResource = {
         id: uuid(),
         resourceInfo,
         clusterId: cluster.metadata.name
@@ -339,8 +324,8 @@ const restActions = {
 
   enablePromethus: (cluster: Cluster, clusterVersion: string) => {
     return async () => {
-      const resourceInfo = resourceConfig(clusterVersion)['addon_prometheus'];
-      const resource: CreateResource = {
+      let resourceInfo = resourceConfig(clusterVersion)['addon_prometheus'];
+      let resource: CreateResource = {
         id: uuid(),
         resourceInfo,
         clusterId: cluster.metadata.name,

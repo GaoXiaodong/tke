@@ -21,8 +21,6 @@ import { TcrRegistyDeployDialog } from './clusterManage/TcrRegistyDeployDialog';
 import { ResourceContainerPanel } from './resource/ResourceContainerPanel';
 import { ConfigPromethus } from './clusterManage/ConfigPromethus';
 import { RecoilRoot } from 'recoil';
-import { ClusterUpdate } from './clusterManage/ClusterUpdate';
-import { WorkerUpdate } from './clusterManage/WorkerUpdate';
 
 export const store = configStore();
 
@@ -55,8 +53,8 @@ const mapDispatchToProps = dispatch =>
 @((router.serve as any)())
 class ClusterApp extends React.Component<RootProps, {}> {
   render() {
-    const { route } = this.props;
-    const urlParam = router.resolve(route);
+    let { route } = this.props;
+    let urlParam = router.resolve(route);
     if (!urlParam['sub']) {
       return (
         <ContentView>
@@ -81,10 +79,6 @@ class ClusterApp extends React.Component<RootProps, {}> {
       return <CreateICPanel />;
     } else if (urlParam['sub'] === 'config-promethus') {
       return <ConfigPromethus {...this.props} />;
-    } else if (urlParam['sub'] === 'cluster-update') {
-      return <ClusterUpdate {...this.props}/>;
-    } else if (urlParam['sub'] === 'worker-update') {
-      return <WorkerUpdate {...this.props}/>;
     }
   }
 }

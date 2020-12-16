@@ -58,18 +58,6 @@ interface ClusterSpec {
 
   properties?: any;
 
-  updateInfo?: {
-    master: {
-      isNeed: boolean;
-      message: string;
-    };
-
-    worker: {
-      isNeed: boolean;
-      message: string;
-    };
-  };
-
   [props: string]: any;
 }
 

@@ -1,19 +1,15 @@
 import { changeForbiddentConfig } from '@/index';
-import { Method } from '@helper';
 import Axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
 const instance = Axios.create({
-  timeout: 10000
+  baseURL: '/apis',
+  timeout: 3000
 });
 
 instance.interceptors.request.use(
   config => {
-    Object.assign(config.headers, {
-      'X-Remote-Extra-RequestID': uuidv4(),
-      'Content-Type':
-        config.method === 'patch' ? 'application/strategic-merge-patch+json' : config.headers['Content-Type']
-    });
+    config.headers['X-Remote-Extra-RequestID'] = uuidv4();
     return config;
   },
   error => {
@@ -25,7 +21,6 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   ({ data }) => data,
   error => {
-    console.error('response error:', error);
     if (!error.response) {
       error.response = {
         data: {

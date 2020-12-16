@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 
-import { Bubble, Button, Drawer, Icon, Text, Dropdown, List } from '@tea/component';
+import { Bubble, Button, Drawer, Icon, Text } from '@tea/component';
 import { TablePanel, TablePanelColumnProps } from '@tencent/ff-component';
 import { bindActionCreators } from '@tencent/ff-redux';
 import { ChartPanel } from '@tencent/tchart';
@@ -48,7 +48,7 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
   };
 
   componentWillUnmount() {
-    const { actions } = this.props;
+    let { actions } = this.props;
     actions.cluster.clearPolling();
   }
 
@@ -64,7 +64,7 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
   }
 
   private _renderTablePanel() {
-    const { actions, cluster, region } = this.props;
+    let { actions, cluster, region } = this.props;
 
     const columns: TablePanelColumnProps<Cluster>[] = [
       {
@@ -146,7 +146,7 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
                   actions.dialog.updateDialogState(DialogNameEnum.clusterStatusDialog);
                 }}
               >
-                查看详情
+                查看创建详情
               </Button>
             )}
           </React.Fragment>
@@ -173,7 +173,7 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
       { key: 'operation', header: t('操作'), width: '16%', render: x => this._renderOperationCell(x) }
     ];
 
-    const emptyTips: JSX.Element = (
+    let emptyTips: JSX.Element = (
       <div className="text-center">
         <Trans>
           当前集群列表为空，您可以
@@ -236,7 +236,7 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
   }
 
   private renderPromTip() {
-    const { selectCluster } = this.state;
+    let { selectCluster } = this.state;
     return (
       selectCluster &&
       !selectCluster.spec.hasPrometheus && (
@@ -256,8 +256,8 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
   }
 
   /** 处理创建时间 */
-  private _reduceTime(time = '') {
-    const showTime = dateFormatter(new Date(time), 'YYYY-MM-DD HH:mm:ss');
+  private _reduceTime(time: string = '') {
+    let showTime = dateFormatter(new Date(time), 'YYYY-MM-DD HH:mm:ss');
 
     return (
       <Bubble placement="left" content={showTime || null}>
@@ -268,10 +268,10 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
 
   /** 处理集群点击跳转 */
   private _handleClickForCluster(cluster: Cluster) {
-    const { actions, region } = this.props;
+    let { actions, region } = this.props;
 
     // 进行路由的跳转
-    const routeQueries = {
+    let routeQueries = {
       rid: region.selection.value + '',
       clusterId: cluster.metadata.name
     };
@@ -285,13 +285,8 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
 
   /** 渲染操作按钮 */
   private _renderOperationCell(cluster: Cluster) {
-    const { actions, region } = this.props;
-    const isDisabledButon = cluster.status.phase === 'Terminating';
-
-    const routeQueries = {
-      rid: region.selection.value + '',
-      clusterId: cluster.metadata.name
-    };
+    let { actions } = this.props;
+    let isDisabledButon = cluster.status.phase === 'Terminating';
 
     const renderConditions = () => {
       return (
@@ -308,7 +303,7 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
     };
 
     const renderDeleteButton = () => {
-      const isCanNotDelete = cluster.metadata.name === 'global' || isDisabledButon;
+      let isCanNotDelete = cluster.metadata.name === 'global' || isDisabledButon;
       return (
         <LinkButton
           disabled={isCanNotDelete}
@@ -357,57 +352,12 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
       );
     };
 
-    const renderMoreButton = () => {
-      return (
-        <Dropdown
-          trigger="hover"
-          style={{ marginRight: '5px' }}
-          button="更多"
-          onOpen={() => console.log('open')}
-          onClose={() => console.log('close')}
-        >
-          <List type="option">
-            <List.Item>
-              <LinkButton
-                disabled={!cluster.spec.updateInfo.master.isNeed || cluster.status.phase !== 'Running'}
-                errorTip={cluster.spec.updateInfo.master.message}
-                onClick={() => {
-                  router.navigate(
-                    { sub: 'cluster-update' },
-                    { ...routeQueries, clusterVersion: cluster?.status?.version }
-                  );
-                }}
-              >
-                升级Master
-              </LinkButton>
-            </List.Item>
-
-            <List.Item>
-              <LinkButton
-                disabled={!cluster.spec.updateInfo.worker.isNeed || cluster.status.phase !== 'Running'}
-                errorTip={cluster.spec.updateInfo.worker.message}
-                onClick={() => {
-                  router.navigate(
-                    { sub: 'worker-update' },
-                    { ...routeQueries, clusterVersion: cluster?.status?.version }
-                  );
-                }}
-              >
-                升级Worker
-              </LinkButton>
-            </List.Item>
-          </List>
-        </Dropdown>
-      );
-    };
-
     return (
       <React.Fragment>
         {/* {cluster.status.phase !== 'Running' && cluster.status.phase !== 'Terminating' && renderConditions()} */}
         {renderDeleteButton()}
         {renderKuberctlButton()}
         {cluster.spec.type === 'Imported' && renderUpdateTokenButton()}
-        {renderMoreButton()}
       </React.Fragment>
     );
   }
