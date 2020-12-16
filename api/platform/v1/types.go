@@ -373,8 +373,7 @@ type HA struct {
 }
 
 type TKEHA struct {
-	VIP  string `json:"vip" protobuf:"bytes,1,name=vip"`
-	VRID *int32 `json:"vrid,omitempty" protobuf:"bytes,2,name=vrid"`
+	VIP string `json:"vip" protobuf:"bytes,1,name=vip"`
 }
 
 type ThirdPartyHA struct {

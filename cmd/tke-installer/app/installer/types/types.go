@@ -205,8 +205,7 @@ func (ha *HA) VIP() string {
 }
 
 type TKEHA struct {
-	VIP  string `json:"vip" validate:"required"`
-	VRID *int32 `json:"vrid"`
+	VIP string `json:"vip" validate:"required"`
 }
 
 type ThirdPartyHA struct {

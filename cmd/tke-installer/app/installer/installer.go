@@ -671,10 +671,7 @@ func (t *TKE) setClusterDefault(cluster *platformv1.Cluster, config *types.Confi
 	if config.HA != nil {
 		if t.Para.Config.HA.TKEHA != nil {
 			cluster.Spec.Features.HA = &platformv1.HA{
-				TKEHA: &platformv1.TKEHA{
-					VIP:  t.Para.Config.HA.TKEHA.VIP,
-					VRID: t.Para.Config.HA.TKEHA.VRID,
-				},
+				TKEHA: &platformv1.TKEHA{VIP: t.Para.Config.HA.TKEHA.VIP},
 			}
 		}
 		if t.Para.Config.HA.ThirdPartyHA != nil {

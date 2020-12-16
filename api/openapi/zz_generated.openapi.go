@@ -48698,12 +48698,6 @@ func schema_tke_api_platform_v1_TKEHA(ref common.ReferenceCallback) common.OpenA
 							Format: "",
 						},
 					},
-					"vrid": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
 				},
 				Required: []string{"vip"},
 			},
