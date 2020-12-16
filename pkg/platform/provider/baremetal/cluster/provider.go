@@ -238,7 +238,6 @@ func (p *Provider) PreCreate(cluster *types.Cluster) error {
 	if cluster.Spec.Etcd.Local != nil {
 		// reuse global etcd for tke components which create `etcd` service.
 		cluster.Spec.Etcd.Local.ServerCertSANs = append(cluster.Spec.Etcd.Local.ServerCertSANs, "etcd")
-		cluster.Spec.Etcd.Local.ServerCertSANs = append(cluster.Spec.Etcd.Local.ServerCertSANs, "etcd.kube-system")
 	}
 
 	return nil
