@@ -162,19 +162,18 @@ const restActions = {
   },
 
   /**Tapp灰度升级编辑项 */
-  initTappGrayUpdate: (setting: TappGrayUpdateEditItem): ReduxAction<TappGrayUpdateEditItem> => {
+  initTappGrayUpdate: (items: TappGrayUpdateEditItem[]): ReduxAction<TappGrayUpdateEditItem[]> => {
     return {
       type: ActionType.W_TappGrayUpdate,
-      payload: setting
+      payload: items
     };
   },
-
-  updateTappGrayUpdate: (index_in, imageName, imageTag) => {
+  updateTappGrayUpdate: (index_out, index_in, imageName, imageTag) => {
     return async (dispatch, getState: GetState) => {
       const { editTappGrayUpdate } = getState().subRoot.resourceDetailState;
-      const target: TappGrayUpdateEditItem = cloneDeep(editTappGrayUpdate);
-      target.containers[index_in].imageName = imageName;
-      target.containers[index_in].imageTag = imageTag;
+      const target: TappGrayUpdateEditItem[] = cloneDeep(editTappGrayUpdate);
+      target[index_out].containers[index_in].imageName = imageName;
+      target[index_out].containers[index_in].imageTag = imageTag;
 
       dispatch({
         type: ActionType.W_TappGrayUpdate,
@@ -182,7 +181,6 @@ const restActions = {
       });
     };
   },
-
   /** 是否展示 登录弹框 */
   toggleLoginDialog: () => {
     return async (dispatch, getState: GetState) => {
