@@ -73,7 +73,6 @@ type OIDCAuth struct {
 type Registry struct {
 	TKERegistry        *TKERegistry        `json:"tke,omitempty"`
 	ThirdPartyRegistry *ThirdPartyRegistry `json:"thirdParty,omitempty"`
-	UserInputRegistry  UserInputRegistry   `json:"userInputRegistry,omitempty"`
 }
 
 type Audit struct {
@@ -88,9 +87,6 @@ type ElasticSearch struct {
 }
 
 func (r *Registry) Domain() string {
-	if r.UserInputRegistry.Domain != "" {
-		return r.UserInputRegistry.Domain
-	}
 	if r.ThirdPartyRegistry != nil { // first use third party when both set
 		return r.ThirdPartyRegistry.Domain
 	}
@@ -98,9 +94,6 @@ func (r *Registry) Domain() string {
 }
 
 func (r *Registry) Namespace() string {
-	if r.UserInputRegistry.Namespace != "" {
-		return r.UserInputRegistry.Namespace
-	}
 	if r.ThirdPartyRegistry != nil {
 		return r.ThirdPartyRegistry.Namespace
 	}
@@ -108,9 +101,6 @@ func (r *Registry) Namespace() string {
 }
 
 func (r *Registry) Username() string {
-	if r.UserInputRegistry.Username != "" {
-		return r.UserInputRegistry.Username
-	}
 	if r.ThirdPartyRegistry != nil {
 		return r.ThirdPartyRegistry.Username
 	}
@@ -118,9 +108,6 @@ func (r *Registry) Username() string {
 }
 
 func (r *Registry) Password() []byte {
-	if len(r.UserInputRegistry.Password) != 0 {
-		return r.UserInputRegistry.Password
-	}
 	if r.ThirdPartyRegistry != nil {
 		return r.ThirdPartyRegistry.Password
 	}
@@ -147,13 +134,6 @@ type TKERegistry struct {
 type ThirdPartyRegistry struct {
 	Domain    string `json:"domain" validate:"required"`
 	Namespace string `json:"namespace" validate:"required"`
-	Username  string `json:"username"`
-	Password  []byte `json:"password"`
-}
-
-type UserInputRegistry struct {
-	Domain    string `json:"domain"`
-	Namespace string `json:"namespace"`
 	Username  string `json:"username"`
 	Password  []byte `json:"password"`
 }

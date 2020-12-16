@@ -28,32 +28,32 @@ import (
 type RegistryConfiguration struct {
 	metav1.TypeMeta
 
-	Storage  Storage  `json:"storage" yaml:"storage"`
-	Security Security `json:"security" yaml:"security"`
+	Storage  Storage  `json:"storage"`
+	Security Security `json:"security"`
 	// +optional
-	Redis         *Redis `json:"redis,omitempty" yaml:"redis,omitempty"`
-	DefaultTenant string `json:"defaultTenant" yaml:"defaultTenant"`
+	Redis         *Redis `json:"redis,omitempty"`
+	DefaultTenant string `json:"defaultTenant"`
 	// +optional
-	DomainSuffix  string `json:"domainSuffix,omitempty" yaml:"domainSuffix,omitempty"`
-	HarborEnabled bool   `json:"harborEnabled,omitempty" yaml:"harborEnabled,omitempty"`
-	HarborCAFile  string `json:"harborCAFile,omitempty" yaml:"harborCAFile,omitempty"`
+	DomainSuffix string `json:"domainSuffix,omitempty"`
+	HarborEnabled bool  `json:"harborEnabled,omitempty"`
+	HarborCAFile string  `json:"harborCAFile,omitempty"`
 }
 
 type Storage struct {
 	// +optional
-	FileSystem *FileSystemStorage `json:"fileSystem,omitempty" yaml:"fileSystem,omitempty"`
+	FileSystem *FileSystemStorage `json:"fileSystem,omitempty"`
 	// +optional
-	InMemory *InMemoryStorage `json:"inMemory,omitempty" yaml:"inMemory,omitempty"`
+	InMemory *InMemoryStorage `json:"inMemory,omitempty"`
 	// +optional
-	S3 *S3Storage `json:"s3,omitempty" yaml:"s3,omitempty"`
+	S3 *S3Storage `json:"s3,omitempty"`
 	// +optional
-	Delete *Delete `json:"delete,omitempty" yaml:"delete,omitempty"`
+	Delete *Delete `json:"delete,omitempty"`
 }
 
 type FileSystemStorage struct {
-	RootDirectory string `json:"rootDirectory" yaml:"rootDirectory"`
+	RootDirectory string `json:"rootDirectory"`
 	// +optional
-	MaxThreads *int64 `json:"maxThreads,omitempty" yaml:"maxThreads,omitempty"`
+	MaxThreads *int64 `json:"maxThreads,omitempty"`
 }
 
 type InMemoryStorage struct{}
@@ -67,82 +67,82 @@ const (
 )
 
 type S3Storage struct {
-	Bucket string `json:"bucket" yaml:"bucket"`
-	Region string `json:"region" yaml:"region"`
+	Bucket string `json:"bucket"`
+	Region string `json:"region"`
 
 	// +optional
-	AccessKey *string `json:"accessKey,omitempty" yaml:"accessKey,omitempty"`
+	AccessKey *string `json:"accessKey,omitempty"`
 	// +optional
-	SecretKey *string `json:"secretKey,omitempty" yaml:"secretKey,omitempty"`
+	SecretKey *string `json:"secretKey,omitempty"`
 	// +optional
-	RegionEndpoint *string `json:"regionEndpoint,omitempty" yaml:"regionEndpoint,omitempty"`
+	RegionEndpoint *string `json:"regionEndpoint,omitempty"`
 	// +optional
-	Encrypt *bool `json:"encrypt,omitempty" yaml:"encrypt,omitempty"`
+	Encrypt *bool `json:"encrypt,omitempty"`
 	// +optional
-	KeyID *string `json:"keyID,omitempty" yaml:"keyID,omitempty"`
+	KeyID *string `json:"keyID,omitempty"`
 	// +optional
-	Secure *bool `json:"secure,omitempty" yaml:"secure,omitempty"`
+	Secure *bool `json:"secure,omitempty"`
 	// +optional
-	SkipVerify *bool `json:"skipVerify,omitempty" yaml:"skipVerify,omitempty"`
+	SkipVerify *bool `json:"skipVerify,omitempty"`
 	// +optional
-	V4Auth *bool `json:"v4Auth,omitempty" yaml:"v4Auth,omitempty"`
+	V4Auth *bool `json:"v4Auth,omitempty"`
 	// +optional
-	ChunkSize *int64 `json:"chunkSize,omitempty" yaml:"chunkSize,omitempty"`
+	ChunkSize *int64 `json:"chunkSize,omitempty"`
 	// +optional
-	MultipartCopyChunkSize *int64 `json:"multipartCopyChunkSize,omitempty" yaml:"multipartCopyChunkSize,omitempty"`
+	MultipartCopyChunkSize *int64 `json:"multipartCopyChunkSize,omitempty"`
 	// +optional
-	MultipartCopyMaxConcurrency *int64 `json:"multipartCopyMaxConcurrency,omitempty" yaml:"multipartCopyMaxConcurrency,omitempty"`
+	MultipartCopyMaxConcurrency *int64 `json:"multipartCopyMaxConcurrency,omitempty"`
 	// +optional
-	MultipartCopyThresholdSize *int64 `json:"multipartCopyThresholdSize,omitempty" yaml:"multipartCopyThresholdSize,omitempty"`
+	MultipartCopyThresholdSize *int64 `json:"multipartCopyThresholdSize,omitempty"`
 	// +optional
-	RootDirectory *string `json:"rootDirectory,omitempty" yaml:"rootDirectory,omitempty"`
+	RootDirectory *string `json:"rootDirectory,omitempty"`
 	// +optional
-	StorageClass *S3StorageClass `json:"storageClass,omitempty" yaml:"storageClass,omitempty"`
+	StorageClass *S3StorageClass `json:"storageClass,omitempty"`
 	// +optional
-	UserAgent *string `json:"userAgent,omitempty" yaml:"userAgent,omitempty"`
+	UserAgent *string `json:"userAgent,omitempty"`
 	// +optional
-	ObjectACL *string `json:"objectACL,omitempty" yaml:"objectACL,omitempty"`
+	ObjectACL *string `json:"objectACL,omitempty"`
 }
 
 // Delete cloud enable the deletion of image blobs and manifests by digest.
 type Delete struct {
-	Enabled bool `json:"enabled" yaml:"enabled"`
+	Enabled bool `json:"enabled"`
 }
 
 type Security struct {
-	TokenPrivateKeyFile string `json:"tokenPrivateKeyFile" yaml:"tokenPrivateKeyFile"`
-	TokenPublicKeyFile  string `json:"tokenPublicKeyFile" yaml:"tokenPublicKeyFile"`
+	TokenPrivateKeyFile string `json:"tokenPrivateKeyFile"`
+	TokenPublicKeyFile  string `json:"tokenPublicKeyFile"`
 	// +optional
-	TokenExpiredHours *int64 `json:"tokenExpiredHours,omitempty" yaml:"tokenExpiredHours,omitempty"`
-	HTTPSecret        string `json:"httpSecret" yaml:"httpSecret"`
-	AdminUsername     string `json:"adminUsername" yaml:"adminUsername"`
-	AdminPassword     string `json:"adminPassword" yaml:"adminPassword"`
+	TokenExpiredHours *int64 `json:"tokenExpiredHours,omitempty"`
+	HTTPSecret        string `json:"httpSecret"`
+	AdminUsername     string `json:"adminUsername"`
+	AdminPassword     string `json:"adminPassword"`
 	// +optional
-	EnableAnonymous *bool `json:"enableAnonymous" yaml:"enableAnonymous"`
+	EnableAnonymous *bool `json:"enableAnonymous"`
 }
 
 // Redis configures the redis pool available to the registry cache.
 type Redis struct {
 	// Addr specifies the the redis instance available to the registry API server.
-	Addr string `json:"addr" yaml:"addr"`
+	Addr string `json:"addr"`
 	// Password string to use when making a connection.
-	Password string `json:"password" yaml:"password"`
+	Password string `json:"password"`
 	// DB specifies the database to connect to on the redis instance.
-	DB int32 `json:"db" yaml:"db"`
+	DB int32 `json:"db"`
 	// +optional
-	ReadTimeoutMillisecond *int64 `json:"readTimeoutMillisecond,omitempty" yaml:"readTimeoutMillisecond,omitempty"`
+	ReadTimeoutMillisecond *int64 `json:"readTimeoutMillisecond,omitempty"`
 	// +optional
-	DialTimeoutMillisecond *int64 `json:"dialTimeoutMillisecond,omitempty" yaml:"dialTimeoutMillisecond,omitempty"`
+	DialTimeoutMillisecond *int64 `json:"dialTimeoutMillisecond,omitempty"`
 	// +optional
-	WriteTimeoutMillisecond *int64 `json:"writeTimeoutMillisecond,omitempty" yaml:"writeTimeoutMillisecond,omitempty"`
+	WriteTimeoutMillisecond *int64 `json:"writeTimeoutMillisecond,omitempty"`
 	// PoolMaxIdle sets the maximum number of idle connections.
 	// +optional
-	PoolMaxIdle *int32 `json:"poolMaxIdle,omitempty" yaml:"poolMaxIdle,omitempty"`
+	PoolMaxIdle *int32 `json:"poolMaxIdle,omitempty"`
 	// PoolMaxActive sets the maximum number of connections that should be opened before
 	// blocking a connection request.
 	// +optional
-	PoolMaxActive *int32 `json:"poolMaxActive,omitempty" yaml:"poolMaxActive,omitempty"`
+	PoolMaxActive *int32 `json:"poolMaxActive,omitempty"`
 	// PoolIdleTimeoutSeconds sets the amount time to wait before closing inactive connections.
 	// +optional
-	PoolIdleTimeoutSeconds *int64 `json:"poolIdleTimeoutSeconds,omitempty" yaml:"poolIdleTimeoutSeconds,omitempty"`
+	PoolIdleTimeoutSeconds *int64 `json:"poolIdleTimeoutSeconds,omitempty"`
 }
