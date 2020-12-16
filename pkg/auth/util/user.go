@@ -24,17 +24,17 @@ import (
 	"fmt"
 	"strings"
 
-	"tkestack.io/tke/api/auth"
-	authv1 "tkestack.io/tke/api/auth/v1"
-	authinternalclient "tkestack.io/tke/api/client/clientset/internalversion/typed/auth/internalversion"
+	"github.com/casbin/casbin/v2"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"tkestack.io/tke/pkg/util"
 	"tkestack.io/tke/pkg/util/log"
 
-	"github.com/casbin/casbin/v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/util/errors"
+	"tkestack.io/tke/api/auth"
+	authv1 "tkestack.io/tke/api/auth/v1"
+	authinternalclient "tkestack.io/tke/api/client/clientset/internalversion/typed/auth/internalversion"
 )
 
 const (
@@ -216,7 +216,7 @@ func HandleUserPoliciesUpdate(ctx context.Context, authClient authinternalclient
 	return errors.NewAggregate([]error{berr, uerr})
 }
 
-func SetAdministrator(enforcer *casbin.SyncedEnforcer, localIdentity *auth.LocalIdentity, idp *auth.IdentityProvider) {
+func SetAdministrator(ctx context.Context, enforcer *casbin.SyncedEnforcer, authClient authinternalclient.AuthInterface, localIdentity *auth.LocalIdentity) {
 	if localIdentity.Spec.Extra == nil {
 		localIdentity.Spec.Extra = make(map[string]string)
 	}
@@ -235,12 +235,16 @@ func SetAdministrator(enforcer *casbin.SyncedEnforcer, localIdentity *auth.Local
 		}
 	}
 
-	if idp != nil {
-		for _, name := range idp.Spec.Administrators {
-			if name == localIdentity.Spec.Username {
-				localIdentity.Spec.Extra[administratorKey] = "true"
-				return
-			}
+	idp, err := authClient.IdentityProviders().Get(ctx, localIdentity.Spec.TenantID, v1.GetOptions{})
+	if err != nil {
+		log.Error("get idp for tenant failed", log.String("tenantID", localIdentity.Spec.TenantID))
+		return
+	}
+
+	for _, name := range idp.Spec.Administrators {
+		if name == localIdentity.Spec.Username {
+			localIdentity.Spec.Extra[administratorKey] = "true"
+			return
 		}
 	}
 }
@@ -252,32 +256,17 @@ func IsPlatformAdministrator(user authv1.User) bool {
 	return false
 }
 
-func FillUserPolicies(ctx context.Context, authClient authinternalclient.AuthInterface, enforcer *casbin.SyncedEnforcer,
-	localidentityList *auth.LocalIdentityList) {
+func FillUserPolicies(ctx context.Context, authClient authinternalclient.AuthInterface, enforcer *casbin.SyncedEnforcer, localidentityList *auth.LocalIdentityList) {
 	if enforcer == nil || enforcer.GetRoleManager() == nil || enforcer.GetAdapter() == nil {
 		return
 	}
 
-	idpList, err := authClient.IdentityProviders().List(ctx, v1.ListOptions{})
-	if err != nil || idpList == nil {
-		return
-	}
-
-	idpMap := make(map[string]*auth.IdentityProvider)
-	for i := 0; i < len(idpList.Items); i++ {
-		idpMap[idpList.Items[i].GetName()] = &idpList.Items[i]
-	}
-
 	policyDisplayNameMap := make(map[string]string)
 	for i, item := range localidentityList.Items {
-		if idp, ok := idpMap[localidentityList.Items[i].Spec.TenantID]; ok {
-			SetAdministrator(enforcer, &localidentityList.Items[i], idp)
-		} else {
-			SetAdministrator(enforcer, &localidentityList.Items[i], nil)
-		}
+		SetAdministrator(ctx, enforcer, authClient, &localidentityList.Items[i])
 
 		// Use direct roles to fill policies
-		roles, _ := enforcer.GetRoleManager().GetRoles(UserKey(item.Spec.TenantID, item.Spec.Username), DefaultDomain)
+		roles := enforcer.GetRolesForUserInDomain(UserKey(item.Spec.TenantID, item.Spec.Username), DefaultDomain)
 		var policies []string
 		for _, r := range roles {
 			if strings.HasPrefix(r, "pol-") {
