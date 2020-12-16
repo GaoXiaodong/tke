@@ -932,22 +932,14 @@ export const validateActions = {
     };
   },
 
-  _validateDomain(domain: string, openConsole: boolean) {
+  _validateDomain(domain: string) {
     let reg = /^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$/,
       status = 0,
       message = '填写域名时请不要带有http或https协议，例如：console.tke.com';
 
-    if (openConsole) {
-      if (!domain) {
-        status = 2;
-        message = '域名不能为空';
-      } else if (!reg.test(domain)) {
-        status = 2;
-        message = '域名格式不正确';
-      } else {
-        status = 1;
-        message = '';
-      }
+    if (domain && !reg.test(domain)) {
+      status = 2;
+      message = '域名格式不正确';
     } else {
       status = 1;
       message = '';
@@ -956,9 +948,9 @@ export const validateActions = {
     return { status, message };
   },
 
-  validateDomain(domain: string, openConsole: boolean) {
+  validateDomain(domain: string) {
     return dispatch => {
-      const v_consoleDomain = validateActions._validateDomain(domain, openConsole);
+      const v_consoleDomain = validateActions._validateDomain(domain);
       dispatch(installerActions.updateEdit({ v_consoleDomain }));
     };
   },
@@ -1023,7 +1015,7 @@ export const validateActions = {
     const result =
       validateActions._validateCertificate(editState.certificate, editState.openConsole, editState.certType).status ===
         1 &&
-      validateActions._validateDomain(editState.consoleDomain, editState.openConsole).status === 1 &&
+      validateActions._validateDomain(editState.consoleDomain).status === 1 &&
       validateActions._validatePrivateKey(editState.privateKey, editState.openConsole, editState.certType).status === 1;
 
     return result;
@@ -1036,7 +1028,6 @@ export const validateActions = {
           editState.openConsole,
           editState.certType
         ),
-        v_consoleDomain = validateActions._validateDomain(editState.consoleDomain, editState.openConsole),
         v_privateKey = validateActions._validateCertificate(
           editState.privateKey,
           editState.openConsole,
@@ -1045,8 +1036,7 @@ export const validateActions = {
       dispatch(
         installerActions.updateEdit({
           v_certificate,
-          v_privateKey,
-          v_consoleDomain
+          v_privateKey
         })
       );
     };

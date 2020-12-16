@@ -43,7 +43,6 @@ export class AddonHeadPanel extends React.Component<RootProps, {}> {
       clusterContent = (
         <Select
           type="simulate"
-          appearence="button"
           searchable
           size="m"
           options={clusterOptions}

@@ -207,14 +207,11 @@ export async function fetchResourceList(
       const { pageSize } = paging;
       k8sQueryObj = JSON.parse(
         JSON.stringify(
-          Object.assign(
-            {
-              limit: pageSize,
-              continue: continueToken ? continueToken : undefined,
-              labelSelector
-            },
-            k8sQueryObj
-          )
+          Object.assign({}, k8sQueryObj, {
+            limit: pageSize,
+            continue: continueToken ? continueToken : undefined,
+            labelSelector
+          })
         )
       );
     }
