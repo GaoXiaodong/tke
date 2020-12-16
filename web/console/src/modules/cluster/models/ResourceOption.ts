@@ -42,8 +42,6 @@ export interface ResourceFilter {
   specificName?: string;
 
   meshId?: string;
-
-  labelSelector?: string;
 }
 
 export interface DifferentInterfaceResourceOperation {

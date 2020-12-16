@@ -52,15 +52,14 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
   }
 
   render() {
-    const { route, subRoot } = this.props,
+    let { route, subRoot } = this.props,
       urlParams = router.resolve(route);
 
-    const kind = urlParams['type'],
+    let kind = urlParams['type'],
       resourceName = urlParams['resourceName'];
 
     let monitorButton = null;
-    monitorButton =
-      ['deployment', 'statefulset', 'daemonset', 'tapp'].includes(resourceName) && this._renderMonitorButton();
+    monitorButton = ['deployment', 'statefulset', 'daemonset', 'tapp'].includes(resourceName) && this._renderMonitorButton();
 
     return (
       <Table.ActionPanel>
@@ -103,7 +102,7 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
     );
   }
   _handleMonitor() {
-    const { subRoot, route } = this.props,
+    let { subRoot, route } = this.props,
       { resourceOption } = subRoot;
 
     this.setState({
@@ -149,7 +148,7 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
 
   /** render新建按钮 */
   private _renderCreateButton() {
-    const { subRoot } = this.props,
+    let { subRoot } = this.props,
       { resourceInfo } = subRoot;
 
     const isShow = !isEmpty(resourceInfo) && resourceInfo.actionField && resourceInfo.actionField.create.isAvailable;
@@ -169,14 +168,14 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
 
   /** action for create button */
   private _handleClickForCreate() {
-    const { route } = this.props,
+    let { route } = this.props,
       urlParams = router.resolve(route);
     router.navigate(Object.assign({}, urlParams, { mode: 'create' }), route.queries);
   }
 
   /** 生成命名空间选择列表 */
   private _renderNamespaceSelect() {
-    const { actions, namespaceList, namespaceSelection } = this.props;
+    let { actions, namespaceList, namespaceSelection } = this.props;
 
     let selectProps = {};
 
@@ -186,7 +185,7 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
         return { ...gr, [clusterName]: <Tooltip title={value}>{value}</Tooltip> };
       }, {});
 
-      const options = namespaceList.data.recordCount
+      let options = namespaceList.data.recordCount
         ? namespaceList.data.records.map(item => {
             const text = `${item.clusterDisplayName}-${item.namespace}`;
 
@@ -205,7 +204,7 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
         filter: (inputValue, { realText }: any) => (realText ? realText.includes(inputValue) : true)
       };
     } else {
-      const options = namespaceList.data.recordCount
+      let options = namespaceList.data.recordCount
         ? namespaceList.data.records.map((item, index) => ({
             value: item.name,
             text: item.displayName
@@ -243,8 +242,8 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
 
   /** 生成搜索框 */
   private _renderTagSearchBox() {
-    const { subRoot } = this.props,
-      { resourceInfo, resourceOption, resourceName } = subRoot,
+    let { subRoot } = this.props,
+      { resourceInfo, resourceOption } = subRoot,
       { ffResourceList } = resourceOption;
 
     // const defaultValue = [{attr: {key: 'namespace',name: '命名空间'},values: [{name: namespaceSelection}]}];
@@ -258,11 +257,6 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
         type: 'input',
         key: 'resourceName',
         name: t('名称')
-      },
-      {
-        type: 'input',
-        key: 'labelSelector',
-        name: 'labels'
       }
     ];
 
@@ -281,7 +275,7 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
 
     // 受控展示的values
     // const values = resourceQuery.search ? this.state.searchBoxValues : isNeedFetchNamespace ? defaultValue : [];
-    const values = this.state.searchBoxValues;
+    const values = ffResourceList.query.search ? this.state.searchBoxValues : [];
 
     const isShow = !isEmpty(resourceInfo) && resourceInfo.actionField && resourceInfo.actionField.search.isAvailable;
 
@@ -295,10 +289,6 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
             this._handleClickForTagSearch(tags);
           }}
         />
-        <CleanState
-          resourceName={resourceName}
-          clean={() => this.setState({ searchBoxValues: [], searchBoxLength: 0 })}
-        />
       </div>
     ) : (
       <noscript />
@@ -307,7 +297,7 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
 
   /** 搜索框的操作，不同的搜索进行相对应的操作 */
   private _handleClickForTagSearch(tags) {
-    const { actions, subRoot } = this.props,
+    let { actions, subRoot } = this.props,
       { resourceOption } = subRoot,
       { ffResourceList } = resourceOption;
 
@@ -317,17 +307,29 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
       searchBoxLength: tags.length
     });
 
-    const resourceName = tags.find(({ attr: { key } }) => key === 'resourceName')?.values?.[0]?.name ?? '';
-    const labelSelector = tags.find(({ attr: { key } }) => key === 'labelSelector')?.values?.[0]?.name;
+    // 如果检测到 tags的长度变化，并且key为 resourceName 去掉了，则清除搜索条件
+    if (
+      tags.length === 0 ||
+      (tags.length === 1 && ffResourceList.query.search && tags[0].attr && tags[0].attr.key !== 'resourceName')
+    ) {
+      actions.resource.changeKeyword('');
+      actions.resource.performSearch('');
+    }
 
-    actions.resource.changeFilter({ labelSelector });
-    actions.resource.changeKeyword(resourceName);
-    actions.resource.performSearch(resourceName);
+    tags.forEach(tagItem => {
+      let attrKey = tagItem.attr ? tagItem.attr.key : null;
+      if (attrKey === 'resourceName' || attrKey === null) {
+        // let oldSerach = resourceQuery.search;
+        let search = tagItem.values[0].name;
+        actions.resource.changeKeyword(search);
+        actions.resource.performSearch(search);
+      }
+    });
   }
 
   /** 生成自动刷新按钮 */
   private _renderAutoRenew() {
-    const { subRoot } = this.props,
+    let { subRoot } = this.props,
       { resourceInfo } = subRoot;
 
     const isShow = !isEmpty(resourceInfo) && resourceInfo.actionField && resourceInfo.actionField.autoRenew.isAvailable;
@@ -354,11 +356,11 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
 
   /** 生成手动刷新按钮 */
   private _renderManualRenew() {
-    const { actions, subRoot, namespaceSelection } = this.props,
+    let { actions, subRoot, namespaceSelection } = this.props,
       { resourceOption, resourceInfo } = subRoot,
       { ffResourceList } = resourceOption;
 
-    const loading = ffResourceList.list.loading || ffResourceList.list.fetchState === FetchState.Fetching;
+    let loading = ffResourceList.list.loading || ffResourceList.list.fetchState === FetchState.Fetching;
     const isShow =
       !isEmpty(resourceInfo) && resourceInfo.actionField && resourceInfo.actionField.manualRenew.isAvailable;
     return isShow ? (
@@ -377,11 +379,11 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
 
   /** 生成自动下载按钮 */
   private _renderDownload() {
-    const { subRoot } = this.props,
+    let { subRoot } = this.props,
       { resourceOption, resourceInfo } = subRoot,
       { ffResourceList } = resourceOption;
 
-    const loading = ffResourceList.list.loading || ffResourceList.list.fetchState === FetchState.Fetching;
+    let loading = ffResourceList.list.loading || ffResourceList.list.fetchState === FetchState.Fetching;
     const isShow = !isEmpty(resourceInfo) && resourceInfo.actionField && resourceInfo.actionField.download.isAvailable;
     return isShow ? (
       <Button
@@ -397,20 +399,20 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
 
   /** 导出数据 */
   private downloadHandle(resourceList: Resource[]) {
-    const { clusterVersion, subRoot } = this.props,
+    let { clusterVersion, subRoot } = this.props,
       { resourceName } = subRoot;
 
-    const resourceInfo: ResourceInfo = resourceConfig(clusterVersion)[resourceName];
+    let resourceInfo: ResourceInfo = resourceConfig(clusterVersion)[resourceName];
     let rows = [],
       head = [];
 
     // 这里是去处理head当中显示的内容
-    const headKeys = [],
+    let headKeys = [],
       displayKeys = Object.keys(resourceInfo.displayField);
 
     displayKeys.forEach(item => {
       if (item !== 'operator') {
-        const displayField: DisplayFiledProps = resourceInfo.displayField[item];
+        let displayField: DisplayFiledProps = resourceInfo.displayField[item];
         headKeys.push(displayField.headTitle);
       }
     });
@@ -418,8 +420,8 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
     // 这里是去处理rows当中的信息
     resourceList.forEach((resource: Resource) => {
       // 每一行的数据
-      const row = [];
-      const rowInfos: DisplayFiledProps[] = [];
+      let row = [];
+      let rowInfos: DisplayFiledProps[] = [];
       displayKeys.forEach(item => {
         if (item !== 'operator') {
           rowInfos.push(resourceInfo.displayField[item]);
@@ -430,8 +432,8 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
       rowInfos.forEach(item => {
         let showData: any = [];
         item.dataField.forEach(field => {
-          const dataFieldIns = field.split('.');
-          const data: any = this._getFinalData(dataFieldIns, resource);
+          let dataFieldIns = field.split('.');
+          let data: any = this._getFinalData(dataFieldIns, resource);
           // 如果返回的为 ''，即找不到这个对象，则使用配置文件中设定的默认值
           showData.push(data === '' ? item.noExsitedValue : data);
         });
@@ -453,7 +455,7 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
         } else if (item.dataFormat === 'replicas') {
           content = showData[0] + '、' + showData[1];
         } else if (item.dataFormat === 'ingressType') {
-          const ingressId = showData['kubernetes.io/ingress.qcloud-loadbalance-id'] || '-';
+          let ingressId = showData['kubernetes.io/ingress.qcloud-loadbalance-id'] || '-';
           content = ingressId + '\n' + t('应用型负载均衡');
         } else if (item.dataFormat === 'ingressRule') {
           content = this._reduceIngressRule(showData, resource);
@@ -511,7 +513,7 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
       }${rule.path}`;
     };
 
-    const finalRules = [...httpRules, ...httpsRules];
+    let finalRules = [...httpRules, ...httpsRules];
 
     data = finalRules
       .map(item => {
@@ -537,12 +539,4 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
     // 返回空值，是因为如果不存在值，则使用配置文件的默认值
     return result || '';
   }
-}
-
-function CleanState({ resourceName, clean }) {
-  React.useEffect(() => {
-    clean && clean();
-  }, [resourceName]);
-
-  return <noscript></noscript>;
 }

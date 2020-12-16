@@ -61,21 +61,21 @@ function operationResult<T>(target: T[] | T, error?: any): OperationResult<T>[] 
 /** 访问凭证相关 */
 export async function fetchApiKeyList(query: QueryState<ApiKeyFilter>) {
   const { search, paging } = query;
-  const apiKeyResourceInfo: ResourceInfo = resourceConfig()['apiKey'];
-  const url = reduceK8sRestfulPath({
+  let apiKeyResourceInfo: ResourceInfo = resourceConfig()['apiKey'];
+  let url = reduceK8sRestfulPath({
     resourceInfo: apiKeyResourceInfo
   });
 
-  const params: RequestParams = {
+  let params: RequestParams = {
     method: Method.get,
     url
   };
 
-  const response = await reduceNetworkRequest(params);
+  let response = await reduceNetworkRequest(params);
   let apiKeyList = [];
   try {
     if (response.code === 0) {
-      const listItems = response.data;
+      let listItems = response.data;
       if (listItems.items) {
         apiKeyList = listItems.items.map((item, index) => {
           return Object.assign({}, item, { id: index });
@@ -102,23 +102,23 @@ export async function fetchApiKeyList(query: QueryState<ApiKeyFilter>) {
 
 export async function createApiKey(apiKeys: ApiKeyCreation[]) {
   try {
-    const apiKeyResourceInfo: ResourceInfo = resourceConfig()['apiKey'];
-    const url = reduceK8sRestfulPath({
+    let apiKeyResourceInfo: ResourceInfo = resourceConfig()['apiKey'];
+    let url = reduceK8sRestfulPath({
       resourceInfo: apiKeyResourceInfo
     });
 
-    const apiKey = apiKeys[0];
+    let apiKey = apiKeys[0];
     /** 构建参数 */
-    const requestParams = {
+    let requestParams = {
       description: apiKey.description,
       expire: apiKey.expire + apiKey.unit
     };
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.post,
       url: url + '/default/token',
       data: requestParams
     };
-    const response = await reduceNetworkRequest(params);
+    let response = await reduceNetworkRequest(params);
     if (response.code === 0) {
       return operationResult(apiKey);
     } else {
@@ -131,18 +131,18 @@ export async function createApiKey(apiKeys: ApiKeyCreation[]) {
 
 export async function deleteApiKey(apiKeys: ApiKey[]) {
   try {
-    const apiKeyResourceInfo: ResourceInfo = resourceConfig()['apiKey'];
-    const url = reduceK8sRestfulPath({
+    let apiKeyResourceInfo: ResourceInfo = resourceConfig()['apiKey'];
+    let url = reduceK8sRestfulPath({
       resourceInfo: apiKeyResourceInfo,
       specificName: apiKeys[0].metadata.name
     });
 
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.delete,
       url
     };
 
-    const response = await reduceNetworkRequest(params);
+    let response = await reduceNetworkRequest(params);
     if (response.code === 0) {
       return operationResult(apiKeys);
     } else {
@@ -155,8 +155,8 @@ export async function deleteApiKey(apiKeys: ApiKey[]) {
 
 export async function toggleKeyStatus(apiKeys: ApiKey[]) {
   try {
-    const apiKeyResourceInfo: ResourceInfo = resourceConfig()['apiKey'];
-    const url = reduceK8sRestfulPath({
+    let apiKeyResourceInfo: ResourceInfo = resourceConfig()['apiKey'];
+    let url = reduceK8sRestfulPath({
       resourceInfo: apiKeyResourceInfo,
       specificName: apiKeys[0].metadata.name
     });
@@ -165,14 +165,14 @@ export async function toggleKeyStatus(apiKeys: ApiKey[]) {
       disabled: !apiKeys[0].status.disabled
     });
 
-    const requestParams = apiKeys[0];
-    const params: RequestParams = {
+    let requestParams = apiKeys[0];
+    let params: RequestParams = {
       method: Method.put,
       url: url,
       data: requestParams
     };
 
-    const response = await reduceNetworkRequest(params);
+    let response = await reduceNetworkRequest(params);
     if (response.code === 0) {
       return operationResult(apiKeys);
     } else {
@@ -185,19 +185,19 @@ export async function toggleKeyStatus(apiKeys: ApiKey[]) {
 
 /** 镜像仓库相关 */
 export async function fetchRepoList(query: QueryState<RepoFilter>) {
-  const { search, paging } = query;
+  let { search, paging } = query;
 
-  const params: RequestParams = {
+  let params: RequestParams = {
     method: Method.get,
     url: REPO_URL
   };
 
-  const response = await reduceNetworkRequest(params);
+  let response = await reduceNetworkRequest(params);
   let repoList = [],
     total = 0;
   try {
     if (response.code === 0) {
-      const listItems = response.data;
+      let listItems = response.data;
       if (listItems.items) {
         repoList = listItems.items.map((item, index) => {
           return Object.assign({}, item, { id: index });
@@ -225,9 +225,9 @@ export async function fetchRepoList(query: QueryState<RepoFilter>) {
 
 export async function createRepo(repos: RepoCreation[]) {
   try {
-    const repo = repos[0];
+    let repo = repos[0];
     /** 构建参数 */
-    const requestParams = {
+    let requestParams = {
       apiVersion: 'registry.tkestack.io/v1',
       kind: 'Namespace',
       spec: {
@@ -236,12 +236,12 @@ export async function createRepo(repos: RepoCreation[]) {
         visibility: repo.visibility || 'Public'
       }
     };
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.post,
       url: REPO_URL,
       data: requestParams
     };
-    const response = await reduceNetworkRequest(params);
+    let response = await reduceNetworkRequest(params);
     if (response.code === 0) {
       return operationResult(repo);
     } else {
@@ -254,12 +254,12 @@ export async function createRepo(repos: RepoCreation[]) {
 
 export async function deleteRepo(repos: Repo[]) {
   try {
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.delete,
       url: REPO_URL + repos[0].metadata.name
     };
 
-    const response = await reduceNetworkRequest(params);
+    let response = await reduceNetworkRequest(params);
     if (response.code === 0) {
       return operationResult(repos);
     } else {
@@ -272,9 +272,9 @@ export async function deleteRepo(repos: Repo[]) {
 
 export async function createChart(charts: ChartCreation[]) {
   try {
-    const chart = charts[0];
+    let chart = charts[0];
     /** 构建参数 */
-    const requestParams = {
+    let requestParams = {
       apiVersion: 'registry.tkestack.io/v1',
       kind: 'ChartGroup',
       spec: {
@@ -283,12 +283,12 @@ export async function createChart(charts: ChartCreation[]) {
         visibility: chart.visibility || 'Public'
       }
     };
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.post,
       url: CHART_URL,
       data: requestParams
     };
-    const response = await reduceNetworkRequest(params);
+    let response = await reduceNetworkRequest(params);
     if (response.code === 0) {
       return operationResult(chart);
     } else {
@@ -301,12 +301,12 @@ export async function createChart(charts: ChartCreation[]) {
 
 export async function deleteChart(charts: Chart[]) {
   try {
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.delete,
       url: CHART_URL + charts[0].metadata.name
     };
 
-    const response = await reduceNetworkRequest(params);
+    let response = await reduceNetworkRequest(params);
     if (response.code === 0) {
       return operationResult(charts);
     } else {
@@ -318,19 +318,19 @@ export async function deleteChart(charts: Chart[]) {
 }
 
 export async function fetchChartInsList(query: QueryState<ChartInsFilter>) {
-  const { search, paging, filter } = query;
+  let { search, paging, filter } = query;
 
-  const params: RequestParams = {
+  let params: RequestParams = {
     method: Method.get,
     url: `${REPO_URL}${filter.chartgroup}/charts`
   };
 
-  const response = await reduceNetworkRequest(params);
+  let response = await reduceNetworkRequest(params);
   let chartList = [],
     total = 0;
   try {
     if (response.code === 0) {
-      const listItems = response.data;
+      let listItems = response.data;
       if (listItems.items) {
         chartList = listItems.items.map((item, index) => {
           return Object.assign({}, item, { id: index });
@@ -358,19 +358,19 @@ export async function fetchChartInsList(query: QueryState<ChartInsFilter>) {
 
 /** 镜像相关 */
 export async function fetchImageList(query: QueryState<ImageFilter>) {
-  const { search, paging, filter } = query;
+  let { search, paging, filter } = query;
 
-  const params: RequestParams = {
+  let params: RequestParams = {
     method: Method.get,
     url: `${REPO_URL}${filter.namespace}/repositories`
   };
 
-  const response = await reduceNetworkRequest(params);
+  let response = await reduceNetworkRequest(params);
   let imageList = [],
     total = 0;
   try {
     if (response.code === 0) {
-      const listItems = response.data;
+      let listItems = response.data;
       if (listItems.items) {
         imageList = listItems.items.map((item, index) => {
           return Object.assign({}, item, { id: index });
@@ -398,9 +398,9 @@ export async function fetchImageList(query: QueryState<ImageFilter>) {
 
 export async function createImage(images: ImageCreation[]) {
   try {
-    const image = images[0];
+    let image = images[0];
     /** 构建参数 */
-    const requestParams = {
+    let requestParams = {
       apiVersion: 'registry.tkestack.io/v1',
       kind: 'Repository',
       metadata: {
@@ -413,12 +413,12 @@ export async function createImage(images: ImageCreation[]) {
         visibility: image.visibility || 'Public'
       }
     };
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.post,
       url: `${REPO_URL}${image.namespace}/repositories`,
       data: requestParams
     };
-    const response = await reduceNetworkRequest(params);
+    let response = await reduceNetworkRequest(params);
     if (response.code === 0) {
       return operationResult(image);
     } else {
@@ -431,13 +431,13 @@ export async function createImage(images: ImageCreation[]) {
 
 export async function deleteImage(images: Image[]) {
   try {
-    const image = images[0];
-    const params: RequestParams = {
+    let image = images[0];
+    let params: RequestParams = {
       method: Method.delete,
       url: `${REPO_URL}${image.metadata.namespace}/repositories/${image.metadata.name}`
     };
 
-    const response = await reduceNetworkRequest(params);
+    let response = await reduceNetworkRequest(params);
     if (response.code === 0) {
       return operationResult(images);
     } else {
@@ -449,21 +449,21 @@ export async function deleteImage(images: Image[]) {
 }
 
 export async function fetchDockerRegUrl() {
-  const _localUrl = localStorage.getItem('_registry_url');
+  let _localUrl = localStorage.getItem('_registry_url');
   if (_localUrl && !/^https:\/\/.*/.test(_localUrl)) {
     return _localUrl;
   } else {
-    const paramsInfo: RequestParams = {
+    let paramsInfo: RequestParams = {
       method: Method.get,
       url: '/apis/gateway.tkestack.io/v1/tokens/info'
     };
-    const paramsSysInfo: RequestParams = {
+    let paramsSysInfo: RequestParams = {
       method: Method.get,
       url: '/apis/gateway.tkestack.io/v1/sysinfo'
     };
 
-    const info = await reduceNetworkRequest(paramsInfo);
-    const sysInfo = await reduceNetworkRequest(paramsSysInfo);
+    let info = await reduceNetworkRequest(paramsInfo);
+    let sysInfo = await reduceNetworkRequest(paramsSysInfo);
     try {
       let url = '';
       if (info.code === 0) {
@@ -511,8 +511,8 @@ export async function fetchChartGroupList(query: QueryState<ChartGroupFilter>) {
   const resourceInfo: ResourceInfo = resourceConfig()['chartgroup'];
   const url = reduceK8sRestfulPath({ resourceInfo });
   const queryString = reduceK8sQueryString({ k8sQueryObj: queryObj });
-  const rr: RequestResult = await GET({ url: url + queryString, keyword: keyword });
-  const objs: ChartGroup[] = !rr.error && rr.data.items ? rr.data.items : [];
+  let rr: RequestResult = await GET({ url: url + queryString, keyword: keyword });
+  let objs: ChartGroup[] = !rr.error && rr.data.items ? rr.data.items : [];
   const result: RecordSet<ChartGroup> = {
     recordCount: objs.length,
     records: objs
@@ -527,7 +527,7 @@ export async function fetchChartGroupList(query: QueryState<ChartGroupFilter>) {
 export async function fetchChartGroup(filter: ChartGroupDetailFilter) {
   const resourceInfo: ResourceInfo = resourceConfig()['chartgroup'];
   const url = reduceK8sRestfulPath({ resourceInfo, specificName: filter.name });
-  const rr: RequestResult = await GET({ url });
+  let rr: RequestResult = await GET({ url });
   return rr.data;
 }
 
@@ -538,7 +538,7 @@ export async function fetchChartGroup(filter: ChartGroupDetailFilter) {
 export async function updateChartGroup([chartGroupInfo]) {
   const resourceInfo: ResourceInfo = resourceConfig()['chartgroup'];
   const url = reduceK8sRestfulPath({ resourceInfo, specificName: chartGroupInfo.metadata.name });
-  const rr: RequestResult = await PUT({
+  let rr: RequestResult = await PUT({
     url,
     bodyData: chartGroupInfo
   });
@@ -552,10 +552,7 @@ export async function updateChartGroup([chartGroupInfo]) {
 export async function addChartGroup([chartGroupInfo]) {
   const resourceInfo: ResourceInfo = resourceConfig()['chartgroup'];
   const url = reduceK8sRestfulPath({ resourceInfo });
-  chartGroupInfo.spec.importedInfo.password = chartGroupInfo.spec.importedInfo.password
-    ? btoa(chartGroupInfo.spec.importedInfo.password)
-    : '';
-  const rr: RequestResult = await POST({
+  let rr: RequestResult = await POST({
     url,
     bodyData: chartGroupInfo
   });
@@ -567,9 +564,9 @@ export async function addChartGroup([chartGroupInfo]) {
  * @param group
  */
 export async function deleteChartGroup([chartGroup]: ChartGroup[]) {
-  const resourceInfo: ResourceInfo = resourceConfig()['chartgroup'];
+  let resourceInfo: ResourceInfo = resourceConfig()['chartgroup'];
   const url = reduceK8sRestfulPath({ resourceInfo, specificName: chartGroup.metadata.name });
-  const rr: RequestResult = await DELETE({
+  let rr: RequestResult = await DELETE({
     url
   });
   return operationResult(rr.data, rr.error);
@@ -580,13 +577,13 @@ export async function deleteChartGroup([chartGroup]: ChartGroup[]) {
  * @param group
  */
 export async function repoUpdateChartGroup([chartGroup]: ChartGroup[]) {
-  const resourceInfo: ResourceInfo = resourceConfig()['chartgroup'];
+  let resourceInfo: ResourceInfo = resourceConfig()['chartgroup'];
   const url = reduceK8sRestfulPath({
     resourceInfo,
     extraResource: 'repoupdating',
     specificName: chartGroup.metadata.name
   });
-  const rr: RequestResult = await POST({
+  let rr: RequestResult = await POST({
     url
   });
   return operationResult(rr.data, rr.error);
@@ -656,11 +653,11 @@ export async function fetchPortalProjectList(query: QueryState<ProjectFilter>) {
   };
   const resourceInfo: ResourceInfo = resourceConfig()['portal'];
   const url = reduceK8sRestfulPath({ resourceInfo });
-  const rr: RequestResult = await GET({ url });
+  let rr: RequestResult = await GET({ url });
   if (rr.error) {
     return empty;
   }
-  const items = Object.keys(rr.data.projects).map(key => {
+  let items = Object.keys(rr.data.projects).map(key => {
     return {
       id: key,
       metadata: {
@@ -686,7 +683,7 @@ export async function fetchPortalProjectList(query: QueryState<ProjectFilter>) {
 export async function fetchUserInfo() {
   const resourceInfo: ResourceInfo = resourceConfig()['info'];
   const url = reduceK8sRestfulPath({ resourceInfo });
-  const rr: RequestResult = await GET({ url });
+  let rr: RequestResult = await GET({ url });
   return rr.data;
 }
 
@@ -709,7 +706,7 @@ export async function fetchChartList(query: QueryState<ChartFilter>) {
       }
     : {};
   const resourceInfo: ResourceInfo = resourceConfig()['chart'];
-  const opts = { resourceInfo: resourceInfo };
+  let opts = { resourceInfo: resourceInfo };
   // if (filter.namespace) {
   //   opts['namespace'] = filter.namespace;
   //   opts['isSpecialNamespace'] = true;
@@ -717,11 +714,11 @@ export async function fetchChartList(query: QueryState<ChartFilter>) {
   const url = reduceK8sRestfulPath(opts);
   const queryString = reduceK8sQueryString({ k8sQueryObj: queryObj });
   // reduceNetworkRequest设置了未传业务id则从cookie中读取的逻辑，传空的业务id是为了适配这段逻辑
-  const rr: RequestResult = await GET({
+  let rr: RequestResult = await GET({
     url: url + queryString,
     keyword
   });
-  const objs: Chart[] = !rr.error && rr.data.items ? rr.data.items : [];
+  let objs: Chart[] = !rr.error && rr.data.items ? rr.data.items : [];
   const result: RecordSet<Chart> = {
     recordCount: objs.length,
     records: objs
@@ -741,7 +738,7 @@ export async function fetchChart(filter: ChartDetailFilter) {
     specificName: filter.name,
     isSpecialNamespace: true
   });
-  const rr: RequestResult = await GET({ url });
+  let rr: RequestResult = await GET({ url });
   return rr.data;
 }
 
@@ -757,7 +754,7 @@ export async function updateChart([chartInfo], filter: ChartDetailFilter) {
     specificName: chartInfo.metadata.name,
     isSpecialNamespace: true
   });
-  const rr: RequestResult = await PUT({ url, bodyData: chartInfo });
+  let rr: RequestResult = await PUT({ url, bodyData: chartInfo });
   return operationResult(rr.data, rr.error);
 }
 
@@ -781,7 +778,7 @@ export async function deleteChartVersion([chartVersion]: ChartVersion[], filter:
     extraResource: 'version',
     isSpecialNamespace: true
   });
-  const rr: RequestResult = await DELETE({
+  let rr: RequestResult = await DELETE({
     url: url + '/' + filter.chartVersion
   });
   return operationResult(rr.data, rr.error);
@@ -793,7 +790,7 @@ export async function deleteChartVersion([chartVersion]: ChartVersion[], filter:
  */
 export async function fetchChartVersionFile(filter: ChartVersionFilter) {
   const url = `/chart/${filter.chartGroupName}/charts/${filter.chartName}-${filter.chartVersion}.tgz`;
-  const rr: RequestResult = await GET({ url });
+  let rr: RequestResult = await GET({ url });
   return rr.data;
 }
 
@@ -815,7 +812,7 @@ export async function fetchChartInfo(filter: ChartInfoFilter) {
     isSpecialNamespace: true
   });
   const queryString = reduceK8sQueryString({ k8sQueryObj: queryObj });
-  const rr: RequestResult = await GET({
+  let rr: RequestResult = await GET({
     url: url + '/' + filter.chartVersion + queryString
   });
   return rr.data;
@@ -832,7 +829,7 @@ export async function addApp([appInfo]) {
     namespace: appInfo.metadata.namespace,
     isSpecialNamespace: true
   });
-  const rr: RequestResult = await POST({ url, bodyData: appInfo });
+  let rr: RequestResult = await POST({ url, bodyData: appInfo });
   return operationResult(rr.data, rr.error);
 }
 
@@ -843,8 +840,8 @@ export async function addApp([appInfo]) {
 export async function fetchClusterList(query: QueryState<ClusterFilter>) {
   const resourceInfo: ResourceInfo = resourceConfig()['cluster'];
   const url = reduceK8sRestfulPath({ resourceInfo });
-  const rr: RequestResult = await GET({ url });
-  const objs: Cluster[] = !rr.error && rr.data.items ? rr.data.items : [];
+  let rr: RequestResult = await GET({ url });
+  let objs: Cluster[] = !rr.error && rr.data.items ? rr.data.items : [];
   const result: RecordSet<Cluster, ChartInfoFilter> = {
     recordCount: objs.length,
     records: objs,
@@ -861,8 +858,8 @@ export async function fetchNamespaceList(query: QueryState<NamespaceFilter>) {
   const { keyword, filter } = query;
   const resourceInfo: ResourceInfo = resourceConfig()['ns'];
   const url = reduceK8sRestfulPath({ resourceInfo });
-  const rr: RequestResult = await GET({ url, clusterId: filter.cluster });
-  const objs: Namespace[] = !rr.error && rr.data.items ? rr.data.items : [];
+  let rr: RequestResult = await GET({ url, clusterId: filter.cluster });
+  let objs: Namespace[] = !rr.error && rr.data.items ? rr.data.items : [];
   const result: RecordSet<Namespace, ChartInfoFilter> = {
     recordCount: objs.length,
     records: objs,
@@ -879,8 +876,8 @@ export async function fetchProjectNamespaceList(query: QueryState<ProjectNamespa
   const { keyword, filter } = query;
   const resourceInfo: ResourceInfo = resourceConfig()['namespaces'];
   const url = reduceK8sRestfulPath({ resourceInfo, specificName: filter.projectId, extraResource: 'namespaces' });
-  const rr: RequestResult = await GET({ url });
-  const objs: ProjectNamespace[] = !rr.error && rr.data.items ? rr.data.items : [];
+  let rr: RequestResult = await GET({ url });
+  let objs: ProjectNamespace[] = !rr.error && rr.data.items ? rr.data.items : [];
   const result: RecordSet<ProjectNamespace, ChartInfoFilter> = {
     recordCount: objs.length,
     records: objs,
@@ -902,8 +899,8 @@ export async function fetchCommonUserList(query: QueryState<void>) {
   const resourceInfo: ResourceInfo = resourceConfig()['user'];
   const url = reduceK8sRestfulPath({ resourceInfo });
   const queryString = reduceK8sQueryString({ k8sQueryObj: queryObj });
-  const rr: RequestResult = await GET({ url: url + queryString });
-  const users: UserPlain[] =
+  let rr: RequestResult = await GET({ url: url + queryString });
+  let users: UserPlain[] =
     !rr.error && rr.data.items
       ? rr.data.items.map(i => {
           return {

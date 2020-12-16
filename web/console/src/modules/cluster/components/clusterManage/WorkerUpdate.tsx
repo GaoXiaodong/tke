@@ -6,8 +6,6 @@ import { difference } from 'lodash';
 import { RootProps } from '../ClusterApp';
 import { getNodes, updateWorkers } from '@src/webApi/cluster';
 
-const { Text } = Typography;
-
 export function WorkerUpdate({ route }: RootProps) {
   const ItemStyle = () => ({
     width: 120
@@ -25,7 +23,7 @@ export function WorkerUpdate({ route }: RootProps) {
       console.log('start:---');
       const nodes = await getNodes({ clusterName: clusterId, clusterVersion });
       console.log('getMachines:', nodes);
-      setNodes(nodes.map(node => ({ ...node, disabled: node.phase !== 'Running' })));
+      setNodes(nodes);
     })();
   }, [clusterId, clusterVersion]);
 
@@ -36,11 +34,8 @@ export function WorkerUpdate({ route }: RootProps) {
     },
 
     {
-      dataIndex: 'phase',
-      title: '状态',
-      render(phase) {
-        return <Text type={phase === 'Running' ? 'success' : 'danger'}>{phase}</Text>;
-      }
+      dataIndex: 'labels',
+      title: 'label'
     },
 
     {

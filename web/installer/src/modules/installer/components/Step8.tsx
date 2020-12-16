@@ -20,11 +20,7 @@ export class Step8 extends React.Component<RootProps> {
           </Form.Item>
           {editState.openConsole ? (
             <>
-              <Form.Item
-                label="控制台域名"
-                status={getValidateStatus(editState.v_consoleDomain)}
-                message={editState.v_consoleDomain.message}
-              >
+              <Form.Item label="控制台域名">
                 <Input
                   value={editState.consoleDomain}
                   onChange={value => actions.installer.updateEdit({ consoleDomain: value })}

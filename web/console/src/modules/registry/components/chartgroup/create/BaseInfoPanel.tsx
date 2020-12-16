@@ -22,8 +22,8 @@ const mapDispatchToProps = dispatch =>
 @connect(state => state, mapDispatchToProps)
 export class BaseInfoPanel extends React.Component<RootProps, {}> {
   render() {
-    const { actions, route, chartGroupCreation, chartGroupValidator, projectList, commonUserAssociation } = this.props;
-    const action = actions.chartGroup.create.addChartGroupWorkflow;
+    let { actions, route, chartGroupCreation, chartGroupValidator, projectList, commonUserAssociation } = this.props;
+    let action = actions.chartGroup.create.addChartGroupWorkflow;
     const { chartGroupAddWorkflow } = this.props;
     const workflow = chartGroupAddWorkflow;
 
@@ -41,7 +41,7 @@ export class BaseInfoPanel extends React.Component<RootProps, {}> {
     const perform = () => {
       actions.chartGroup.create.validator.validate(null, async r => {
         if (isValid(r)) {
-          const chartGroup: ChartGroup = Object.assign({}, chartGroupCreation);
+          let chartGroup: ChartGroup = Object.assign({}, chartGroupCreation);
           if (chartGroup.spec.importedInfo && chartGroup.spec.importedInfo.password) {
             if (!isBase64(chartGroup.spec.importedInfo.password)) {
               chartGroup.spec.importedInfo.password = btoa(chartGroup.spec.importedInfo.password);
@@ -92,7 +92,7 @@ export class BaseInfoPanel extends React.Component<RootProps, {}> {
               { value: 'Public', text: '公共' }
             ]}
             onChange={value => {
-              const obj = { visibility: value };
+              let obj = { visibility: value };
               switch (value) {
                 case 'User': {
                   /** 已选中的数据 */
@@ -174,7 +174,7 @@ export class BaseInfoPanel extends React.Component<RootProps, {}> {
                 placeholder: t('请输入仓库地址'),
                 value: chartGroupCreation.spec.importedInfo.addr,
                 onChange: value => {
-                  const info = Object.assign({}, chartGroupCreation.spec.importedInfo);
+                  let info = Object.assign({}, chartGroupCreation.spec.importedInfo);
                   info.addr = value;
                   actions.chartGroup.create.updateCreationState({
                     spec: Object.assign({}, chartGroupCreation.spec, { importedInfo: info })
@@ -189,7 +189,7 @@ export class BaseInfoPanel extends React.Component<RootProps, {}> {
                 placeholder: t('请输入用户名'),
                 value: chartGroupCreation.spec.importedInfo.username,
                 onChange: value => {
-                  const info = Object.assign({}, chartGroupCreation.spec.importedInfo);
+                  let info = Object.assign({}, chartGroupCreation.spec.importedInfo);
                   info.username = value;
                   actions.chartGroup.create.updateCreationState({
                     spec: Object.assign({}, chartGroupCreation.spec, { importedInfo: info })
@@ -205,8 +205,8 @@ export class BaseInfoPanel extends React.Component<RootProps, {}> {
                 placeholder: t('请输入仓库密码'),
                 value: chartGroupCreation.spec.importedInfo.password,
                 onChange: value => {
-                  const info = Object.assign({}, chartGroupCreation.spec.importedInfo);
-                  info.password = value;
+                  let info = Object.assign({}, chartGroupCreation.spec.importedInfo);
+                  info.password = value ? btoa(value) : value;
                   actions.chartGroup.create.updateCreationState({
                     spec: Object.assign({}, chartGroupCreation.spec, { importedInfo: info })
                   });

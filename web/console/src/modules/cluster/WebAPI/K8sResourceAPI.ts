@@ -34,8 +34,8 @@ const tips = seajs.require('tips');
  * @param resourceInfo: ResourceInfo 当前namespace查询api的配置
  */
 export async function fetchNamespaceList(query: QueryState<ResourceFilter>, resourceInfo: ResourceInfo) {
-  const { filter, search } = query;
-  const { clusterId, regionId } = filter;
+  let { filter, search } = query;
+  let { clusterId, regionId } = filter;
 
   let namespaceList = [];
 
@@ -47,16 +47,16 @@ export async function fetchNamespaceList(query: QueryState<ResourceFilter>, reso
   }
 
   /** 构建参数 */
-  const params: RequestParams = {
+  let params: RequestParams = {
     method: Method.get,
     url
   };
 
   try {
-    const response = await reduceNetworkRequest(params, clusterId);
+    let response = await reduceNetworkRequest(params, clusterId);
 
     if (response.code === 0) {
-      const list = response.data;
+      let list = response.data;
       if (list.items) {
         namespaceList = list.items.map(item => {
           return {
@@ -95,9 +95,9 @@ export async function fetchNamespaceList(query: QueryState<ResourceFilter>, reso
  */
 export async function modifyNamespaceSecret(resource: CreateResource[], regionId: number) {
   try {
-    const { resourceIns, mode, clusterId, resourceInfo, namespace, jsonData } = resource[0];
+    let { resourceIns, mode, clusterId, resourceInfo, namespace, jsonData } = resource[0];
 
-    const isCreate = mode === 'create';
+    let isCreate = mode === 'create';
     let userDefinedHeader: UserDefinedHeader = {};
     let method = Method.post;
     // 获取k8s restfulpath
@@ -113,7 +113,7 @@ export async function modifyNamespaceSecret(resource: CreateResource[], regionId
     }
 
     // 构建参数 requestBody 当中
-    const params: RequestParams = {
+    let params: RequestParams = {
       method,
       url,
       userDefinedHeader,
@@ -133,7 +133,7 @@ export async function modifyNamespaceSecret(resource: CreateResource[], regionId
       }
     };
 
-    const response = await reduceNetworkRequest(params, clusterId);
+    let response = await reduceNetworkRequest(params, clusterId);
 
     if (response.code === 0) {
       tips.success(t('下发成功'), 2000);
@@ -167,7 +167,7 @@ export async function fetchResourceList(
   }
 ) {
   let { filter, search, paging, continueToken } = query,
-    { namespace, clusterId, regionId, specificName, meshId, labelSelector } = filter;
+    { namespace, clusterId, regionId, specificName, meshId } = filter;
 
   let {
     resourceInfo,
@@ -204,33 +204,29 @@ export async function fetchResourceList(
 
     // 这里是去拼接，是否需要在k8s url后面拼接一些queryString
     if (isContinue && !search) {
-      const { pageSize } = paging;
+      let { pageSize } = paging;
       k8sQueryObj = JSON.parse(
         JSON.stringify(
-          Object.assign({}, k8sQueryObj, {
-            limit: pageSize,
-            continue: continueToken ? continueToken : undefined,
-            labelSelector
-          })
+          Object.assign({}, k8sQueryObj, { limit: pageSize, continue: continueToken ? continueToken : undefined })
         )
       );
     }
 
     // 这里是去拼接，是否需要在k8s url后面拼接一些queryString
-    const queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
-    const url = k8sUrl + queryString;
+    let queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
+    let url = k8sUrl + queryString;
 
     // 构建参数
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.get,
       url
     };
 
     try {
-      const response = await reduceNetworkRequest(params, clusterId);
+      let response = await reduceNetworkRequest(params, clusterId);
 
       if (response.code === 0) {
-        const listItems = response.data;
+        let listItems = response.data;
 
         // 这里将继续拉取数据的token传递下去
         if (isContinue && listItems.metadata && listItems.metadata.continue) {
@@ -279,8 +275,8 @@ export async function fetchResourceList(
 export async function fetchSpecificResourceList(
   query: QueryState<ResourceFilter>,
   resourceInfo: ResourceInfo,
-  isClearData = false,
-  isRecordSet = false,
+  isClearData: boolean = false,
+  isRecordSet: boolean = false,
   k8sQueryObj: any = {}
 ) {
   let { filter } = query,
@@ -290,23 +286,23 @@ export async function fetchSpecificResourceList(
   let resourceList = [];
 
   if (!isClearData) {
-    const k8sUrl = reduceK8sRestfulPath({ resourceInfo, namespace, specificName, clusterId });
+    let k8sUrl = reduceK8sRestfulPath({ resourceInfo, namespace, specificName, clusterId });
     // 这里是去拼接，是否需要在k8s url后面拼接一些queryString
-    const queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
+    let queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
     // 这里是拼接查询的 queryString
-    const url = k8sUrl + queryString;
+    let url = k8sUrl + queryString;
 
     // 构建参数
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.get,
       url
     };
 
     try {
-      const response = await reduceNetworkRequest(params, clusterId);
+      let response = await reduceNetworkRequest(params, clusterId);
 
       if (response.code === 0) {
-        const listItems = response.data;
+        let listItems = response.data;
         if (listItems.items) {
           resourceList = listItems.items.map(item => {
             return Object.assign({}, item, { id: uuid() });
@@ -352,10 +348,10 @@ export async function fetchSpecificResourceList(
 export async function fetchExtraResourceList(
   query: QueryState<ResourceFilter>,
   resourceInfo: ResourceInfo,
-  isClearData = false,
-  extraResource = '',
+  isClearData: boolean = false,
+  extraResource: string = '',
   k8sQueryObj: any = {},
-  isNeedDes = false
+  isNeedDes: boolean = false
 ) {
   let { filter } = query,
     { namespace, clusterId, regionId, specificName } = filter;
@@ -363,22 +359,22 @@ export async function fetchExtraResourceList(
   let extraResourceList = [];
 
   if (!isClearData) {
-    const k8sUrl = reduceK8sRestfulPath({ resourceInfo, namespace, specificName, extraResource, clusterId });
+    let k8sUrl = reduceK8sRestfulPath({ resourceInfo, namespace, specificName, extraResource, clusterId });
     // 这里是去拼接，是否需要在k8s url后面拼接一些queryString
-    const queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
+    let queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
     // 这里是拼接查询的 queryString
-    const url = k8sUrl + queryString;
+    let url = k8sUrl + queryString;
 
     // 构建参数
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.get,
       url
     };
 
-    const response = await reduceNetworkRequest(params, clusterId);
+    let response = await reduceNetworkRequest(params, clusterId);
 
     if (response.code === 0) {
-      const listItems = response.data;
+      let listItems = response.data;
       if (listItems.items) {
         extraResourceList = listItems.items.map(item => {
           return Object.assign({}, item, { id: uuid() });
@@ -405,22 +401,22 @@ export async function fetchExtraResourceList(
 export async function fetchResourceLogList(
   query: QueryState<ResourceFilter>,
   resourceInfo: ResourceInfo,
-  isClearData = false,
+  isClearData: boolean = false,
   k8sQueryObj: any = {}
 ) {
   let { filter } = query,
     { namespace, clusterId, regionId, specificName } = filter;
 
-  const logList = [];
+  let logList = [];
 
   if (!isClearData) {
-    const k8sUrl = reduceK8sRestfulPath({ resourceInfo, namespace, specificName, extraResource: 'log', clusterId });
+    let k8sUrl = reduceK8sRestfulPath({ resourceInfo, namespace, specificName, extraResource: 'log', clusterId });
     // 这里是去拼接，是否需要在k8s url后面拼接一些queryString
-    const queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
-    const url = k8sUrl + queryString;
+    let queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
+    let url = k8sUrl + queryString;
 
     // 构建参数
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.get,
       url,
       apiParams: {
@@ -438,10 +434,10 @@ export async function fetchResourceLogList(
       }
     };
 
-    const response = await reduceNetworkRequest(params, clusterId);
+    let response = await reduceNetworkRequest(params, clusterId);
 
     if (response.code === 0) {
-      const content = response.data;
+      let content = response.data;
       content !== '' && logList.push(content);
     }
   }
@@ -459,16 +455,16 @@ export async function fetchResourceLogList(
  */
 export async function fetchLogagentName(resourceInfo: ResourceInfo, clusterId: string, k8sQueryObj: any = {}) {
   let logAgent = {};
-  const k8sUrl = reduceK8sRestfulPath({ resourceInfo });
-  const queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
-  const url = k8sUrl + queryString;
+  let k8sUrl = reduceK8sRestfulPath({ resourceInfo });
+  let queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
+  let url = k8sUrl + queryString;
   // 构建参数
-  const params: RequestParams = {
+  let params: RequestParams = {
     method: Method.get,
     url
   };
 
-  const response = await reduceNetworkRequest(params, clusterId);
+  let response = await reduceNetworkRequest(params, clusterId);
 
   if (response.code === 0) {
     const { items } = response.data;
@@ -485,10 +481,10 @@ export async function fetchLogagentName(resourceInfo: ResourceInfo, clusterId: s
  * 获取日志目录结构
  */
 export async function fetchResourceLogHierarchy(query: LogHierarchyQuery) {
-  const { agentName, clusterId, namespace, pod, container } = query;
-  const logList = [];
+  let { agentName, clusterId, namespace, pod, container } = query;
+  let logList = [];
 
-  const url = `/apis/logagent.tkestack.io/v1/logagents/${agentName}/filetree`;
+  let url = `/apis/logagent.tkestack.io/v1/logagents/${agentName}/filetree`;
   const payload = {
     kind: 'LogFileTree',
     apiVersion: 'logagent.tkestack.io/v1',
@@ -499,17 +495,17 @@ export async function fetchResourceLogHierarchy(query: LogHierarchyQuery) {
       pod
     }
   };
-  const params: RequestParams = {
+  let params: RequestParams = {
     method: Method.post,
     url,
     userDefinedHeader: {},
     data: payload
   };
 
-  const response = await reduceNetworkRequest(params, clusterId);
+  let response = await reduceNetworkRequest(params, clusterId);
 
   const traverse = (hierarchyData, path = '') => {
-    const { path: subPath, isDir, children } = hierarchyData;
+    let { path: subPath, isDir, children } = hierarchyData;
     // 如果是日志文件的话，构造完整路径，附加到日志文件列表，返回
     if (!isDir) {
       logList.push(path ? path + '/' + subPath : subPath);
@@ -524,7 +520,7 @@ export async function fetchResourceLogHierarchy(query: LogHierarchyQuery) {
   if (response.code === 0) {
     // 接口成功的话 response.data 为日志内容，失败的话为 { Code: '', Message: '' } 格式的错误
     if (response.data && !response.data.Code) {
-      const content = response.data;
+      let content = response.data;
       !isEmpty(content) && traverse(content);
     }
   }
@@ -537,9 +533,9 @@ export async function fetchResourceLogHierarchy(query: LogHierarchyQuery) {
  */
 export async function fetchResourceLogContent(query: LogContentQuery) {
   let content = '';
-  const { agentName, clusterId, namespace, pod, container, start, length, filepath } = query;
+  let { agentName, clusterId, namespace, pod, container, start, length, filepath } = query;
 
-  const url = `/apis/logagent.tkestack.io/v1/logagents/${agentName}/filecontent`;
+  let url = `/apis/logagent.tkestack.io/v1/logagents/${agentName}/filecontent`;
   const payload = {
     kind: 'LogFileContent',
     apiVersion: 'logagent.tkestack.io/v1',
@@ -553,17 +549,17 @@ export async function fetchResourceLogContent(query: LogContentQuery) {
       filepath
     }
   };
-  const params: RequestParams = {
+  let params: RequestParams = {
     method: Method.post,
     url,
     userDefinedHeader: {},
     data: payload
   };
 
-  const response = await reduceNetworkRequest(params, clusterId);
+  let response = await reduceNetworkRequest(params, clusterId);
 
   if (response.code === 0) {
-    const { data } = response;
+    let { data } = response;
     if (data && data.content) {
       content = data.content;
     }
@@ -577,10 +573,10 @@ export async function fetchResourceLogContent(query: LogContentQuery) {
  * @param query
  */
 export async function downloadLogFile(query) {
-  const content = '';
-  const { agentName, clusterId, namespace, pod, container, filepath } = query;
+  let content = '';
+  let { agentName, clusterId, namespace, pod, container, filepath } = query;
 
-  const url = `/apis/logagent.tkestack.io/v1/logagents/${agentName}/filedownload`;
+  let url = `/apis/logagent.tkestack.io/v1/logagents/${agentName}/filedownload`;
   const payload = {
     pod,
     namespace: namespace.replace(new RegExp(`^${clusterId}-`), ''),
@@ -588,13 +584,13 @@ export async function downloadLogFile(query) {
     path: filepath
   };
   // 构建参数
-  const params: RequestParams = {
+  let params: RequestParams = {
     method: Method.post,
     url,
     data: payload
   };
 
-  const response = await reduceNetworkRequest(params, clusterId);
+  let response = await reduceNetworkRequest(params, clusterId);
 
   if (response.code === 0) {
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/x-tar' }));
@@ -615,12 +611,12 @@ export async function downloadLogFile(query) {
  */
 export async function applyResourceIns(resource: CreateResource[], regionId: number) {
   try {
-    const { clusterId, yamlData, jsonData } = resource[0];
+    let { clusterId, yamlData, jsonData } = resource[0];
 
-    const url = `/${apiServerVersion.basicUrl}/${apiServerVersion.group}/${apiServerVersion.version}/clusters/${clusterId}/apply`;
+    let url = `/${apiServerVersion.basicUrl}/${apiServerVersion.group}/${apiServerVersion.version}/clusters/${clusterId}/apply`;
 
     // 这里是独立部署版 和 控制台共用的参数，只有是yamlData的时候才需要userdefinedHeader，如果是jaonData的话，就不需要了
-    const userDefinedHeader: UserDefinedHeader = yamlData
+    let userDefinedHeader: UserDefinedHeader = yamlData
       ? {
           Accept: 'application/json',
           'Content-Type': 'application/yaml'
@@ -628,14 +624,14 @@ export async function applyResourceIns(resource: CreateResource[], regionId: num
       : {};
 
     // 构建参数
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.post,
       url,
       userDefinedHeader,
       data: yamlData ? yamlData : jsonData
     };
 
-    const response = await reduceNetworkRequest(params, clusterId);
+    let response = await reduceNetworkRequest(params, clusterId);
     if (response.code === 0) {
       return operationResult(resource);
     } else {
@@ -653,34 +649,34 @@ export async function applyDifferentInterfaceResource(
   resources: CreateResource[],
   operations: DifferentInterfaceResourceOperation[] = []
 ) {
-  const allResponses = []; //收集所有资源的返回结果
+  let allResponses = []; //收集所有资源的返回结果
   try {
     for (let index = 0; index < resources.length; index++) {
-      const { mode, resourceIns, clusterId, yamlData, resourceInfo, namespace, jsonData } = resources[index];
-      const extraResource = operations[index] && operations[index].extraResource ? operations[index].extraResource : '';
+      let { mode, resourceIns, clusterId, yamlData, resourceInfo, namespace, jsonData } = resources[index];
+      let extraResource = operations[index] && operations[index].extraResource ? operations[index].extraResource : '';
       let url = reduceK8sRestfulPath({ resourceInfo, namespace, specificName: resourceIns, extraResource, clusterId });
       //拼接字符串查询参数
-      const queryUrl =
+      let queryUrl =
         operations[index] && operations[index].query
           ? reduceK8sQueryString({ k8sQueryObj: operations[index].query })
           : '';
       url = url + queryUrl;
-      const method = requestMethodForAction(mode);
+      let method = requestMethodForAction(mode);
       // 这里是独立部署版 和 控制台共用的参数，只有是yamlData的时候才需要userdefinedHeader，如果是jaonData的话，就不需要了
-      const userDefinedHeader: UserDefinedHeader = yamlData
+      let userDefinedHeader: UserDefinedHeader = yamlData
         ? {
             Accept: 'application/json',
             'Content-Type': 'application/yaml'
           }
         : {};
       // 构建参数
-      const params: RequestParams = {
+      let params: RequestParams = {
         method,
         url,
         userDefinedHeader,
         data: yamlData ? yamlData : jsonData
       };
-      const response = await reduceNetworkRequest(params, clusterId);
+      let response = await reduceNetworkRequest(params, clusterId);
       allResponses.push(response);
     }
 
@@ -705,13 +701,13 @@ export async function applyDifferentInterfaceResource(
  */
 export async function modifyResourceIns(resource: CreateResource[], regionId: number) {
   try {
-    const { mode, resourceIns, clusterId, yamlData, resourceInfo, namespace, jsonData, meshId } = resource[0];
+    let { mode, resourceIns, clusterId, yamlData, resourceInfo, namespace, jsonData, meshId } = resource[0];
 
-    const url = reduceK8sRestfulPath({ resourceInfo, namespace, specificName: resourceIns, clusterId, meshId });
+    let url = reduceK8sRestfulPath({ resourceInfo, namespace, specificName: resourceIns, clusterId, meshId });
     // 获取具体的请求方法，create为POST，modify为PUT
-    const method = requestMethodForAction(mode);
+    let method = requestMethodForAction(mode);
     // 这里是独立部署版 和 控制台共用的参数，只有是yamlData的时候才需要userdefinedHeader，如果是jaonData的话，就不需要了
-    const userDefinedHeader: UserDefinedHeader = yamlData
+    let userDefinedHeader: UserDefinedHeader = yamlData
       ? {
           Accept: 'application/json',
           'Content-Type': 'application/yaml'
@@ -719,14 +715,14 @@ export async function modifyResourceIns(resource: CreateResource[], regionId: nu
       : {};
 
     // 构建参数
-    const params: RequestParams = {
+    let params: RequestParams = {
       method,
       url,
       userDefinedHeader,
       data: yamlData ? yamlData : jsonData
     };
 
-    const response = await reduceNetworkRequest(params, clusterId);
+    let response = await reduceNetworkRequest(params, clusterId);
     if (response.code === 0) {
       return operationResult(resource);
     } else {
@@ -744,19 +740,19 @@ export async function modifyResourceIns(resource: CreateResource[], regionId: nu
  */
 export async function modifyMultiResourceIns(resource: CreateResource[], regionId: number) {
   try {
-    const requests = resource.map(async item => {
-      const { mode, resourceIns, clusterId, yamlData, resourceInfo, namespace, jsonData } = item;
-      const url = reduceK8sRestfulPath({ resourceInfo, namespace, specificName: resourceIns, clusterId });
+    let requests = resource.map(async item => {
+      let { mode, resourceIns, clusterId, yamlData, resourceInfo, namespace, jsonData } = item;
+      let url = reduceK8sRestfulPath({ resourceInfo, namespace, specificName: resourceIns, clusterId });
       // 获取具体的请求方法，create为POST，modify为PUT
-      const method = requestMethodForAction(mode);
+      let method = requestMethodForAction(mode);
       // 这里是独立部署版 和 控制台共用的参数，只有是yamlData的时候才需要userdefinedHeader，如果是jaonData的话，就不需要了
-      const userDefinedHeader: UserDefinedHeader = yamlData
+      let userDefinedHeader: UserDefinedHeader = yamlData
         ? {
             Accept: 'application/json',
             'Content-Type': 'application/yaml'
           }
         : {};
-      const param = {
+      let param = {
         method,
         url,
         userDefinedHeader,
@@ -776,11 +772,11 @@ export async function modifyMultiResourceIns(resource: CreateResource[], regionI
           }
         }
       };
-      const response = reduceNetworkRequest(param, clusterId);
+      let response = reduceNetworkRequest(param, clusterId);
       return response;
     });
     // 构建参数
-    const response = await Promise.all(requests);
+    let response = await Promise.all(requests);
     if (response.every(r => r.code === 0)) {
       return operationResult(resource);
     } else {
@@ -798,9 +794,9 @@ export async function modifyMultiResourceIns(resource: CreateResource[], regionI
  */
 export async function deleteResourceIns(resource: CreateResource[], regionId: number) {
   try {
-    const { resourceIns, clusterId, resourceInfo, namespace, meshId, isSpecialNamespace = true } = resource[0];
+    let { resourceIns, clusterId, resourceInfo, namespace, meshId, isSpecialNamespace = true } = resource[0];
 
-    const k8sUrl = reduceK8sRestfulPath({
+    let k8sUrl = reduceK8sRestfulPath({
       resourceInfo,
       namespace,
       specificName: resourceIns,
@@ -808,10 +804,10 @@ export async function deleteResourceIns(resource: CreateResource[], regionId: nu
       meshId,
       isSpecialNamespace
     });
-    const url = k8sUrl;
+    let url = k8sUrl;
 
     // 是用于后台去异步的删除resource当中的pod
-    const extraParamsForDelete = {
+    let extraParamsForDelete = {
       propagationPolicy: 'Background'
     };
     if (resourceInfo.headTitle === 'Namespace') {
@@ -819,12 +815,12 @@ export async function deleteResourceIns(resource: CreateResource[], regionId: nu
     }
 
     // 构建参数 requestBody 当中
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.delete,
       url,
       data: JSON.stringify(extraParamsForDelete)
     };
-    const response = await reduceNetworkRequest(params, clusterId);
+    let response = await reduceNetworkRequest(params, clusterId);
 
     if (response.code === 0) {
       tips.success(t('删除成功'), 2000);
@@ -843,9 +839,9 @@ export async function deleteResourceIns(resource: CreateResource[], regionId: nu
  */
 export async function rollbackResourceIns(resource: CreateResource[], regionId: number) {
   try {
-    const { resourceIns, clusterId, resourceInfo, namespace, jsonData, clusterVersion } = resource[0];
+    let { resourceIns, clusterId, resourceInfo, namespace, jsonData, clusterVersion } = resource[0];
 
-    const rsResourceInfo = resourceConfig(resourceInfo.k8sVersion).rs;
+    let rsResourceInfo = resourceConfig(resourceInfo.k8sVersion).rs;
     /// #if project
     //业务侧ns eg: cls-xxx-ns 需要去除前缀
     // if (resourceInfo.namespaces) {
@@ -855,14 +851,14 @@ export async function rollbackResourceIns(resource: CreateResource[], regionId: 
     /// #endif
     // 因为回滚需要使用特定的apiVersion，故不用reduceK8sRestful
 
-    const k8sUrl =
+    let k8sUrl =
       `/${resourceInfo.basicEntry}/apps/${compareVersions(clusterVersion, '1.14') >= 0 ? 'v1' : 'v1beta1'}/` +
       (resourceInfo.namespaces ? `${resourceInfo.namespaces}/${namespace}/` : '') +
       `${resourceInfo.requestType['list']}/${resourceIns}/rollback`;
-    const url = k8sUrl;
+    let url = k8sUrl;
 
     // 构建参数 requestBody 当中
-    const params: RequestParams = {
+    let params: RequestParams = {
       method: Method.post,
       url,
       data: jsonData,
@@ -879,7 +875,7 @@ export async function rollbackResourceIns(resource: CreateResource[], regionId: 
       }
     };
 
-    const response = await reduceNetworkRequest(params, clusterId);
+    let response = await reduceNetworkRequest(params, clusterId);
 
     if (response.code === 0) {
       tips.success(t('回滚成功'), 2000);
@@ -900,10 +896,10 @@ export async function rollbackResourceIns(resource: CreateResource[], regionId: 
  */
 export async function updateResourceIns(resource: CreateResource[], regionId: number) {
   try {
-    const { resourceIns, clusterId, resourceInfo, namespace, jsonData, isStrategic = true } = resource[0];
+    let { resourceIns, clusterId, resourceInfo, namespace, jsonData, isStrategic = true } = resource[0];
 
-    const url = reduceK8sRestfulPath({ resourceInfo, namespace, specificName: resourceIns, clusterId });
-    const params: RequestParams = {
+    let url = reduceK8sRestfulPath({ resourceInfo, namespace, specificName: resourceIns, clusterId });
+    let params: RequestParams = {
       method: Method.patch,
       url,
       userDefinedHeader: {
@@ -923,7 +919,7 @@ export async function updateResourceIns(resource: CreateResource[], regionId: nu
       }
     };
 
-    const response = await reduceNetworkRequest(params, clusterId);
+    let response = await reduceNetworkRequest(params, clusterId);
 
     if (response.code === 0) {
       tips.success(t('更新成功'), 2000);
@@ -943,11 +939,11 @@ export async function updateResourceIns(resource: CreateResource[], regionId: nu
  */
 export async function updateMultiResourceIns(resource: CreateResource[], regionId: number) {
   try {
-    const requests = resource.map(async item => {
-      const { resourceIns, clusterId, resourceInfo, namespace, jsonData, mergeType } = item;
+    let requests = resource.map(async item => {
+      let { resourceIns, clusterId, resourceInfo, namespace, jsonData, mergeType } = item;
 
-      const url = reduceK8sRestfulPath({ resourceInfo, namespace, specificName: resourceIns, clusterId });
-      const params: RequestParams = {
+      let url = reduceK8sRestfulPath({ resourceInfo, namespace, specificName: resourceIns, clusterId });
+      let params: RequestParams = {
         method: Method.patch,
         url,
         userDefinedHeader: {
@@ -967,10 +963,10 @@ export async function updateMultiResourceIns(resource: CreateResource[], regionI
         }
       };
 
-      const response = reduceNetworkRequest(params, clusterId);
+      let response = reduceNetworkRequest(params, clusterId);
       return response;
     });
-    const response = await Promise.all(requests);
+    let response = await Promise.all(requests);
     if (response.every(r => r.code === 0)) {
       tips.success(t('更新成功'), 2000);
       return operationResult(resource);
@@ -994,26 +990,26 @@ export async function fetchResourceYaml(
   clusterId: string,
   regionId: number
 ) {
-  const url = reduceK8sRestfulPath({
+  let url = reduceK8sRestfulPath({
     resourceInfo,
     namespace,
     specificName: Array.isArray(resourceIns) ? resourceIns[0].metadata.name : resourceIns,
     clusterId
   });
 
-  const userDefinedHeader = {
+  let userDefinedHeader = {
     Accept: 'application/yaml'
   };
 
   // 构建参数
-  const params: RequestParams = {
+  let params: RequestParams = {
     method: Method.get,
     url,
     userDefinedHeader
   };
 
-  const response = await reduceNetworkRequest(params, clusterId);
-  const yamlList = response.code === 0 ? [response.data] : [];
+  let response = await reduceNetworkRequest(params, clusterId);
+  let yamlList = response.code === 0 ? [response.data] : [];
 
   const result: RecordSet<Resource> = {
     recordCount: yamlList.length,
