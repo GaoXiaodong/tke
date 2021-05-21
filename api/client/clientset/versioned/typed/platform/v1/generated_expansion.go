@@ -28,6 +28,8 @@ type ClusterAddonExpansion interface{}
 
 type ClusterAddonTypeExpansion interface{}
 
+type ClusterAuthenticationExpansion interface{}
+
 type ClusterCredentialExpansion interface{}
 
 type ConfigMapExpansion interface{}

@@ -1281,6 +1281,47 @@ type VolumeDecoratorStatus struct {
 	LastReInitializingTimestamp metav1.Time
 }
 
+// +genclient
+// +genclient:skipVerbs=deleteCollection
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ClusterAuthentication is the resource that record the users tencentcloud accounts.
+type ClusterAuthentication struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	// +optional
+	TenantID string `json:"tenantID" protobuf:"bytes,2,opt,name=tenantID"`
+	// +optional
+	ClusterName string `json:"clusterName" protobuf:"bytes,3,opt,name=clusterName"`
+	// +optional
+	OwnerUIN string `json:"ownerUIN" protobuf:"bytes,4,opt,name=ownerUIN"`
+	// +optional
+	SubAccountUIN string `json:"subAccountUIN" protobuf:"bytes,5,opt,name=subAccountUIN"`
+	// +optional
+	ServiceRole bool `json:"serviceRole" protobuf:"bytes,6,opt,name=serviceRole"`
+	// +optional
+	AuthenticationInfo AuthenticationInfo `json:"authenticationInfo" protobuf:"bytes,7,opt,name=authenticationInfo"`
+}
+
+type AuthenticationInfo struct {
+	ClientCertificate []byte `json:"clientCertificate" protobuf:"bytes,1,opt,name=clientCertificate"`
+	ClientKey         []byte `json:"clientKey" protobuf:"bytes,2,opt,name=clientKey"`
+	CommonName        string `json:"commonName" protobuf:"bytes,3,opt,name=commonName"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ClusterAuthenticationList is the whole list of all ClusterAuthentications.
+type ClusterAuthenticationList struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	// List of ClusterAuthentications
+	Items []ClusterAuthentication `json:"items" protobuf:"bytes,2,rep,name=items"`
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // LogCollectorProxyOptions is the query options to a kube-apiserver prforoxy call  LogCollector crd object.

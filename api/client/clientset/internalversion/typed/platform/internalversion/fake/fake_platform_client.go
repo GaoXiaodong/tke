@@ -46,6 +46,10 @@ func (c *FakePlatform) ClusterAddonTypes() internalversion.ClusterAddonTypeInter
 	return &FakeClusterAddonTypes{c}
 }
 
+func (c *FakePlatform) ClusterAuthentications(namespace string) internalversion.ClusterAuthenticationInterface {
+	return &FakeClusterAuthentications{c, namespace}
+}
+
 func (c *FakePlatform) ClusterCredentials() internalversion.ClusterCredentialInterface {
 	return &FakeClusterCredentials{c}
 }

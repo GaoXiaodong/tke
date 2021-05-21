@@ -179,6 +179,23 @@ func (ClusterApplyOptions) SwaggerDoc() map[string]string {
 	return map_ClusterApplyOptions
 }
 
+var map_ClusterAuthentication = map[string]string{
+	"": "ClusterAuthentication is the resource that record the users tencentcloud accounts.",
+}
+
+func (ClusterAuthentication) SwaggerDoc() map[string]string {
+	return map_ClusterAuthentication
+}
+
+var map_ClusterAuthenticationList = map[string]string{
+	"":      "ClusterAuthenticationList is the whole list of all ClusterAuthentications.",
+	"items": "List of ClusterAuthentications",
+}
+
+func (ClusterAuthenticationList) SwaggerDoc() map[string]string {
+	return map_ClusterAuthenticationList
+}
+
 var map_ClusterComponent = map[string]string{
 	"": "ClusterComponent records the number of copies of each component of the cluster master.",
 }

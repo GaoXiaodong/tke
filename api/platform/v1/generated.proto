@@ -41,6 +41,14 @@ message AddonSpec {
   optional string version = 3;
 }
 
+message AuthenticationInfo {
+  optional bytes clientCertificate = 1;
+
+  optional bytes clientKey = 2;
+
+  optional string commonName = 3;
+}
+
 message AuthzWebhookAddr {
   // +optional
   optional BuiltinAuthzWebhookAddr builtin = 1;
@@ -233,6 +241,39 @@ message ClusterAddress {
 message ClusterApplyOptions {
   // +optional
   optional bool notUpdate = 1;
+}
+
+// ClusterAuthentication is the resource that record the users tencentcloud accounts.
+message ClusterAuthentication {
+  // +optional
+  optional k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
+
+  // +optional
+  optional string tenantID = 2;
+
+  // +optional
+  optional string clusterName = 3;
+
+  // +optional
+  optional string ownerUIN = 4;
+
+  // +optional
+  optional string subAccountUIN = 5;
+
+  // +optional
+  optional bool serviceRole = 6;
+
+  // +optional
+  optional AuthenticationInfo authenticationInfo = 7;
+}
+
+// ClusterAuthenticationList is the whole list of all ClusterAuthentications.
+message ClusterAuthenticationList {
+  // +optional
+  optional k8s.io.apimachinery.pkg.apis.meta.v1.ListMeta metadata = 1;
+
+  // List of ClusterAuthentications
+  repeated ClusterAuthentication items = 2;
 }
 
 // ClusterComponent records the number of copies of each component of the

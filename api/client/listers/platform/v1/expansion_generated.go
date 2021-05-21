@@ -32,6 +32,14 @@ type ClusterListerExpansion interface{}
 // ClusterAddonLister.
 type ClusterAddonListerExpansion interface{}
 
+// ClusterAuthenticationListerExpansion allows custom methods to be added to
+// ClusterAuthenticationLister.
+type ClusterAuthenticationListerExpansion interface{}
+
+// ClusterAuthenticationNamespaceListerExpansion allows custom methods to be added to
+// ClusterAuthenticationNamespaceLister.
+type ClusterAuthenticationNamespaceListerExpansion interface{}
+
 // ClusterCredentialListerExpansion allows custom methods to be added to
 // ClusterCredentialLister.
 type ClusterCredentialListerExpansion interface{}

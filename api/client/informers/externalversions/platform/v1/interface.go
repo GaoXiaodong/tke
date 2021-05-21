@@ -30,6 +30,8 @@ type Interface interface {
 	CSIOperators() CSIOperatorInformer
 	// Clusters returns a ClusterInformer.
 	Clusters() ClusterInformer
+	// ClusterAuthentications returns a ClusterAuthenticationInformer.
+	ClusterAuthentications() ClusterAuthenticationInformer
 	// ClusterCredentials returns a ClusterCredentialInformer.
 	ClusterCredentials() ClusterCredentialInformer
 	// ConfigMaps returns a ConfigMapInformer.
@@ -77,6 +79,11 @@ func (v *version) CSIOperators() CSIOperatorInformer {
 // Clusters returns a ClusterInformer.
 func (v *version) Clusters() ClusterInformer {
 	return &clusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// ClusterAuthentications returns a ClusterAuthenticationInformer.
+func (v *version) ClusterAuthentications() ClusterAuthenticationInformer {
+	return &clusterAuthenticationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // ClusterCredentials returns a ClusterCredentialInformer.

@@ -31,6 +31,7 @@ type PlatformInterface interface {
 	ClustersGetter
 	ClusterAddonsGetter
 	ClusterAddonTypesGetter
+	ClusterAuthenticationsGetter
 	ClusterCredentialsGetter
 	ConfigMapsGetter
 	CronHPAsGetter
@@ -65,6 +66,10 @@ func (c *PlatformClient) ClusterAddons() ClusterAddonInterface {
 
 func (c *PlatformClient) ClusterAddonTypes() ClusterAddonTypeInterface {
 	return newClusterAddonTypes(c)
+}
+
+func (c *PlatformClient) ClusterAuthentications(namespace string) ClusterAuthenticationInterface {
+	return newClusterAuthentications(c, namespace)
 }
 
 func (c *PlatformClient) ClusterCredentials() ClusterCredentialInterface {
