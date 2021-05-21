@@ -44,7 +44,7 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 	store := &registry.Store{
 		NewFunc:                  func() runtime.Object { return &platform.ClusterAuthentication{} },
 		NewListFunc:              func() runtime.Object { return &platform.ClusterAuthenticationList{} },
-		DefaultQualifiedResource: platform.Resource("clusterAuthentication"),
+		DefaultQualifiedResource: platform.Resource("clusterauthentications"),
 		PredicateFunc:            clusterAuthentication.MatchClusterAuthentication,
 
 		CreateStrategy: strategy,
