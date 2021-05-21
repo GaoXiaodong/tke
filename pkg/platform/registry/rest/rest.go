@@ -32,7 +32,7 @@ import (
 	clusteraddontypestorage "tkestack.io/tke/pkg/platform/registry/clusteraddontype/storage"
 	clustercredentialstorage "tkestack.io/tke/pkg/platform/registry/clustercredential/storage"
 	configmapstorage "tkestack.io/tke/pkg/platform/registry/configmap/storage"
-	clusterAuthenticationstorage "tkestack.io/tke/pkg/platform/registry/clusterAuthentication/storage"
+	clusterAuthenticationstorage "tkestack.io/tke/pkg/platform/registry/clusterauthentications/storage"
 	cronhpastorage "tkestack.io/tke/pkg/platform/registry/cronhpa/storage"
 	csioperatorstorage "tkestack.io/tke/pkg/platform/registry/csioperator/storage"
 	helmstorage "tkestack.io/tke/pkg/platform/registry/helm/storage"

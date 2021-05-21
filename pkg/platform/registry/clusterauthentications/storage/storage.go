@@ -29,7 +29,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	platforminternalclient "tkestack.io/tke/api/client/clientset/internalversion/typed/platform/internalversion"
 	"tkestack.io/tke/api/platform"
-	"tkestack.io/tke/pkg/platform/registry/clusterAuthentication"
+	"tkestack.io/tke/pkg/platform/registry/clusterauthentications"
 	"tkestack.io/tke/pkg/util/log"
 )
 
