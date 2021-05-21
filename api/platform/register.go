@@ -111,6 +111,9 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&VolumeDecoratorList{},
 		&PVCRProxyOptions{},
 
+		&ClusterAuthentication{},
+		&ClusterAuthenticationList{},
+
 		&LogCollector{},
 		&LogCollectorList{},
 		&LogCollectorProxyOptions{},
