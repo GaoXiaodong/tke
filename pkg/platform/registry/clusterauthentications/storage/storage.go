@@ -40,12 +40,12 @@ type Storage struct {
 
 // NewStorage returns a Storage object that will work against namespace sets.
 func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient platforminternalclient.PlatformInterface, privilegedUsername string) *Storage {
-	strategy := clusterAuthentication.NewStrategy(platformClient)
+	strategy := clusterauthentications.NewStrategy(platformClient)
 	store := &registry.Store{
 		NewFunc:                  func() runtime.Object { return &platform.ClusterAuthentication{} },
 		NewListFunc:              func() runtime.Object { return &platform.ClusterAuthenticationList{} },
 		DefaultQualifiedResource: platform.Resource("clusterauthentications"),
-		PredicateFunc:            clusterAuthentication.MatchClusterAuthentication,
+		PredicateFunc:            clusterauthentications.MatchClusterAuthentication,
 
 		CreateStrategy: strategy,
 		UpdateStrategy: strategy,
@@ -54,7 +54,7 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 	}
 	options := &genericregistry.StoreOptions{
 		RESTOptions: optsGetter,
-		AttrFunc:    clusterAuthentication.GetAttrs,
+		AttrFunc:    clusterauthentications.GetAttrs,
 	}
 
 	if err := store.CompleteWithOptions(options); err != nil {

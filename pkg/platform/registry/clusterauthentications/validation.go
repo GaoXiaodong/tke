@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package clusterAuthentication
+package clusterauthentications
 
 import (
 	apiMachineryValidation "k8s.io/apimachinery/pkg/api/validation"
