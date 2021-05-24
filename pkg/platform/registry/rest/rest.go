@@ -30,9 +30,9 @@ import (
 	"tkestack.io/tke/pkg/apiserver/storage"
 	clusterstorage "tkestack.io/tke/pkg/platform/registry/cluster/storage"
 	clusteraddontypestorage "tkestack.io/tke/pkg/platform/registry/clusteraddontype/storage"
+	clusterAuthenticationstorage "tkestack.io/tke/pkg/platform/registry/clusterauthentications/storage"
 	clustercredentialstorage "tkestack.io/tke/pkg/platform/registry/clustercredential/storage"
 	configmapstorage "tkestack.io/tke/pkg/platform/registry/configmap/storage"
-	clusterAuthenticationstorage "tkestack.io/tke/pkg/platform/registry/clusterauthentications/storage"
 	cronhpastorage "tkestack.io/tke/pkg/platform/registry/cronhpa/storage"
 	csioperatorstorage "tkestack.io/tke/pkg/platform/registry/csioperator/storage"
 	helmstorage "tkestack.io/tke/pkg/platform/registry/helm/storage"
@@ -108,7 +108,7 @@ func (s *StorageProvider) v1Storage(apiResourceConfigSource serverstorage.APIRes
 		clusterCredentialREST := clustercredentialstorage.NewStorage(restOptionsGetter, platformClient, s.PrivilegedUsername)
 		storageMap["clustercredentials"] = clusterCredentialREST.ClusterCredential
 
-		clusterAuthenticationREST := clusterAuthenticationstorage.NewStorage(restOptionsGetter, platformClient, s.PrivilegedUsername)
+		clusterAuthenticationREST := clusterAuthenticationstorage.NewStorage(restOptionsGetter, platformClient)
 		storageMap["clusterauthentications"] = clusterAuthenticationREST.ClusterAuthentication
 
 		clusterAddonTypeREST := clusteraddontypestorage.NewStorage(restOptionsGetter)

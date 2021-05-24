@@ -115,7 +115,11 @@ func MatchClusterAuthentication(label labels.Selector, field fields.Selector) st
 		Field:    field,
 		GetAttrs: GetAttrs,
 		IndexFields: []string{
+			"tenantID",
 			"clusterName",
+			"ownerUIN",
+			"subAccountUIN",
+			"authenticationInfo.commonName",
 		},
 	}
 }
@@ -124,7 +128,11 @@ func MatchClusterAuthentication(label labels.Selector, field fields.Selector) st
 func ToSelectableFields(clusterAuthentication *platform.ClusterAuthentication) fields.Set {
 	objectMetaFieldsSet := generic.ObjectMetaFieldsSet(&clusterAuthentication.ObjectMeta, false)
 	specificFieldsSet := fields.Set{
-		"clusterName": clusterAuthentication.ClusterName,
+		"tenantID":                      clusterAuthentication.TenantID,
+		"clusterName":                   clusterAuthentication.ClusterName,
+		"ownerUIN":                      clusterAuthentication.OwnerUIN,
+		"subAccountUIN":                 clusterAuthentication.SubAccountUIN,
+		"authenticationInfo.commonName": clusterAuthentication.AuthenticationInfo.CommonName,
 	}
 	return generic.MergeFieldsSets(objectMetaFieldsSet, specificFieldsSet)
 }

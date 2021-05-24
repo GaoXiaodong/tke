@@ -33,13 +33,13 @@ import (
 	"tkestack.io/tke/pkg/util/log"
 )
 
-// Storage includes storage for namespace set and all sub resources.
+// Storage includes storage for clusterauthentication and all sub resources.
 type Storage struct {
 	ClusterAuthentication *REST
 }
 
 // NewStorage returns a Storage object that will work against namespace sets.
-func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient platforminternalclient.PlatformInterface, privilegedUsername string) *Storage {
+func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient platforminternalclient.PlatformInterface) *Storage {
 	strategy := clusterauthentications.NewStrategy(platformClient)
 	store := &registry.Store{
 		NewFunc:                  func() runtime.Object { return &platform.ClusterAuthentication{} },
@@ -62,21 +62,20 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 	}
 
 	return &Storage{
-		ClusterAuthentication: &REST{store, privilegedUsername},
+		ClusterAuthentication: &REST{store},
 	}
 }
 
 // REST implements a RESTStorage for namespace sets against etcd.
 type REST struct {
 	*registry.Store
-	privilegedUsername string
 }
 
 var _ rest.ShortNamesProvider = &REST{}
 
 // ShortNames implements the ShortNamesProvider interface. Returns a list of short names for a resource.
 func (r *REST) ShortNames() []string {
-	return []string{"clsauth"}
+	return []string{"clusterauth"}
 }
 
 func (r *REST) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, options *metav1.CreateOptions) (runtime.Object, error) {
@@ -91,6 +90,11 @@ func (r *REST) List(ctx context.Context, options *metainternal.ListOptions) (run
 // Get finds a resource in the storage by name and returns it.
 func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return r.Store.Get(ctx, name, options)
+}
+
+// Export an object.  Fields that are not user specified are stripped out
+func (r *REST) Export(ctx context.Context, name string, options *metav1.ExportOptions) (runtime.Object, error) {
+	return r.Store.Export(ctx, name, *options)
 }
 
 // Update finds a resource in the storage and updates it.

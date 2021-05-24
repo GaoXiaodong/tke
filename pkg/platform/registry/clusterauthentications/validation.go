@@ -30,7 +30,7 @@ var ValidateName = apiMachineryValidation.ValidateNamespaceName
 
 // ValidateClusterAuthentication tests if required fields in the cluster are set.
 func ValidateClusterAuthentication(clusterAuthentication *platform.ClusterAuthentication) field.ErrorList {
-	allErrs := apiMachineryValidation.ValidateObjectMeta(&clusterAuthentication.ObjectMeta, false, ValidateName, field.NewPath("metadata"))
+	allErrs := apiMachineryValidation.ValidateObjectMeta(&clusterAuthentication.ObjectMeta, true, ValidateName, field.NewPath("metadata"))
 
 	if len(clusterAuthentication.ClusterName) == 0 {
 		allErrs = append(allErrs, field.Required(field.NewPath("spec", "clusterName"), "must specify a cluster name"))
