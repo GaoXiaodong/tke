@@ -74,6 +74,7 @@ func NewProvider() (*Provider, error) {
 
 			// configure system
 			p.EnsureRegistryHosts,
+			p.EnsureInitAPIServerHost,
 			p.EnsureKernelModule,
 			p.EnsureSysctl,
 			p.EnsureDisableSwap,
@@ -84,7 +85,7 @@ func NewProvider() (*Provider, error) {
 			// install packages
 			p.EnsureNvidiaDriver,
 			p.EnsureNvidiaContainerRuntime,
-			p.EnsureDocker,
+			p.EnsureContainerRuntime,
 			p.EnsureKubernetesImages,
 			p.EnsureKubelet,
 			p.EnsureCNIPlugins,
@@ -109,6 +110,7 @@ func NewProvider() (*Provider, error) {
 			p.EnsureKubeadmInitPhaseAddon,
 
 			p.EnsureGalaxy,
+			p.EnsureCilium,
 
 			p.EnsureJoinPhasePreflight,
 			p.EnsureJoinPhaseControlPlanePrepare,
@@ -120,6 +122,7 @@ func NewProvider() (*Provider, error) {
 			p.EnsureMarkControlPlane,
 			p.EnsureKeepalivedWithLBOption,
 			p.EnsureThirdPartyHA,
+			p.EnsureModifyAPIServerHost,
 			// deploy apps
 			p.EnsureNvidiaDevicePlugin,
 			p.EnsureGPUManager,
@@ -141,6 +144,7 @@ func NewProvider() (*Provider, error) {
 		},
 		UpgradeHandlers: []clusterprovider.Handler{
 			p.EnsurePreClusterUpgradeHook,
+			p.EnsureUpgradeCoreDNS,
 			p.EnsureUpgradeControlPlaneNode,
 			p.EnsurePostClusterUpgradeHook,
 		},
@@ -186,7 +190,7 @@ func (p *Provider) RegisterHandler(mux *mux.PathRecorderMux) {
 }
 
 func (p *Provider) Validate(cluster *types.Cluster) field.ErrorList {
-	return validation.ValidateCluster(cluster)
+	return validation.ValidateCluster(p.platformClient, cluster)
 }
 
 func (p *Provider) PreCreate(cluster *types.Cluster) error {
@@ -200,7 +204,6 @@ func (p *Provider) PreCreate(cluster *types.Cluster) error {
 		cluster.Spec.NetworkDevice = "eth0"
 
 	}
-
 	if cluster.Spec.Features.CSIOperator != nil {
 		if cluster.Spec.Features.CSIOperator.Version == "" {
 			cluster.Spec.Features.CSIOperator.Version = csioperatorimage.LatestVersion
@@ -226,6 +229,15 @@ func (p *Provider) PreCreate(cluster *types.Cluster) error {
 	}
 	if cluster.Spec.Properties.MaxNodePodNum == nil {
 		cluster.Spec.Properties.MaxNodePodNum = pointer.ToInt32(256)
+	}
+	// append SkipConditions when disable the cluster features.
+	if cluster.Spec.Features.EnableCilium {
+		cluster.Spec.Features.SkipConditions = append(cluster.Spec.Features.SkipConditions, "EnsureGalaxy")
+	} else {
+		cluster.Spec.Features.SkipConditions = append(cluster.Spec.Features.SkipConditions, "EnsureCilium")
+	}
+	if !cluster.Spec.Features.EnableMetricsServer {
+		cluster.Spec.Features.SkipConditions = append(cluster.Spec.Features.SkipConditions, "EnsureMetricsServer")
 	}
 	if p.config.Feature.SkipConditions != nil {
 		cluster.Spec.Features.SkipConditions = append(cluster.Spec.Features.SkipConditions, p.config.Feature.SkipConditions...)

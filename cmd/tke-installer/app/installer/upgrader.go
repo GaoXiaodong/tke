@@ -21,8 +21,11 @@ package installer
 import (
 	"context"
 	"fmt"
+	"log"
 	"os/exec"
 	"time"
+
+	applicationversiondclient "tkestack.io/tke/api/client/clientset/versioned/typed/application/v1"
 
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
@@ -33,13 +36,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	platformv1 "tkestack.io/tke/api/client/clientset/versioned/typed/platform/v1"
+	registryversionedclient "tkestack.io/tke/api/client/clientset/versioned/typed/registry/v1"
 	"tkestack.io/tke/cmd/tke-installer/app/installer/images"
 	"tkestack.io/tke/cmd/tke-installer/app/installer/types"
-	typesv1 "tkestack.io/tke/pkg/platform/types/v1"
+	cronhpaimage "tkestack.io/tke/pkg/platform/controller/addon/cronhpa/images"
+	tappimage "tkestack.io/tke/pkg/platform/controller/addon/tappcontroller/images"
+	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
+	"tkestack.io/tke/pkg/platform/util"
 	configv1 "tkestack.io/tke/pkg/registry/apis/config/v1"
+	"tkestack.io/tke/pkg/spec"
 	"tkestack.io/tke/pkg/util/apiclient"
 	"tkestack.io/tke/pkg/util/containerregistry"
 	"tkestack.io/tke/pkg/util/file"
+	"tkestack.io/tke/pkg/util/version"
 
 	// import platform schema
 	_ "tkestack.io/tke/api/platform/install"
@@ -50,41 +59,114 @@ const (
 	registryCmKey  = "tke-registry-config.yaml"
 )
 
+var upgradeProviderResImage string
+
 func (t *TKE) upgradeSteps() {
-	if !t.Para.Config.Registry.IsOfficial() {
-		t.steps = append(t.steps, []types.Handler{
+	containerregistry.Init(t.Para.Config.Registry.Domain(), t.Para.Config.Registry.Namespace())
+	tkeVersion, k8sValidVersions, err := util.GetPlatformVersionsFromClusterInfo(context.Background(), t.globalClient)
+	if err != nil {
+		log.Fatalf("get platform version from cluster info failed: %v", err)
+	}
+	result := version.Compare(tkeVersion, spec.TKEVersion)
+
+	switch {
+	// current platform version is higher than installer version
+	case result > 0:
+		log.Fatalf("can't upgrade, platform's version %s is higher than installer's version %s", tkeVersion, spec.TKEVersion)
+	// current platform version is euaql to installer version
+	case result == 0:
+		if len(k8sValidVersions) == len(spec.K8sVersions) {
+			log.Fatalf("can't upgrade, platform's version %s is equal to installer's version %s, please prepare your custom upgrade images before upgrade", tkeVersion, spec.TKEVersion)
+		}
+		upgradeProviderResImage = containerregistry.GetImagePrefix(images.Get().ProviderRes.Name + ":" + k8sValidVersions[len(k8sValidVersions)-1])
+		t.steps = []types.Handler{
 			{
 				Name: "Login registry",
-				Func: t.loginRegistryForUpgrade,
+				Func: t.loginRegistry,
 			},
 			{
-				Name: "Load images",
-				Func: t.loadImages,
+				Name: "Tag images",
+				Func: t.tagImages,
 			},
 			{
 				Name: "Push images",
 				Func: t.pushImages,
 			},
+			{
+				Name: "Upgrade tke-platform-controller",
+				Func: t.upgradeTKEPlatformController,
+			},
+		}
+	// installer version is higher than current platform version
+	case result < 0:
+		upgradeProviderResImage = images.Get().ProviderRes.FullName()
+		if !t.Para.Config.Registry.IsOfficial() {
+			t.steps = append(t.steps, []types.Handler{
+				{
+					Name: "Login registry",
+					Func: t.loginRegistry,
+				},
+				{
+					Name: "Load images",
+					Func: t.loadImages,
+				},
+				{
+					Name: "Tag images",
+					Func: t.tagImages,
+				},
+				{
+					Name: "Push images",
+					Func: t.pushImages,
+				},
+			}...)
+		}
+		t.steps = append(t.steps, []types.Handler{
+			{
+				Name: "Upgrade tke-platform-api",
+				Func: t.upgradeTKEPlatformAPI,
+			},
+			{
+				Name: "Upgrade tke-platform-controller",
+				Func: t.upgradeTKEPlatformController,
+			},
+			{
+				Name: "Upgrade tke-monitor-api",
+				Func: t.upgradeTKEMonitorAPI,
+			},
+			{
+				Name: "Upgrade tke-monitor-controller",
+				Func: t.upgradeTKEMonitorController,
+			},
 		}...)
+
+		t.steps = append(t.steps, []types.Handler{
+			{
+				Name: "Patch platform versions in cluster info",
+				Func: t.patchPlatformVersion,
+			},
+		}...)
+
+		t.steps = append(t.steps, []types.Handler{
+			{
+				Name: "Upgrade TAPP",
+				Func: t.upgradeTAPP,
+			},
+			{
+				Name: "Upgrade CronHPA",
+				Func: t.upgradeCronHPA,
+			},
+		}...)
+
+		if t.Para.Config.Registry.ThirdPartyRegistry == nil &&
+			t.Para.Config.Registry.TKERegistry != nil {
+			t.steps = append(t.steps, []types.Handler{
+				{
+					Name: "Import charts",
+					Func: t.importCharts,
+				},
+			}...)
+		}
 	}
-
-	t.steps = append(t.steps, []types.Handler{
-		{
-			Name: "Update tke-platform-api",
-			Func: t.updateTKEPlatformAPI,
-		},
-		{
-			Name: "Update tke-platform-controller",
-			Func: t.updateTKEPlatformController,
-		},
-	}...)
-
-	t.steps = append(t.steps, []types.Handler{
-		{
-			Name: "Patch platform versions in cluster info",
-			Func: t.patchPlatformVersion,
-		},
-	}...)
 
 	t.steps = funk.Filter(t.steps, func(step types.Handler) bool {
 		return !funk.ContainsString(t.Para.Config.SkipSteps, step.Name)
@@ -96,7 +178,7 @@ func (t *TKE) upgradeSteps() {
 	}
 }
 
-func (t *TKE) updateTKEPlatformAPI(ctx context.Context) error {
+func (t *TKE) upgradeTKEPlatformAPI(ctx context.Context) error {
 	com := "tke-platform-api"
 	depl, err := t.globalClient.AppsV1().Deployments(t.namespace).Get(ctx, com, metav1.GetOptions{})
 	if err != nil {
@@ -122,7 +204,7 @@ func (t *TKE) updateTKEPlatformAPI(ctx context.Context) error {
 	})
 }
 
-func (t *TKE) updateTKEPlatformController(ctx context.Context) error {
+func (t *TKE) upgradeTKEPlatformController(ctx context.Context) error {
 	com := "tke-platform-controller"
 	depl, err := t.globalClient.AppsV1().Deployments(t.namespace).Get(ctx, com, metav1.GetOptions{})
 	if err != nil {
@@ -137,7 +219,60 @@ func (t *TKE) updateTKEPlatformController(ctx context.Context) error {
 	if len(depl.Spec.Template.Spec.InitContainers) == 0 {
 		return fmt.Errorf("%s has no initContainers", com)
 	}
-	depl.Spec.Template.Spec.InitContainers[0].Image = images.Get().ProviderRes.FullName()
+
+	depl.Spec.Template.Spec.InitContainers[0].Image = upgradeProviderResImage
+
+	_, err = t.globalClient.AppsV1().Deployments(t.namespace).Update(ctx, depl, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return wait.PollImmediate(5*time.Second, 10*time.Minute, func() (bool, error) {
+		ok, err := apiclient.CheckDeployment(ctx, t.globalClient, t.namespace, com)
+		if err != nil {
+			return false, nil
+		}
+		return ok, nil
+	})
+}
+
+func (t *TKE) upgradeTKEMonitorAPI(ctx context.Context) error {
+	com := "tke-monitor-api"
+	depl, err := t.globalClient.AppsV1().Deployments(t.namespace).Get(ctx, com, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if len(depl.Spec.Template.Spec.Containers) == 0 {
+		return fmt.Errorf("%s has no containers", com)
+	}
+	depl.Spec.Template.Spec.Containers[0].Image = images.Get().TKEMonitorAPI.FullName()
+
+	_, err = t.globalClient.AppsV1().Deployments(t.namespace).Update(ctx, depl, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	return wait.PollImmediate(5*time.Second, 10*time.Minute, func() (bool, error) {
+		ok, err := apiclient.CheckDeployment(ctx, t.globalClient, t.namespace, com)
+		if err != nil {
+			return false, nil
+		}
+		return ok, nil
+	})
+}
+
+func (t *TKE) upgradeTKEMonitorController(ctx context.Context) error {
+	com := "tke-monitor-controller"
+	depl, err := t.globalClient.AppsV1().Deployments(t.namespace).Get(ctx, com, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if len(depl.Spec.Template.Spec.Containers) == 0 {
+		return fmt.Errorf("%s has no containers", com)
+	}
+	depl.Spec.Template.Spec.Containers[0].Image = images.Get().TKEMonitorController.FullName()
 
 	_, err = t.globalClient.AppsV1().Deployments(t.namespace).Update(ctx, depl, metav1.UpdateOptions{})
 	if err != nil {
@@ -169,11 +304,19 @@ func (t *TKE) prepareForUpgrade(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	platformClient, err := platformv1.NewForConfig(config)
+	t.platformClient, err = platformv1.NewForConfig(config)
 	if err != nil {
 		return err
 	}
-	t.Cluster, err = typesv1.GetClusterByName(ctx, platformClient, "global")
+	t.registryClient, err = registryversionedclient.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+	t.applicationClient, err = applicationversiondclient.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+	t.Cluster, err = clusterprovider.GetV1ClusterByName(ctx, t.platformClient, "global", clusterprovider.AdminUsername)
 	if err != nil {
 		return err
 	}
@@ -218,7 +361,7 @@ func (t *TKE) loadRegistry(ctx context.Context) error {
 	return nil
 }
 
-func (t *TKE) loginRegistryForUpgrade(ctx context.Context) error {
+func (t *TKE) loginRegistry(ctx context.Context) error {
 	containerregistry.Init(t.Para.Config.Registry.Domain(), t.Para.Config.Registry.Namespace())
 	cmd := exec.Command("docker", "login",
 		"--username", t.Para.Config.Registry.Username(),
@@ -232,5 +375,43 @@ func (t *TKE) loginRegistryForUpgrade(ctx context.Context) error {
 		}
 		return err
 	}
+	return nil
+}
+
+func (t *TKE) upgradeTAPP(ctx context.Context) error {
+	t.log.Infof("start to upgrade TAPPControllers, TAPPControllers latest version is %s", tappimage.LatestVersion)
+	tapps, err := t.platformClient.TappControllers().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, tapp := range tapps.Items {
+		t.log.Infof("upgrade %s from %s to %s", tapp.Name, tapp.Spec.Version, tappimage.LatestVersion)
+		tapp.Spec.Version = tappimage.LatestVersion
+		_, err = t.platformClient.TappControllers().Update(ctx, &tapp, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	t.log.Infof("end TAPPControllers upgrade process")
+
+	return nil
+}
+
+func (t *TKE) upgradeCronHPA(ctx context.Context) error {
+	t.log.Infof("start to upgrade CronHPAs, CronHPAs latest version is %s", cronhpaimage.LatestVersion)
+	cronhpas, err := t.platformClient.CronHPAs().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, cronhpa := range cronhpas.Items {
+		t.log.Infof("upgrade %s from %s to %s", cronhpa.Name, cronhpa.Spec.Version, cronhpaimage.LatestVersion)
+		cronhpa.Spec.Version = cronhpaimage.LatestVersion
+		_, err = t.platformClient.CronHPAs().Update(ctx, &cronhpa, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	t.log.Infof("end CronHPAs upgrade process")
+
 	return nil
 }

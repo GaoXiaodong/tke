@@ -111,22 +111,25 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
         key: 'monitor',
         header: t('监控'),
         width: '7%',
-        render: x => (
-          <div>
-            <p className="text-overflow m-width">
-              <i
-                className="dosage-icon"
-                style={{ cursor: 'pointer' }}
-                data-monitor
-                data-title={t('查看监控')}
-                onClick={() => {
-                  this._handleMonitor(x);
-                }}
-              />
-              {/* {!x.clusterBMonitor && <span className="alarm-label-tips">{t('未配告警')}</span>} */}
-            </p>
-          </div>
-        )
+        render: x => {
+          const { promethus } = x.spec;
+          return (
+            <div>
+              <p className="text-overflow m-width">
+                <i
+                  className="dosage-icon"
+                  style={{ cursor: promethus ? 'pointer' : 'not-allowed' }}
+                  data-monitor
+                  data-title={promethus ? t('查看监控') : '监控告警组件未开启'}
+                  onClick={() => {
+                    promethus && this._handleMonitor(x);
+                  }}
+                />
+                {/* {!x.clusterBMonitor && <span className="alarm-label-tips">{t('未配告警')}</span>} */}
+              </p>
+            </div>
+          );
+        }
       },
       {
         key: 'status',
@@ -146,7 +149,7 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
                     router.navigate(
                       { sub: 'sub', mode: 'list', type: 'nodeManage', resourceName: 'node' },
                       {
-                        rid: region.selection.value + '',
+                        rid: region?.selection?.value + '',
                         clusterId: x.metadata.name
                       }
                     );
@@ -198,7 +201,7 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
           当前集群列表为空，您可以
           <a
             href="javascript:void(0);"
-            onClick={() => router.navigate({ sub: 'createIC' }, { rid: region.selection.value + '' })}
+            onClick={() => router.navigate({ sub: 'createIC' }, { rid: region?.selection?.value + '' })}
           >
             [新建一个集群]
           </a>
@@ -291,7 +294,7 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
 
     // 进行路由的跳转
     const routeQueries = {
-      rid: region.selection.value + '',
+      rid: region?.selection?.value + '',
       clusterId: cluster.metadata.name
     };
     router.navigate({ sub: 'sub', mode: 'list', type: 'resource', resourceName: 'deployment' }, routeQueries);
@@ -308,7 +311,7 @@ export class ClusterTablePanel extends React.Component<RootProps, State> {
     const isDisabledButon = cluster.status.phase === 'Terminating';
 
     const routeQueries = {
-      rid: region.selection.value + '',
+      rid: region?.selection?.value + '',
       clusterId: cluster.metadata.name
     };
 

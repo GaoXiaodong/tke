@@ -21,6 +21,8 @@ package env
 import (
 	"os"
 	"path"
+	"strings"
+
 	"tkestack.io/tke/cmd/tke-installer/app/installer/images"
 	"tkestack.io/tke/pkg/spec"
 
@@ -50,6 +52,8 @@ const (
 	CREATEINSTANCESPARAM = "CREATE_INSTANCES_PARAM"
 	PASSWORD             = "PASSWORD"
 	NEEDDELETE           = "NEED_DELETE"
+	INSTANCETYPES        = "INSTANCE_TYPES"
+	DOCKERHUBACTIONAUTH  = "DOCKER_HUB_ACTION_AUTH"
 )
 
 func ImageVersion() string {
@@ -80,8 +84,17 @@ func CreateInstancesParam() string {
 	return os.Getenv(CREATEINSTANCESPARAM)
 }
 
-func NeedDelete() string {
-	return os.Getenv(NEEDDELETE)
+func InstanceTypes() []string {
+	v := os.Getenv(INSTANCETYPES)
+	v = strings.Trim(v, "[]")
+	if v == "" {
+		return []string{"S5.2XLARGE16", "S2.2XLARGE16", "S2.3XLARGE24"}
+	}
+	return strings.Split(v, ",")
+}
+
+func NeedDelete() bool {
+	return strings.ToLower(os.Getenv(NEEDDELETE)) == "true"
 }
 
 func ProviderResImageVersion() string {

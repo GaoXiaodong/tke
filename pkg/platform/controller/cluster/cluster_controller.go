@@ -21,33 +21,31 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"reflect"
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/rand"
-
+	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 	platformversionedclient "tkestack.io/tke/api/client/clientset/versioned/typed/platform/v1"
 	platformv1informer "tkestack.io/tke/api/client/informers/externalversions/platform/v1"
 	platformv1lister "tkestack.io/tke/api/client/listers/platform/v1"
 	platformv1 "tkestack.io/tke/api/platform/v1"
 	controllerutil "tkestack.io/tke/pkg/controller"
+	clusterconfig "tkestack.io/tke/pkg/platform/controller/cluster/config"
 	"tkestack.io/tke/pkg/platform/controller/cluster/deletion"
 	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
 	typesv1 "tkestack.io/tke/pkg/platform/types/v1"
-	"tkestack.io/tke/pkg/util/apiclient"
+	"tkestack.io/tke/pkg/platform/util/vendor"
 	"tkestack.io/tke/pkg/util/log"
 	"tkestack.io/tke/pkg/util/metrics"
-	"tkestack.io/tke/pkg/util/strategicpatch"
 )
 
 type ContextKey int
@@ -56,8 +54,6 @@ const (
 	KeyLister                ContextKey = iota
 	conditionTypeHealthCheck            = "HealthCheck"
 	failedHealthCheckReason             = "FailedHealthCheck"
-
-	resyncInternal = 5 * time.Minute
 )
 
 // Controller is responsible for performing actions dependent upon a cluster phase.
@@ -66,22 +62,25 @@ type Controller struct {
 	lister       platformv1lister.ClusterLister
 	listerSynced cache.InformerSynced
 
-	log            log.Logger
-	platformClient platformversionedclient.PlatformV1Interface
-	deleter        deletion.ClusterDeleterInterface
+	log               log.Logger
+	platformClient    platformversionedclient.PlatformV1Interface
+	deleter           deletion.ClusterDeleterInterface
+	healthCheckPeriod time.Duration
 }
 
 // NewController creates a new Controller object.
 func NewController(
 	platformClient platformversionedclient.PlatformV1Interface,
 	clusterInformer platformv1informer.ClusterInformer,
-	resyncPeriod time.Duration,
+	configuration clusterconfig.ClusterControllerConfiguration,
 	finalizerToken platformv1.FinalizerName) *Controller {
-
 	rand.Seed(time.Now().Unix())
-
+	rateLimit := workqueue.NewMaxOfRateLimiter(
+		workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1000*time.Second),
+		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(configuration.BucketRateLimiterLimit), configuration.BucketRateLimiterBurst)},
+	)
 	c := &Controller{
-		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
+		queue: workqueue.NewNamedRateLimitingQueue(rateLimit, "cluster"),
 
 		log:            log.WithName("ClusterController"),
 		platformClient: platformClient,
@@ -96,14 +95,29 @@ func NewController(
 	}
 
 	clusterInformer.Informer().AddEventHandlerWithResyncPeriod(
-		cache.ResourceEventHandlerFuncs{
-			AddFunc:    c.addCluster,
-			UpdateFunc: c.updateCluster,
+		cache.FilteringResourceEventHandler{
+			Handler: cache.ResourceEventHandlerFuncs{
+				AddFunc:    c.addCluster,
+				UpdateFunc: c.updateCluster,
+			},
+			FilterFunc: func(obj interface{}) bool {
+				cluster, ok := obj.(*platformv1.Cluster)
+				if !ok {
+					return false
+				}
+				provider, err := clusterprovider.GetProvider(cluster.Spec.Type)
+				if err != nil {
+					return false
+				}
+				return provider.OnFilter(context.TODO(), cluster)
+			},
 		},
-		resyncPeriod,
+		configuration.ClusterSyncPeriod,
 	)
+
 	c.lister = clusterInformer.Lister()
 	c.listerSynced = clusterInformer.Informer().HasSynced
+	c.healthCheckPeriod = configuration.HealthCheckPeriod
 
 	return c
 }
@@ -156,7 +170,7 @@ func (c *Controller) needsUpdate(old *platformv1.Cluster, new *platformv1.Cluste
 	if healthCondition == nil {
 		return true
 	}
-	if time.Since(healthCondition.LastProbeTime.Time) > resyncInternal {
+	if time.Since(healthCondition.LastProbeTime.Time) > c.healthCheckPeriod {
 		return true
 	}
 
@@ -254,9 +268,6 @@ func (c *Controller) syncCluster(key string) error {
 func (c *Controller) reconcile(ctx context.Context, key string, cluster *platformv1.Cluster) error {
 	var err error
 
-	c.ensureSyncCredentialClusterName(ctx, cluster)
-	c.ensureSyncClusterMachineNodeLabel(ctx, cluster)
-
 	switch cluster.Status.Phase {
 	case platformv1.ClusterInitializing:
 		err = c.onCreate(ctx, cluster)
@@ -286,12 +297,11 @@ func (c *Controller) onCreate(ctx context.Context, cluster *platformv1.Cluster) 
 	if err != nil {
 		return fmt.Errorf("ensureCreateClusterCredential error: %w", err)
 	}
-
 	provider, err := clusterprovider.GetProvider(cluster.Spec.Type)
 	if err != nil {
 		return err
 	}
-	clusterWrapper, err := typesv1.GetCluster(ctx, c.platformClient, cluster)
+	clusterWrapper, err := clusterprovider.GetV1Cluster(ctx, c.platformClient, cluster, clusterprovider.AdminUsername)
 	if err != nil {
 		return err
 	}
@@ -322,7 +332,7 @@ func (c *Controller) onUpdate(ctx context.Context, cluster *platformv1.Cluster) 
 	if err != nil {
 		return err
 	}
-	clusterWrapper, err := typesv1.GetCluster(ctx, c.platformClient, cluster)
+	clusterWrapper, err := clusterprovider.GetV1Cluster(ctx, c.platformClient, cluster, clusterprovider.AdminUsername)
 	if err != nil {
 		return err
 	}
@@ -379,10 +389,22 @@ func (c *Controller) onUpdate(ctx context.Context, cluster *platformv1.Cluster) 
 // TODO: add gc collector for clean non reference ClusterCredential.
 func (c *Controller) ensureCreateClusterCredential(ctx context.Context, cluster *platformv1.Cluster) (*platformv1.Cluster, error) {
 	if cluster.Spec.ClusterCredentialRef != nil {
+		// Set OwnerReferences for imported cluster credentials
+		cc, err := c.platformClient.ClusterCredentials().Get(ctx, cluster.Spec.ClusterCredentialRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		cc.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
+			*metav1.NewControllerRef(cluster, platformv1.SchemeGroupVersion.WithKind("Cluster"))}
+		_, err = c.platformClient.ClusterCredentials().Update(ctx, cc, metav1.UpdateOptions{})
+		if err != nil {
+			return nil, err
+		}
 		return cluster, nil
 	}
 
 	var err error
+	// Set OwnerReferences for baremetal cluster credentials
 	credential := &platformv1.ClusterCredential{
 		TenantID:    cluster.Spec.TenantID,
 		ClusterName: cluster.Name,
@@ -405,36 +427,6 @@ func (c *Controller) ensureCreateClusterCredential(ctx context.Context, cluster 
 	}
 
 	return cluster, nil
-}
-
-func (c *Controller) ensureSyncCredentialClusterName(ctx context.Context, cluster *platformv1.Cluster) {
-	if cluster.Spec.ClusterCredentialRef == nil {
-		return
-	}
-
-	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		credential, err := c.platformClient.ClusterCredentials().Get(ctx, cluster.Spec.ClusterCredentialRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		oldCredential := credential.DeepCopy()
-		if credential.ClusterName != cluster.Name {
-			credential.ClusterName = cluster.Name
-
-			patchBytes, err := strategicpatch.GetPatchBytes(oldCredential, credential)
-			if err != nil {
-				return fmt.Errorf("GetPatchBytes for credential error: %w", err)
-			}
-			_, err = c.platformClient.ClusterCredentials().Patch(ctx, credential.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		log.FromContext(ctx).Error(err, "sync ClusterCredential.ClusterName error")
-	}
 }
 
 func (c *Controller) checkHealth(ctx context.Context, cluster *typesv1.Cluster) *typesv1.Cluster {
@@ -469,6 +461,7 @@ func (c *Controller) checkHealth(ctx context.Context, cluster *typesv1.Cluster) 
 		} else {
 			cluster.Status.Phase = platformv1.ClusterRunning
 			cluster.Status.Version = strings.TrimPrefix(version.String(), "v")
+			cluster.Status.KubeVendor = vendor.GetKubeVendor(cluster.Status.Version)
 
 			healthCheckCondition.Status = platformv1.ConditionTrue
 		}
@@ -478,56 +471,8 @@ func (c *Controller) checkHealth(ctx context.Context, cluster *typesv1.Cluster) 
 
 	log.FromContext(ctx).Info("Update cluster health status",
 		"version", cluster.Status.Version,
+		"kubevendor", cluster.Status.KubeVendor,
 		"phase", cluster.Status.Phase)
 
 	return cluster
-}
-
-func (c *Controller) ensureSyncClusterMachineNodeLabel(ctx context.Context, cluster *platformv1.Cluster) {
-
-	clusterWrapper, err := typesv1.GetCluster(ctx, c.platformClient, cluster)
-	if err != nil {
-		log.FromContext(ctx).Error(err, "Get cluster error")
-		return
-	}
-
-	client, err := clusterWrapper.Clientset()
-	if err != nil {
-		log.FromContext(ctx).Error(err, "get client set error")
-		return
-	}
-
-	for _, machine := range cluster.Spec.Machines {
-		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			node, err := client.CoreV1().Nodes().Get(ctx, machine.IP, metav1.GetOptions{})
-			if err != nil {
-				if apierrors.IsNotFound(err) {
-					return nil
-				}
-				return err
-			}
-
-			labels := node.GetLabels()
-			_, ok := labels[string(apiclient.LabelMachineIPV4)]
-			if ok {
-				return nil
-			}
-
-			oldNode := node.DeepCopy()
-			labels[string(apiclient.LabelMachineIPV4)] = machine.IP
-			node.SetLabels(labels)
-
-			patchBytes, err := strategicpatch.GetPatchBytes(oldNode, node)
-			if err != nil {
-				return fmt.Errorf("GetPatchBytes for node error: %w", err)
-			}
-
-			_, err = client.CoreV1().Nodes().Patch(ctx, node.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{})
-			return err
-		})
-
-		if err != nil {
-			log.FromContext(ctx).Error(err, "sync ClusterMachine node label error")
-		}
-	}
 }

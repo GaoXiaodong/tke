@@ -33,7 +33,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	platformv1 "tkestack.io/tke/api/platform/v1"
 	"tkestack.io/tke/pkg/platform/provider/baremetal/constants"
+	"tkestack.io/tke/pkg/platform/provider/baremetal/images"
 	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/addons/cniplugins"
+	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/containerd"
+	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/critools"
 	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/docker"
 	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/gpu"
 	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/kubeadm"
@@ -127,7 +130,7 @@ func (p *Provider) EnsurePreflight(ctx context.Context, machine *platformv1.Mach
 		return err
 	}
 
-	err = preflight.RunNodeChecks(machineSSH)
+	err = preflight.RunNodeChecks(cluster, machineSSH)
 	if err != nil {
 		return err
 	}
@@ -311,6 +314,53 @@ func (p *Provider) EnsureNvidiaContainerRuntime(ctx context.Context, machine *pl
 	return gpu.InstallNvidiaContainerRuntime(machineSSH, &gpu.NvidiaContainerRuntimeOption{})
 }
 
+func (p *Provider) EnsureContainerRuntime(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error {
+	if cluster.Cluster.Spec.Features.ContainerRuntime == platformv1.Containerd {
+		return p.EnsureContainerd(ctx, machine, cluster)
+	}
+	return p.EnsureDocker(ctx, machine, cluster)
+}
+
+func (p *Provider) EnsureContainerd(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error {
+	machineSSH, err := machine.Spec.SSH()
+	if err != nil {
+		return err
+	}
+
+	insecureRegistries := []string{p.config.Registry.Domain}
+	if p.config.Registry.NeedSetHosts() && machine.Spec.TenantID != "" {
+		insecureRegistries = append(insecureRegistries, machine.Spec.TenantID+"."+p.config.Registry.Domain)
+	}
+
+	option := &containerd.Option{
+		InsecureRegistries: insecureRegistries,
+		IsGPU:              gpu.IsEnable(machine.Spec.Labels),
+		SandboxImage:       images.Get().Pause.FullName(),
+	}
+	err = containerd.Install(machineSSH, option)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Provider) EnsureCriTools(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error {
+	option := &critools.Option{}
+
+	machineSSH, err := machine.Spec.SSH()
+	if err != nil {
+		return err
+	}
+
+	err = critools.Install(machineSSH, option)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (p *Provider) EnsureDocker(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error {
 	machineSSH, err := machine.Spec.SSH()
 	if err != nil {
@@ -386,7 +436,10 @@ func (p *Provider) EnsureKubeadm(ctx context.Context, machine *platformv1.Machin
 		return err
 	}
 
-	err = kubeadm.Install(machineSSH, cluster.Spec.Version)
+	option := &kubeadm.Option{
+		RuntimeType: cluster.Spec.Features.ContainerRuntime,
+	}
+	err = kubeadm.Install(machineSSH, cluster.Spec.Version, option)
 	if err != nil {
 		return err
 	}
@@ -400,7 +453,7 @@ func (p *Provider) EnsureJoinPhasePreflight(ctx context.Context, machine *platfo
 		return err
 	}
 
-	err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(cluster, machine.Spec.IP), "preflight")
+	err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(cluster, machine.Spec.IP), "preflight", []string{constants.APIServerHostName})
 	if err != nil {
 		return err
 	}
@@ -414,7 +467,7 @@ func (p *Provider) EnsureJoinPhaseKubeletStart(ctx context.Context, machine *pla
 		return err
 	}
 
-	err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(cluster, machine.Spec.IP), "kubelet-start")
+	err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(cluster, machine.Spec.IP), "kubelet-start", []string{constants.APIServerHostName})
 	if err != nil {
 		return err
 	}
@@ -458,4 +511,22 @@ func (p *Provider) EnsureNodeReady(ctx context.Context, machine *platformv1.Mach
 
 		return false, nil
 	})
+}
+
+func (p *Provider) EnsureInitAPIServerHost(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error {
+	machineSSH, err := machine.Spec.SSH()
+	if err != nil {
+		return err
+	}
+	remoteHosts := hosts.RemoteHosts{Host: constants.APIServerHostName, SSH: machineSSH}
+	apiserverIP := cluster.Spec.Machines[0].IP
+	if cluster.Spec.Features.HA != nil {
+		if cluster.Spec.Features.HA.TKEHA != nil {
+			apiserverIP = cluster.Spec.Features.HA.TKEHA.VIP
+		}
+		if cluster.Spec.Features.HA.ThirdPartyHA != nil {
+			apiserverIP = cluster.Spec.Features.HA.ThirdPartyHA.VIP
+		}
+	}
+	return remoteHosts.Set(apiserverIP)
 }

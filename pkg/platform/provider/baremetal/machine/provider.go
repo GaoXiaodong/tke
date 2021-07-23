@@ -63,6 +63,7 @@ func NewProvider() (*Provider, error) {
 
 			p.EnsureClean,
 			p.EnsureRegistryHosts,
+			p.EnsureInitAPIServerHost,
 
 			p.EnsureKernelModule,
 			p.EnsureSysctl,
@@ -73,7 +74,7 @@ func NewProvider() (*Provider, error) {
 
 			p.EnsureNvidiaDriver,
 			p.EnsureNvidiaContainerRuntime,
-			p.EnsureDocker,
+			p.EnsureContainerRuntime,
 			p.EnsureKubelet,
 			p.EnsureCNIPlugins,
 			p.EnsureConntrackTools,

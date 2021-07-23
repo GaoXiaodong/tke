@@ -24,6 +24,7 @@ import (
 	"reflect"
 	"time"
 
+	"golang.org/x/time/rate"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -37,9 +38,10 @@ import (
 	platformv1informer "tkestack.io/tke/api/client/informers/externalversions/platform/v1"
 	platformv1lister "tkestack.io/tke/api/client/listers/platform/v1"
 	platformv1 "tkestack.io/tke/api/platform/v1"
+	machineconfig "tkestack.io/tke/pkg/platform/controller/machine/config"
 	"tkestack.io/tke/pkg/platform/controller/machine/deletion"
+	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
 	machineprovider "tkestack.io/tke/pkg/platform/provider/machine"
-	typesv1 "tkestack.io/tke/pkg/platform/types/v1"
 	"tkestack.io/tke/pkg/platform/util"
 	"tkestack.io/tke/pkg/util/apiclient"
 	"tkestack.io/tke/pkg/util/log"
@@ -69,10 +71,14 @@ type Controller struct {
 func NewController(
 	platformclient platformversionedclient.PlatformV1Interface,
 	machineInformer platformv1informer.MachineInformer,
-	resyncPeriod time.Duration,
+	configuration machineconfig.MachineControllerConfiguration,
 	finalizerToken platformv1.FinalizerName) *Controller {
+	rateLimit := workqueue.NewMaxOfRateLimiter(
+		workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1000*time.Second),
+		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(configuration.BucketRateLimiterLimit), configuration.BucketRateLimiterBurst)},
+	)
 	c := &Controller{
-		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "machine"),
+		queue: workqueue.NewNamedRateLimitingQueue(rateLimit, "machine"),
 
 		log:            log.WithName("MachineController"),
 		platformClient: platformclient,
@@ -88,7 +94,7 @@ func NewController(
 			AddFunc:    c.addMachine,
 			UpdateFunc: c.updateMachine,
 		},
-		resyncPeriod,
+		configuration.MachineSyncPeriod,
 	)
 	c.lister = machineInformer.Lister()
 	c.listerSynced = machineInformer.Informer().HasSynced
@@ -247,7 +253,7 @@ func (c *Controller) onCreate(ctx context.Context, machine *platformv1.Machine) 
 	if err != nil {
 		return err
 	}
-	cluster, err := typesv1.GetClusterByName(ctx, c.platformClient, machine.Spec.ClusterName)
+	cluster, err := clusterprovider.GetV1ClusterByName(ctx, c.platformClient, machine.Spec.ClusterName, clusterprovider.AdminUsername)
 	if err != nil {
 		return err
 	}
@@ -274,7 +280,7 @@ func (c *Controller) onUpdate(ctx context.Context, machine *platformv1.Machine) 
 		return err
 	}
 
-	cluster, err := typesv1.GetClusterByName(ctx, c.platformClient, machine.Spec.ClusterName)
+	cluster, err := clusterprovider.GetV1ClusterByName(ctx, c.platformClient, machine.Spec.ClusterName, clusterprovider.AdminUsername)
 	if err != nil {
 		return err
 	}
@@ -334,7 +340,7 @@ func (c *Controller) checkHealth(ctx context.Context, machine *platformv1.Machin
 
 func (c *Controller) ensureSyncMachineNodeLabel(ctx context.Context, machine *platformv1.Machine) {
 
-	cluster, err := typesv1.GetClusterByName(ctx, c.platformClient, machine.Spec.ClusterName)
+	cluster, err := clusterprovider.GetV1ClusterByName(ctx, c.platformClient, machine.Spec.ClusterName, clusterprovider.AdminUsername)
 	if err != nil {
 		log.FromContext(ctx).Error(err, "sync Machine node label error")
 		return

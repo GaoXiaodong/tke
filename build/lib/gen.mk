@@ -22,11 +22,11 @@ K8S_API_DIR = $(shell go list -f '{{ .Dir }}' -m k8s.io/api)
 GOGO_PROTOBUF_DIR = $(shell go list -f '{{ .Dir }}' -m github.com/gogo/protobuf)
 EXT_PB_APIS = "k8s.io/api/core/v1 k8s.io/api/apps/v1"
 # set the code generator image version
-CODE_GENERATOR_VERSION := v1.18.2
+CODE_GENERATOR_VERSION := v1.19.7
 FIND := find . ! -path './pkg/platform/provider/baremetal/apis/*'
 
 .PHONY: gen.run
-gen.run: gen.clean gen.api gen.openapi gen.gateway gen.registry gen.monitor gen.audit
+gen.run: gen.clean gen.api gen.openapi gen.gateway gen.registry gen.monitor gen.mesh gen.audit
 
 # ==============================================================================
 # Generator
@@ -42,7 +42,7 @@ gen.api:
 	 	$(ROOT_PACKAGE)/api/client \
 	 	$(ROOT_PACKAGE)/api \
 	 	$(ROOT_PACKAGE)/api \
-		"platform:v1 business:v1 notify:v1 registry:v1 monitor:v1 auth:v1 logagent:v1 application:v1"
+		"platform:v1 business:v1 notify:v1 registry:v1 monitor:v1 auth:v1 logagent:v1 application:v1 mesh:v1"
 
 .PHONY: gen.gateway
 gen.gateway:
@@ -93,6 +93,19 @@ gen.monitor:
 	 	$(ROOT_PACKAGE)/pkg/monitor/apis \
 	 	$(ROOT_PACKAGE)/pkg/monitor/apis \
 	 	$(ROOT_PACKAGE)/pkg/monitor/apis \
+	 	"config:v1"
+
+.PHONY: gen.mesh
+gen.mesh:
+	@$(DOCKER) run --rm \
+		-v $(ROOT_DIR):/go/src/$(ROOT_PACKAGE) \
+		-e EXT_PB_APIS=$(EXT_PB_APIS)\
+	 	$(REGISTRY_PREFIX)/code-generator:$(CODE_GENERATOR_VERSION) \
+	 	/root/code.sh \
+	 	deepcopy-internal,deepcopy-external,defaulter-external,conversion-external \
+	 	$(ROOT_PACKAGE)/pkg/mesh/apis \
+	 	$(ROOT_PACKAGE)/pkg/mesh/apis \
+	 	$(ROOT_PACKAGE)/pkg/mesh/apis \
 	 	"config:v1"
 
 .PHONY: gen.openapi

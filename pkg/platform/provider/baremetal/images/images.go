@@ -35,8 +35,13 @@ type Components struct {
 	Busybox           containerregistry.Image
 	GPUQuotaAdmission containerregistry.Image
 
-	MetricsServer containerregistry.Image
-	AddonResizer  containerregistry.Image
+	MetricsServer  containerregistry.Image
+	AddonResizer   containerregistry.Image
+	Cilium         containerregistry.Image
+	CiliumOperator containerregistry.Image
+	Ipamd          containerregistry.Image
+	Masq           containerregistry.Image
+	CiliumRouter   containerregistry.Image
 }
 
 func (c Components) Get(name string) *containerregistry.Image {
@@ -53,17 +58,23 @@ func (c Components) Get(name string) *containerregistry.Image {
 var kubecomponetNames = []string{"kube-apiserver", "kube-controller-manager", "kube-scheduler", "kube-proxy"}
 var components = Components{
 	ETCD:               containerregistry.Image{Name: "etcd", Tag: "v3.4.7"},
-	CoreDNS:            containerregistry.Image{Name: "coredns", Tag: "1.6.7"},
-	Pause:              containerregistry.Image{Name: "pause", Tag: "3.1"},
+	CoreDNS:            containerregistry.Image{Name: "coredns", Tag: "1.7.0"},
+	Pause:              containerregistry.Image{Name: "pause", Tag: "3.2"},
 	NvidiaDevicePlugin: containerregistry.Image{Name: "nvidia-device-plugin", Tag: "1.0.0-beta4"},
 	Keepalived:         containerregistry.Image{Name: "keepalived", Tag: "2.0.16-r0"},
 
 	GPUManager:        containerregistry.Image{Name: "gpu-manager", Tag: "v1.0.6"},
-	Busybox:           containerregistry.Image{Name: "busybox", Tag: "1.31.0"},
+	Busybox:           containerregistry.Image{Name: "busybox", Tag: "1.31.1"},
 	GPUQuotaAdmission: containerregistry.Image{Name: "gpu-quota-admission", Tag: "v1.0.0"},
 
 	MetricsServer: containerregistry.Image{Name: "metrics-server", Tag: "v0.3.6"},
 	AddonResizer:  containerregistry.Image{Name: "addon-resizer", Tag: "1.8.11"},
+
+	Cilium:         containerregistry.Image{Name: "cilium", Tag: "v1.9.5"},
+	CiliumOperator: containerregistry.Image{Name: "cilium-operator-generic", Tag: "v1.9.5"},
+	Ipamd:          containerregistry.Image{Name: "tke-eni-ipamd", Tag: "v3.2.6"},
+	Masq:           containerregistry.Image{Name: "ip-masq-agent", Tag: "v1.0.0"},
+	CiliumRouter:   containerregistry.Image{Name: "cilium-router", Tag: "v0.1.0"},
 }
 
 func List() []string {

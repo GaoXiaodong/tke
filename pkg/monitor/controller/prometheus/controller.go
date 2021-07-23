@@ -60,6 +60,7 @@ import (
 	"tkestack.io/tke/pkg/monitor/controller/prometheus/images"
 	esutil "tkestack.io/tke/pkg/monitor/storage/es/client"
 	monitorutil "tkestack.io/tke/pkg/monitor/util"
+	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
 	platformutil "tkestack.io/tke/pkg/platform/util"
 	"tkestack.io/tke/pkg/util/apiclient"
 	containerregistryutil "tkestack.io/tke/pkg/util/containerregistry"
@@ -736,8 +737,12 @@ func (c *Controller) installPrometheus(ctx context.Context, prometheus *v1.Prome
 	prometheus.Status.SubVersion[AlertManagerService] = components.AlertManagerService.Tag
 
 	log.Infof("Start to create prometheus")
+	provider, err := clusterprovider.GetProvider(cluster.Spec.Type)
+	if err != nil {
+		return fmt.Errorf("get provider failed: %v", err)
+	}
 	// Secret for prometheus-etcd
-	credential, err := platformutil.GetClusterCredentialV1(ctx, c.platformClient, cluster)
+	credential, err := provider.GetClusterCredentialV1(ctx, c.platformClient, cluster, clusterprovider.AdminUsername)
 	if err != nil {
 		return fmt.Errorf("get credential failed: %v", err)
 	}
@@ -1265,7 +1270,7 @@ func createPrometheusCRD(components images.Components, prometheus *v1.Prometheus
 				rw.WriteRelabelConfigs = []monitoringv1.RelabelConfig{
 					{
 						SourceLabels: []string{"__name__"},
-						Regex:        "k8s_(.*)|apiserver_(.*)|kube_pod_labels|kube_node_labels|kube_namespace_labels|etcd_(.*)|grpc_(.*)|process_(.*)|scheduler_(.*)|workqueue_(.*)|rest_client_requests_(.*)|go_goroutines|kubelet_(.*)|volume_manager_(.*)|storage_operation_(.*)|coredns_(.*)|up",
+						Regex:        "istio_(.*)|envoy_(.*)|pilot_(.*)|k8s_(.*)|apiserver_(.*)|kube_pod_labels|kube_node_labels|kube_namespace_labels|etcd_(.*)|grpc_(.*)|process_(.*)|scheduler_(.*)|workqueue_(.*)|rest_client_requests_(.*)|go_goroutines|kubelet_(.*)|volume_manager_(.*)|storage_operation_(.*)|coredns_(.*)|up",
 						Action:       "keep",
 					},
 				}
@@ -1281,7 +1286,7 @@ func createPrometheusCRD(components images.Components, prometheus *v1.Prometheus
 			rw.WriteRelabelConfigs = []monitoringv1.RelabelConfig{
 				{
 					SourceLabels: []string{"__name__"},
-					Regex:        "project_(.*)|apiserver_(.*)|k8s_(.*)|kube_pod_labels|kube_node_labels|kube_namespace_labels|etcd_(.*)|grpc_(.*)|process_(.*)|scheduler_(.*)|workqueue_(.*)|rest_client_requests_(.*)|go_goroutines|kubelet_(.*)|volume_manager_(.*)|storage_operation_(.*)|coredns_(.*)|up",
+					Regex:        "istio_(.*)|envoy_(.*)|pilot_(.*)|project_(.*)|apiserver_(.*)|k8s_(.*)|kube_pod_labels|kube_node_labels|kube_namespace_labels|etcd_(.*)|grpc_(.*)|process_(.*)|scheduler_(.*)|workqueue_(.*)|rest_client_requests_(.*)|go_goroutines|kubelet_(.*)|volume_manager_(.*)|storage_operation_(.*)|coredns_(.*)|up",
 					Action:       "keep",
 				},
 			}
@@ -1296,7 +1301,7 @@ func createPrometheusCRD(components images.Components, prometheus *v1.Prometheus
 			rw.WriteRelabelConfigs = []monitoringv1.RelabelConfig{
 				{
 					SourceLabels: []string{"__name__"},
-					Regex:        "project_(.*)|apiserver_(.*)|k8s_(.*)|kube_pod_labels|kube_node_labels|kube_namespace_labels|etcd_(.*)|grpc_(.*)|process_(.*)|scheduler_(.*)|workqueue_(.*)|rest_client_requests_(.*)|go_goroutines|kubelet_(.*)|volume_manager_(.*)|storage_operation_(.*)|coredns_(.*)|up",
+					Regex:        "istio_(.*)|envoy_(.*)|pilot_(.*)|project_(.*)|apiserver_(.*)|k8s_(.*)|kube_pod_labels|kube_node_labels|kube_namespace_labels|etcd_(.*)|grpc_(.*)|process_(.*)|scheduler_(.*)|workqueue_(.*)|rest_client_requests_(.*)|go_goroutines|kubelet_(.*)|volume_manager_(.*)|storage_operation_(.*)|coredns_(.*)|up",
 					Action:       "keep",
 				},
 			}
@@ -1550,7 +1555,7 @@ func createAlertManagerCRD(components images.Components, prometheus *v1.Promethe
 				},
 			},
 			BaseImage: containerregistryutil.GetImagePrefix(alertManagerImagePath),
-			Replicas:  controllerutil.Int32Ptr(3),
+			Replicas:  controllerutil.Int32Ptr(1),
 			SecurityContext: &corev1.PodSecurityContext{
 				FSGroup:      controllerutil.Int64Ptr(2000),
 				RunAsNonRoot: controllerutil.BoolPtr(true),
@@ -1646,14 +1651,14 @@ func createDaemonSetForNodeExporter(components images.Components) *appsv1.Daemon
 								"--no-collector.drbd",
 								"--no-collector.edac",
 								"--no-collector.entropy",
-								"--no-collector.filefd",
+								"--collector.filefd",
 								"--collector.filesystem",
 								"--no-collector.hwmon",
 								"--no-collector.infiniband",
 								"--no-collector.interrupts",
 								"--no-collector.ipvs",
 								"--no-collector.ksmd",
-								"--no-collector.loadavg",
+								"--collector.loadavg",
 								"--no-collector.logind",
 								"--no-collector.mdadm",
 								"--collector.meminfo",
@@ -1669,7 +1674,7 @@ func createDaemonSetForNodeExporter(components images.Components) *appsv1.Daemon
 								"--no-collector.qdisc",
 								"--no-collector.runit",
 								"--collector.sockstat",
-								"--no-collector.stat",
+								"--collector.stat",
 								"--no-collector.supervisord",
 								"--no-collector.systemd",
 								"--no-collector.tcpstat",

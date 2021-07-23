@@ -14,6 +14,7 @@ import { CreateResource } from '../../common/models/CreateResource';
 import { authTypeMapping, CreateICVipType } from '../constants/Config';
 import { CreateIC } from '../models';
 import { deleteResourceIns } from './K8sResourceAPI';
+import { getK8sValidVersions } from '@src/webApi/cluster';
 
 /**
  * 集群列表的查询
@@ -134,7 +135,12 @@ export async function createIC(clusters: CreateIC[]) {
       vipType,
       gpu,
       gpuType,
-      merticsServer
+      merticsServer,
+      cilium,
+      networkMode,
+      asNumber,
+      switchIp,
+      containerRuntime
     } = clusters[0];
 
     const resourceInfo = resourceConfig()['cluster'];
@@ -185,8 +191,25 @@ export async function createIC(clusters: CreateIC[]) {
         displayName: name,
         clusterCIDR: cidr,
         networkDevice: networkDevice,
+
+        ...(cilium === 'Cilium'
+          ? {
+              networkArgs: {
+                networkMode,
+
+                ...(networkMode === 'underlay'
+                  ? {
+                      asn: asNumber,
+                      'switch-ip': switchIp
+                    }
+                  : {})
+              }
+            }
+          : {}),
+
         features: {
           gpuType: gpu ? gpuType : undefined,
+          containerRuntime,
           ha:
             vipType !== CreateICVipType.unuse
               ? {
@@ -206,7 +229,8 @@ export async function createIC(clusters: CreateIC[]) {
                 }
               : undefined,
 
-          enableMetricsServer: merticsServer
+          enableMetricsServer: merticsServer,
+          enableCilium: cilium === 'Galaxy' ? false : true
         },
         properties: {
           maxClusterServiceNum: maxClusterServiceNum,
@@ -273,11 +297,8 @@ export async function modifyClusterName(clusters: CreateResource[]) {
  * @param regionId: number 地域的id
  */
 export async function fetchCreateICK8sVersion() {
-  return [
-    { text: '1.16.9', value: '1.16.9' },
-    { text: '1.17.13', value: '1.17.13' },
-    { text: '1.18.3', value: '1.18.3' }
-  ];
+  const list = await getK8sValidVersions();
+  return list.map(_ => ({ text: _, value: _ }));
 }
 
 /**
@@ -298,7 +319,7 @@ export async function createImportClsutter(resource: CreateResource[], regionId:
 
     const clustercredentialData = {
       metadata: {
-        generateName: 'clustercredential'
+        generateName: 'cc'
       },
       caCert: clusterData.status.credential.caCert,
       token: clusterData.status.credential.token ? clusterData.status.credential.token : undefined,

@@ -19,7 +19,6 @@
 package v1
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"net"
@@ -27,10 +26,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	applicationversiondclient "tkestack.io/tke/api/client/clientset/versioned/typed/application/v1"
 	platformversionedclient "tkestack.io/tke/api/client/clientset/versioned/typed/platform/v1"
+	registryversionedclient "tkestack.io/tke/api/client/clientset/versioned/typed/registry/v1"
 	platformv1 "tkestack.io/tke/api/platform/v1"
 )
 
@@ -44,37 +44,6 @@ type Cluster struct {
 	*platformv1.Cluster
 	ClusterCredential   *platformv1.ClusterCredential
 	IsCredentialChanged bool
-}
-
-func GetClusterByName(ctx context.Context, platformClient platformversionedclient.PlatformV1Interface, name string) (*Cluster, error) {
-	cluster, err := platformClient.Clusters().Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return GetCluster(ctx, platformClient, cluster)
-}
-
-func GetCluster(ctx context.Context, platformClient platformversionedclient.PlatformV1Interface, cluster *platformv1.Cluster) (*Cluster, error) {
-	result := new(Cluster)
-	result.Cluster = cluster
-	result.IsCredentialChanged = false
-	if cluster.Spec.ClusterCredentialRef != nil {
-		clusterCredential, err := platformClient.ClusterCredentials().Get(ctx, cluster.Spec.ClusterCredentialRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("get cluster's credential error: %w", err)
-		}
-		result.ClusterCredential = clusterCredential
-	} else {
-		clusterCredentials, err := platformClient.ClusterCredentials().List(ctx, metav1.ListOptions{FieldSelector: fmt.Sprintf("clusterName=%s", cluster.Name)})
-		if err != nil {
-			return nil, fmt.Errorf("get cluster's credential error: %w", err)
-		}
-		if len(clusterCredentials.Items) > 0 {
-			result.ClusterCredential = &clusterCredentials.Items[0]
-		}
-	}
-
-	return result, nil
 }
 
 func Clientset(cluster *platformv1.Cluster, credential *platformv1.ClusterCredential) (kubernetes.Interface, error) {
@@ -96,6 +65,30 @@ func (c *Cluster) ClientsetForBootstrap() (kubernetes.Interface, error) {
 		return nil, err
 	}
 	return kubernetes.NewForConfig(config)
+}
+
+func (c *Cluster) PlatformClientsetForBootstrap() (platformversionedclient.PlatformV1Interface, error) {
+	config, err := c.RESTConfigForBootstrap(&rest.Config{})
+	if err != nil {
+		return nil, err
+	}
+	return platformversionedclient.NewForConfig(config)
+}
+
+func (c *Cluster) RegistryClientsetForBootstrap() (registryversionedclient.RegistryV1Interface, error) {
+	config, err := c.RESTConfigForBootstrap(&rest.Config{})
+	if err != nil {
+		return nil, err
+	}
+	return registryversionedclient.NewForConfig(config)
+}
+
+func (c *Cluster) RegistryApplicationForBootstrap() (applicationversiondclient.ApplicationV1Interface, error) {
+	config, err := c.RESTConfigForBootstrap(&rest.Config{})
+	if err != nil {
+		return nil, err
+	}
+	return applicationversiondclient.NewForConfig(config)
 }
 
 func (c *Cluster) RESTConfigForBootstrap(config *rest.Config) (*rest.Config, error) {

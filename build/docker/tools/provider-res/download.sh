@@ -56,19 +56,47 @@ function download::docker() {
   done
 }
 
-function download::kubernetes() {
-  for version in ${K8S_VERSIONS}; do
-    wget -c "https://dl.k8s.io/${version}/kubernetes-node-${platform}.tar.gz" \
-      -O "kubernetes-node-${platform}-${version}.tar.gz"
+function download::containerd() {
+  if [ "${arch}" == "amd64" ]; then
+    containerd_arch=amd64
+  elif [ "${arch}" == "arm64" ]; then
+    containerd_arch=amd64
+  else
+    echo "[ERROR] Fail to get containerd ${arch} on ${platform} platform."
+    exit 255
+  fi
+
+  for version in ${CONTAINERD_VERSIONS}; do
+    wget -c "https://github.com/containerd/containerd/releases/download/v${version}/cri-containerd-cni-${version}-linux-${containerd_arch}.tar.gz" \
+      -O "containerd-${platform}-${version}.tar.gz"
   done
 }
 
-function download::kubeadm() {
+function download::critools() {
+  if [ "${arch}" == "amd64" ]; then
+    critools_arch=amd64
+  elif [ "${arch}" == "arm64" ]; then
+    critools_arch=arm
+  else
+    echo "[ERROR] Fail to get critools ${arch} on ${platform} platform."
+    exit 255
+  fi
+
+  for version in ${CRITOOLS_VERSIONS}; do
+    wget -c "https://github.com/kubernetes-sigs/cri-tools/releases/download/${version}/crictl-${version}-linux-${critools_arch}.tar.gz" \
+      -O "critools-${platform}-${version}.tar.gz"
+  done
+}
+
+function download::kubernetes() {
   for version in ${K8S_VERSIONS}; do
-    wget -c "https://storage.googleapis.com/kubernetes-release/release/${version}/bin/${os}/${arch}/kubeadm"
-    chmod +x kubeadm
-    GZIP=-n tar cvzf "kubeadm-${platform}-${version}.tar.gz" kubeadm
-    rm kubeadm
+    if [[ "${version}" =~ "tke" ]]; then
+      wget -c "https://tke-release-1251707795.cos.ap-guangzhou.myqcloud.com/kubernetes-node-linux-amd64-${version}.tar.gz" \
+        -O "kubernetes-node-linux-amd64-${version}.tar.gz"
+    else
+      wget -c "https://dl.k8s.io/${version}/kubernetes-node-${platform}.tar.gz" \
+        -O "kubernetes-node-${platform}-${version}.tar.gz"
+    fi
   done
 }
 
@@ -119,8 +147,9 @@ for os in ${OSS}; do
 
     download::cni_plugins
     download::docker
+    download::containerd
+    download::critools
     download::kubernetes
-    download::kubeadm
     download::nvidia_driver
     download::nvidia_container_runtime
     download::pkgs

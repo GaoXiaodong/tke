@@ -21,11 +21,12 @@ package tke
 import (
 	"context"
 	"fmt"
-	"k8s.io/klog"
 	"net"
 	"net/url"
 	"os"
 	"time"
+
+	"k8s.io/klog"
 
 	"github.com/onsi/gomega"
 
@@ -99,7 +100,7 @@ func (t *TKE) createNamespace(ctx context.Context) error {
 			Name: t.Namespace,
 		},
 	}
-
+	klog.Info("Create namespace: ", t.Namespace)
 	return apiclient.CreateOrUpdateNamespace(context.Background(), t.client, ns)
 }
 

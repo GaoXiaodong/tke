@@ -30,6 +30,7 @@ import (
 	authv1 "tkestack.io/tke/api/auth/v1"
 	businessv1 "tkestack.io/tke/api/business/v1"
 	logagentv1 "tkestack.io/tke/api/logagent/v1"
+	meshv1 "tkestack.io/tke/api/mesh/v1"
 	monitorv1 "tkestack.io/tke/api/monitor/v1"
 	notifyv1 "tkestack.io/tke/api/notify/v1"
 	platformv1 "tkestack.io/tke/api/platform/v1"
@@ -38,12 +39,13 @@ import (
 
 var scheme = runtime.NewScheme()
 var codecs = serializer.NewCodecFactory(scheme)
-var parameterCodec = runtime.NewParameterCodec(scheme)
+
 var localSchemeBuilder = runtime.SchemeBuilder{
 	applicationv1.AddToScheme,
 	authv1.AddToScheme,
 	businessv1.AddToScheme,
 	logagentv1.AddToScheme,
+	meshv1.AddToScheme,
 	monitorv1.AddToScheme,
 	notifyv1.AddToScheme,
 	platformv1.AddToScheme,

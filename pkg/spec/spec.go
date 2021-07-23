@@ -20,27 +20,25 @@ package spec
 
 import (
 	"github.com/thoas/go-funk"
+	"tkestack.io/tke/pkg/app/version"
 )
 
 var (
-	TKEVersion    = "1.5.0"
+	TKEVersion    = version.Get().GitVersion
 	Archs         = []string{"amd64", "arm64"}
 	Arm64         = "arm64"
 	Arm64Variants = []string{"v8", "unknown"}
 	OSs           = []string{"linux"}
 
 	K8sVersionConstraint = ">= 1.10"
-	K8sVersions          = []string{"1.18.3", "1.17.13", "1.16.9"}
+	K8sVersions          = []string{"1.20.4-tke.1", "1.20.4", "1.19.7", "1.18.3"}
 	K8sVersionsWithV     = funk.Map(K8sVersions, func(s string) string {
-		return "v" + s
-	}).([]string)
-	// K8sValidVersions for backward compatibility.
-	K8sValidVersions      = append(K8sVersions, []string{"1.16.6", "1.14.10"}...)
-	K8sValidVersionsWithV = funk.Map(K8sValidVersions, func(s string) string {
 		return "v" + s
 	}).([]string)
 
 	DockerVersions                 = []string{"19.03.14"}
+	ContainerdVersions             = []string{"1.5.2"}
+	CriToolsVersions               = []string{"v1.21.0"}
 	CNIPluginsVersions             = []string{"v0.8.6"}
 	ConntrackToolsVersions         = []string{"1.4.4"}
 	NvidiaDriverVersions           = []string{"440.31"}

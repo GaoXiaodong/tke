@@ -7,7 +7,7 @@ import { TablePanel, TablePanelColumnProps, FormPanel } from '@tencent/ff-compon
 import { bindActionCreators } from '@tencent/ff-redux';
 import { t, Trans } from '@tencent/tea-app/lib/i18n';
 import { Bubble } from '@tencent/tea-component';
-import { sortable, SortBy } from '@tencent/tea-component/lib/table/addons/sortable';
+import { sortable, SortBy } from 'tea-component/es/table/addons/sortable';
 
 import { dateFormatter } from '../../../../../../helpers';
 import { Clip, LinkButton } from '../../../../common/components';
@@ -17,6 +17,7 @@ import { Computer, DialogNameEnum } from '../../../models';
 import { router } from '../../../router';
 import { RootProps } from '../../ClusterApp';
 import { ReduceRequest } from '../resourceDetail/ResourcePodPanel';
+import { formatMemory } from '@helper';
 
 export const ComputerStatus = {
   Running: 'success',
@@ -42,7 +43,7 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
   };
 
   handleExpand() {
-    let { route, cluster } = this.props;
+    const { route, cluster } = this.props;
 
     if ((cluster as any).os) {
       router.navigate({ sub: 'expand' }, { rid: route.queries['rid'], clusterId: route.queries['clusterId'] });
@@ -52,8 +53,8 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
   }
 
   renderOsTipsDialog = () => {
-    let { showOsTips, selectCluster } = this.state;
-    let { route } = this.props,
+    const { showOsTips, selectCluster } = this.state;
+    const { route } = this.props,
       urlParams = router.resolve(route);
 
     if (!showOsTips) return <noscript />;
@@ -84,7 +85,7 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
   };
 
   render() {
-    let { isShowMachine } = this.props.subRoot.computerState;
+    const { isShowMachine } = this.props.subRoot.computerState;
     return (
       <React.Fragment>
         {isShowMachine ? this._renderMachineTablePanel() : this._renderComputerTablePanel()}
@@ -103,7 +104,7 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
         header: t('节点名'),
         width: '15%',
         render: x => {
-          let instanceId = x.metadata.name;
+          const instanceId = x.metadata.name;
 
           return (
             <Text overflow>
@@ -127,10 +128,10 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
         width: '8%',
         render: x => (
           <React.Fragment>
-            <Text theme={ComputerStatus[x.status.phase]} verticalAlign="middle" parent={'p'}>
-              {x.status.phase || '-'}
+            <Text theme={ComputerStatus[x?.status?.phase]} verticalAlign="middle" parent={'p'}>
+              {x?.status?.phase || '-'}
             </Text>
-            {x.status.phase === 'Initializing' && (
+            {x?.status?.phase === 'Initializing' && (
               <Button
                 type="link"
                 onClick={() => {
@@ -172,9 +173,9 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
         header: t('创建时间'),
         width: '15%',
         render: x => {
-          let time = dateFormatter(new Date(x.metadata.creationTimestamp), 'YYYY-MM-DD HH:mm:ss');
+          const time = dateFormatter(new Date(x.metadata.creationTimestamp), 'YYYY-MM-DD HH:mm:ss');
 
-          let [year, currentTime] = time.split(' ');
+          const [year, currentTime] = time.split(' ');
           return (
             <React.Fragment>
               <Text parent="p" key={'year'}>
@@ -225,7 +226,7 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
         header: t('节点名'),
         width: '15%',
         render: x => {
-          let instanceId = x.metadata.name;
+          const instanceId = x.metadata.name;
 
           return (
             <Text overflow>
@@ -249,8 +250,8 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
         width: '8%',
         render: x => (
           <React.Fragment>
-            <Text theme={ComputerStatus[x.status.phase]} verticalAlign="middle" parent={'p'}>
-              {x.status.phase || '-'}
+            <Text theme={ComputerStatus[x?.status?.phase]} verticalAlign="middle" parent={'p'}>
+              {x?.status?.phase ?? '-'}
             </Text>
             <div className="sl-editor-name">
               {x.spec.unschedulable && (
@@ -275,22 +276,13 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
         header: t('配置'),
         width: '12%',
         render: x => {
-          let capacity = x.status.capacity;
-          let capacityInfo = {
-            cpu: capacity ? capacity.cpu : '0',
-            memory: capacity ? capacity.memory : '0'
-          };
-          let finalCpu = ReduceRequest('cpu', capacityInfo),
-            finalmem = (ReduceRequest('memory', capacity) / 1024).toFixed(2);
+          const capacity = x?.status?.capacity;
 
           return (
             <React.Fragment>
-              <Text verticalAlign="middle">
-                {t('{{count}} 核, ', {
-                  count: finalCpu
-                })}
-              </Text>
-              <Text verticalAlign="middle">{`${finalmem} GB`}</Text>
+              <Text verticalAlign="middle">cpu: {capacity?.cpu ?? '-'} 核</Text>
+              <br />
+              <Text verticalAlign="middle">内存: {formatMemory(capacity?.memory ?? '0', 'Gi')}</Text>
             </React.Fragment>
           );
         }
@@ -300,18 +292,22 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
         header: t('IP地址'),
         width: '15%',
         render: x => {
-          let finalIPInfo = x.status.addresses.filter(item => item.type !== 'Hostname');
+          const finalIPInfo = x?.status?.addresses?.filter(item => item.type !== 'Hostname') ?? [];
 
           return (
             <React.Fragment>
-              {finalIPInfo.map((item, index) => (
-                <p key={index}>
-                  <Text id={item.type + index} verticalAlign="middle">
-                    {item.address}
-                  </Text>
-                  <Clip target={`#${item.type + index}`} />
-                </p>
-              ))}
+              {finalIPInfo.map((item, index) => {
+                const id = btoa(item.address);
+
+                return (
+                  <p key={index}>
+                    <Text id={id} verticalAlign="middle">
+                      {item.address}
+                    </Text>
+                    <Clip target={`#${id}`} />
+                  </p>
+                );
+              })}
             </React.Fragment>
           );
         }
@@ -327,9 +323,9 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
         header: t('创建时间'),
         width: '15%',
         render: x => {
-          let time = dateFormatter(new Date(x.metadata.creationTimestamp), 'YYYY-MM-DD HH:mm:ss');
+          const time = dateFormatter(new Date(x.metadata.creationTimestamp), 'YYYY-MM-DD HH:mm:ss');
 
-          let [year, currentTime] = time.split(' ');
+          const [year, currentTime] = time.split(' ');
           return (
             <React.Fragment>
               <Text parent="p" key={'year'}>
@@ -344,7 +340,7 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
       }
     ];
 
-    let emptyTips: JSX.Element = (
+    const emptyTips: JSX.Element = (
       <div className="text-center">
         <Trans>
           您选择的集群的节点列表为空，您可以
@@ -400,12 +396,12 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
    * @param resourceIns:string  node节点的instanceId
    */
   private _handleClickForNavigate(resourceIns: string) {
-    let { actions, route, subRoot } = this.props,
+    const { actions, route, subRoot } = this.props,
       { ffResourceList } = subRoot.resourceOption,
       urlParams = router.resolve(route);
 
     // 选择当前选择的具体的resource
-    let resourceSelection = ffResourceList.list.data.records.find(item => item.metadata.name === resourceIns);
+    const resourceSelection = ffResourceList.list.data.records.find(item => item.metadata.name === resourceIns);
     actions.resource.select(resourceSelection);
     // 进行路由的跳转
     router.navigate(
@@ -416,21 +412,21 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
 
   /** 打开 unSchedule 的弹框 */
   private _handleBatchUnScheduleComputer(computer: Computer, clusterId: string) {
-    let { actions } = this.props;
+    const { actions } = this.props;
     actions.workflow.batchUnScheduleComputer.start();
     actions.computer.selects([computer]);
   }
 
   /** 打开 turn on Schedule 的弹框 */
   private _handeBatchTurnOnScheduleComputer(computer: Computer, clusterId: string) {
-    let { actions } = this.props;
+    const { actions } = this.props;
     actions.workflow.batchTurnOnScheduleComputer.start();
     actions.computer.selects([computer]);
   }
 
   /** 打开驱逐操作的弹框 */
   private _handleBatchDrainComputer(computer: Computer, clusterId: string) {
-    let { actions, route } = this.props;
+    const { actions, route } = this.props;
     actions.computerPod.applyFilter({ clusterId, specificName: computer.metadata.name });
     actions.workflow.batchDrainComputer.start([computer], { clusterId });
     actions.computer.selects([computer]);
@@ -438,7 +434,7 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
 
   /** 打开编辑标签操作的弹框 */
   private _handleUpdatelabel(computer: Computer, clusterId: string) {
-    let { actions, route } = this.props,
+    const { actions, route } = this.props,
       { rid } = route.queries;
     actions.computer.initLabelEdition(computer.metadata.labels, computer.metadata.name);
     actions.workflow.updateNodeLabel.start();
@@ -447,7 +443,7 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
 
   /** 打开编辑标签操作的弹框 */
   private _handleUpdateTaint(computer: Computer, clusterId: string) {
-    let { actions, route } = this.props,
+    const { actions, route } = this.props,
       { rid } = route.queries;
     actions.computer.initTaintEdition(computer.spec.taints, computer.metadata.name);
     actions.workflow.updateNodeTaint.start();
@@ -455,7 +451,7 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
   }
 
   private _handleDeleteComputer(computer: Computer, clusterId: string) {
-    let { actions } = this.props;
+    const { actions } = this.props;
     actions.computer.fetchdeleteMachineResouceIns(computer.metadata.name);
     actions.workflow.deleteComputer.start([computer]);
     actions.computerPod.applyFilter({ clusterId, specificName: computer.metadata.name });
@@ -468,7 +464,7 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
    * @param mode:unSchedule|turn on scheduling    判断是否可进行操作
    */
   private getCanUnSchedule(computer: Computer, mode: 'unSchedule' | 'turnOnScheduling' = 'turnOnScheduling') {
-    let computerStatus = computer.status.phase === 'Running';
+    const computerStatus = computer?.status?.phase === 'Running';
 
     if (mode === 'unSchedule') {
       return computerStatus && (computer.spec.unschedulable == null || computer.spec.unschedulable === false);
@@ -481,9 +477,9 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
     const { cluster, subRoot, route, actions } = this.props,
       { computer } = subRoot.computerState;
 
-    let clusterId = route.queries['clusterId'];
+    const clusterId = route.queries['clusterId'];
 
-    let deleteDisable =
+    const deleteDisable =
       com.metadata.role === 'Master&Etcd' || (cluster.selection && cluster.selection.spec.type === 'Imported');
 
     const renderDeleteButton = () => {
@@ -584,7 +580,7 @@ export class ComputerTablePanel extends React.Component<RootProps, State> {
         </LinkButton>
       );
     };
-    let btns = [renderDeleteButton(), renderDrainButton(), renderLabelUpdateButton(), renderTaintUpdateButton()];
+    const btns = [renderDeleteButton(), renderDrainButton(), renderLabelUpdateButton(), renderTaintUpdateButton()];
     if (this.getCanUnSchedule(com, 'turnOnScheduling')) {
       btns.push(renderTurnOnScheduleButton());
     } else if (this.getCanUnSchedule(com, 'unSchedule')) {

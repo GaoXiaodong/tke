@@ -35,6 +35,15 @@ var (
 		Name:     "docker",
 		Versions: spec.DockerVersions,
 	}
+	Containerd = Package{
+		Name:     "containerd",
+		Versions: spec.ContainerdVersions,
+	}
+
+	CriTools = Package{
+		Name:     "critools",
+		Versions: spec.CriToolsVersions,
+	}
 	CNIPlugins = Package{
 		Name:     "cni-plugins",
 		Versions: spec.CNIPluginsVersions,
@@ -44,14 +53,9 @@ var (
 		Versions:  spec.ConntrackToolsVersions,
 		TargetDir: "/",
 	}
-
-	Kubeadm = Package{
-		Name:     "kubeadm",
-		Versions: spec.K8sValidVersionsWithV,
-	}
 	KubernetesNode = Package{
 		Name:     "kubernetes-node",
-		Versions: spec.K8sValidVersionsWithV,
+		Versions: spec.K8sVersionsWithV,
 	}
 	NvidiaDriver = Package{
 		Name:     "NVIDIA",

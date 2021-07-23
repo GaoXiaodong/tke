@@ -1,16 +1,17 @@
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Card, Form, Select, Text, DatePicker, TableColumn, Table, Button } from '@tea/component';
-import { TablePanel } from '@tencent/ff-component';
+import { Card, Form, Select, Text, DatePicker, Table, Button } from 'tea-component';
+import { TablePanel, TablePanelColumnProps } from '@tencent/ff-component';
 import { bindActionCreators, insertCSS } from '@tencent/ff-redux';
 import { t, Trans } from '@tencent/tea-app/lib/i18n';
 import { useModal } from '../../common/utils';
 import { emptyTips, LinkButton } from '../../common/components';
 import { AuditDetailsDialog } from './AuditDetailsDialog';
+import { AuditSettingDialog } from './AuditSettingDialog';
 import { allActions } from '../actions';
-import { router } from '../router';
 import { Audit } from '../models';
 import { dateFormatter } from '@helper/dateFormatter';
+import { downloadCsv } from '@helper';
 const { useState, useEffect } = React;
 const { RangePicker } = DatePicker;
 const { expandable } = Table.addons;
@@ -59,6 +60,7 @@ export const AuditPanel = () => {
   const [expandedKeys, setExpandedKeys] = useState([]);
   const [record, setRecord] = useState(undefined);
   const { isShowing, toggle } = useModal(false);
+  const [settingDialogVisible, showSettingDialog] = useState(false);
 
   useEffect(() => {
     actions.audit.getAuditFilterCondition.fetch();
@@ -75,7 +77,7 @@ export const AuditPanel = () => {
     });
   }, [cluster, namespace, resource, user, startTime, endTime]);
 
-  const columns: TableColumn<Audit>[] = [
+  const columns: TablePanelColumnProps<Audit>[] = [
     {
       key: 'stageTimestamp',
       header: t('时间'),
@@ -117,6 +119,83 @@ export const AuditPanel = () => {
       render: item => <Text parent="div">{item.status || '-'}</Text>
     }
   ];
+
+  const style = { marginRight: 5 };
+
+  /** 导出数据 */
+  const handleDownload = (resourceList: Audit[]) => {
+    const tableColumns = [
+      {
+        key: 'stageTimestamp',
+        header: '时间',
+        render: item => dateFormatter(new Date(item.stageTimestamp), 'YYYY-MM-DD HH:mm:ss')
+      },
+      {
+        key: 'userName',
+        header: '操作人',
+        render: item => item.userName
+      },
+      {
+        key: 'verb',
+        header: '操作类型',
+        render: item => item.verb
+      },
+      {
+        key: 'clusterName',
+        header: '集群',
+        render: item => item.clusterName
+      },
+      {
+        key: 'namespace',
+        header: '命名空间',
+        render: item => item.namespace
+      },
+      {
+        key: 'resource',
+        header: '资源类型',
+        render: item => item.resource
+      },
+      {
+        key: 'name',
+        header: '操作对象',
+        render: item => item.name
+      },
+      {
+        key: 'status',
+        header: '操作结果',
+        render: item => item.status
+      },
+      {
+        key: 'requestURI',
+        header: '请求URI',
+        render: item => item.requestURI
+      },
+      {
+        key: 'sourceIPs',
+        header: '源地址',
+        render: item => item.sourceIPs
+      },
+      {
+        key: 'code',
+        header: 'HTTP Code',
+        render: item => item.code
+      }
+    ];
+    function getHeader() {
+      // 生成csv需要的表头
+      return tableColumns.map(aColumn => aColumn.header);
+    }
+    function getBody() {
+      // 生成csv需要的内容
+      return resourceList.reduce((accu, anAudit) => {
+        let result;
+        const _row = tableColumns.map(acolumn => acolumn.render(anAudit));
+        result = [...accu, _row];
+        return result;
+      }, []);
+    }
+    downloadCsv(getBody(), getHeader(), `tke_audit_${new Date().getTime()}.csv`);
+  };
 
   return (
     <>
@@ -170,12 +249,28 @@ export const AuditPanel = () => {
               placeholder={t('请选择操作人')}
             />
           </Form.Item>
-          <Form.Item label={t('时间')}>
+          <Form.Item label={t('时间')} align="middle">
             <RangePicker
               showTime
               onChange={value => {
                 setStartTime(new Date(value[0].format()).getTime());
                 setEndTime(new Date(value[1].format()).getTime());
+              }}
+            />
+            <Button
+              icon="setting"
+              title="设置"
+              style={style}
+              onClick={() => {
+                showSettingDialog(!settingDialogVisible);
+              }}
+            />
+            <Button
+              icon="download"
+              title="下载"
+              style={style}
+              onClick={() => {
+                handleDownload(auditList.list.data.records);
               }}
             />
           </Form.Item>
@@ -230,6 +325,7 @@ export const AuditPanel = () => {
           ]}
         />
         <AuditDetailsDialog isShowing={isShowing} toggle={toggle} record={record} />
+        <AuditSettingDialog isShowing={settingDialogVisible} toggle={() => showSettingDialog(!settingDialogVisible)} />
       </Card>
     </>
   );

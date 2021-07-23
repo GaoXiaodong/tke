@@ -19,6 +19,7 @@
 package config
 
 import (
+	"helm.sh/helm/v3/pkg/chartutil"
 	"tkestack.io/tke/cmd/tke-installer/app/options"
 	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
 	"tkestack.io/tke/pkg/util/log"
@@ -34,11 +35,44 @@ type Config struct {
 	SyncProjectsWithNamespaces bool
 	Replicas                   int
 	Upgrade                    bool
+	PrepareCustomK8sImages     bool
+	PrepareCustomCharts        bool
 	Kubeconfig                 string
 	RegistryUsername           string
 	RegistryPassword           string
 	RegistryDomain             string
 	RegistryNamespace          string
+	CustomUpgradeResourceDir   string
+	// CustomChartsName
+	// when upgrading, it is chart tar file name under data/ directory
+	// when installing, it is chart tar file name under data/expansions/ directory
+	// default custom.charts.tar.gz
+	CustomChartsName string
+	// EnableCustomExpansion will enable expansion. default false
+	EnableCustomExpansion bool
+	// CustomExpansionDir path to expansions. default `data/expansions`
+	CustomExpansionDir string
+	PlatformApps       []PlatformApp
+}
+type PlatformApp struct {
+	Name   string
+	Enable bool
+	Chart  Chart
+}
+
+type Chart struct {
+	Name           string
+	TenantID       string
+	ChartGroupName string
+	// install options
+	Version string
+	// install options
+	TargetCluster string
+	// install options
+	TargetNamespace string
+	// install options
+	// chartutil.ReadValues/ReadValuesFile
+	Values chartutil.Values
 }
 
 // CreateConfigFromOptions creates a running configuration instance based
@@ -55,10 +89,14 @@ func CreateConfigFromOptions(serverName string, opts *options.Options) (*Config,
 		SyncProjectsWithNamespaces: *opts.SyncProjectsWithNamespaces,
 		Replicas:                   *opts.Replicas,
 		Upgrade:                    *opts.Upgrade,
+		PrepareCustomK8sImages:     *opts.PrepareCustomK8sImages,
+		PrepareCustomCharts:        *opts.PrepareCustomCharts,
 		Kubeconfig:                 *opts.Kubeconfig,
 		RegistryUsername:           *opts.RegistryUsername,
 		RegistryPassword:           *opts.RegistryPassword,
 		RegistryDomain:             *opts.RegistryDomain,
 		RegistryNamespace:          *opts.RegistryNamespace,
+		CustomUpgradeResourceDir:   *opts.CustomUpgradeResourceDir,
+		CustomChartsName:           *opts.CustomChartsName,
 	}, nil
 }

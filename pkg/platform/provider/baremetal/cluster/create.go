@@ -48,6 +48,8 @@ import (
 	"tkestack.io/tke/pkg/platform/provider/baremetal/images"
 	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/addons/cniplugins"
 	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/authzwebhook"
+	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/containerd"
+	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/critools"
 	csioperatorimage "tkestack.io/tke/pkg/platform/provider/baremetal/phases/csioperator/images"
 	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/docker"
 	"tkestack.io/tke/pkg/platform/provider/baremetal/phases/galaxy"
@@ -145,7 +147,7 @@ func (p *Provider) EnsurePreflight(ctx context.Context, c *v1.Cluster) error {
 			return err
 		}
 
-		err = preflight.RunMasterChecks(machineSSH)
+		err = preflight.RunMasterChecks(c, machineSSH)
 		if err != nil {
 			return errors.Wrap(err, machine.IP)
 		}
@@ -502,6 +504,55 @@ func (p *Provider) EnsureNvidiaContainerRuntime(ctx context.Context, c *v1.Clust
 	return nil
 }
 
+func (p *Provider) EnsureContainerRuntime(ctx context.Context, c *v1.Cluster) error {
+	if c.Cluster.Spec.Features.ContainerRuntime == platformv1.Containerd {
+		return p.EnsureContainerd(ctx, c)
+	}
+	return p.EnsureDocker(ctx, c)
+}
+
+func (p *Provider) EnsureCriTools(ctx context.Context, c *v1.Cluster) error {
+	option := &critools.Option{}
+	for _, machine := range c.Spec.Machines {
+		machineSSH, err := machine.SSH()
+		if err != nil {
+			return err
+		}
+
+		err = critools.Install(machineSSH, option)
+		if err != nil {
+			return errors.Wrap(err, machine.IP)
+		}
+	}
+
+	return nil
+}
+
+func (p *Provider) EnsureContainerd(ctx context.Context, c *v1.Cluster) error {
+	insecureRegistries := []string{p.config.Registry.Domain}
+	if p.config.Registry.NeedSetHosts() && c.Spec.TenantID != "" {
+		insecureRegistries = append(insecureRegistries, c.Spec.TenantID+"."+p.config.Registry.Domain)
+	}
+	option := &containerd.Option{
+		InsecureRegistries: insecureRegistries,
+		SandboxImage:       images.Get().Pause.FullName(),
+	}
+	for _, machine := range c.Spec.Machines {
+		machineSSH, err := machine.SSH()
+		if err != nil {
+			return err
+		}
+
+		option.IsGPU = gpu.IsEnable(machine.Labels)
+		err = containerd.Install(machineSSH, option)
+		if err != nil {
+			return errors.Wrap(err, machine.IP)
+		}
+	}
+
+	return nil
+}
+
 func (p *Provider) EnsureDocker(ctx context.Context, c *v1.Cluster) error {
 	machines := map[bool][]platformv1.ClusterMachine{
 		true:  c.Spec.ScalingMachines,
@@ -543,7 +594,7 @@ func (p *Provider) EnsureKubernetesImages(ctx context.Context, c *v1.Cluster) er
 		if err != nil {
 			return err
 		}
-		err = image.PullKubernetesImages(machineSSH, option)
+		err = image.PullKubernetesImages(c, machineSSH, option)
 		if err != nil {
 			return errors.Wrap(err, machine.IP)
 		}
@@ -581,7 +632,10 @@ func (p *Provider) EnsureKubeadm(ctx context.Context, c *v1.Cluster) error {
 			return err
 		}
 
-		err = kubeadm.Install(machineSSH, c.Spec.Version)
+		option := &kubeadm.Option{
+			RuntimeType: c.Spec.Features.ContainerRuntime,
+		}
+		err = kubeadm.Install(machineSSH, c.Spec.Version, option)
 		if err != nil {
 			return errors.Wrap(err, machine.IP)
 		}
@@ -912,6 +966,14 @@ func (p *Provider) EnsureGalaxy(ctx context.Context, c *v1.Cluster) error {
 	})
 }
 
+func (p *Provider) clusterMachineIPs(c *v1.Cluster) []string {
+	ips := []string{}
+	for _, mc := range c.Spec.Machines {
+		ips = append(ips, mc.IP)
+	}
+	return ips
+}
+
 func (p *Provider) EnsureJoinPhasePreflight(ctx context.Context, c *v1.Cluster) error {
 	machines := map[bool][]platformv1.ClusterMachine{
 		true:  c.Spec.ScalingMachines,
@@ -923,7 +985,7 @@ func (p *Provider) EnsureJoinPhasePreflight(ctx context.Context, c *v1.Cluster) 
 			return err
 		}
 
-		err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(c, machine.IP), "preflight")
+		err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(c, machine.IP), "preflight", p.clusterMachineIPs(c))
 		if err != nil {
 			return errors.Wrap(err, machine.IP)
 		}
@@ -942,7 +1004,7 @@ func (p *Provider) EnsureJoinPhaseControlPlanePrepare(ctx context.Context, c *v1
 			return err
 		}
 
-		err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(c, machine.IP), "control-plane-prepare all")
+		err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(c, machine.IP), "control-plane-prepare all", p.clusterMachineIPs(c))
 		if err != nil {
 			return errors.Wrap(err, machine.IP)
 		}
@@ -961,7 +1023,7 @@ func (p *Provider) EnsureJoinPhaseKubeletStart(ctx context.Context, c *v1.Cluste
 			return err
 		}
 
-		err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(c, machine.IP), "kubelet-start")
+		err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(c, machine.IP), "kubelet-start", p.clusterMachineIPs(c))
 		if err != nil {
 			return errors.Wrap(err, machine.IP)
 		}
@@ -980,7 +1042,7 @@ func (p *Provider) EnsureJoinPhaseControlPlaneJoinETCD(ctx context.Context, c *v
 			return err
 		}
 
-		err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(c, machine.IP), "control-plane-join etcd")
+		err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(c, machine.IP), "control-plane-join etcd", p.clusterMachineIPs(c))
 		if err != nil {
 			return errors.Wrap(err, machine.IP)
 		}
@@ -999,7 +1061,7 @@ func (p *Provider) EnsureJoinPhaseControlPlaneJoinUpdateStatus(ctx context.Conte
 			return err
 		}
 
-		err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(c, machine.IP), "control-plane-join update-status")
+		err = kubeadm.Join(machineSSH, p.getKubeadmJoinConfig(c, machine.IP), "control-plane-join update-status", p.clusterMachineIPs(c))
 		if err != nil {
 			return errors.Wrap(err, machine.IP)
 		}
@@ -1084,23 +1146,28 @@ func (p *Provider) EnsurePatchAnnotation(ctx context.Context, c *v1.Cluster) err
 	machines := map[bool][]platformv1.ClusterMachine{
 		true:  c.Spec.ScalingMachines,
 		false: c.Spec.Machines}[len(c.Spec.ScalingMachines) > 0]
-	client, err := c.Clientset()
-	if err != nil {
-		return err
-	}
+
 	// from k8s 1.18, kubeadm will add built-in annotations to etcd and kube-apiserver
 	// we should handle such case when add tkestack annotations according to different case
-	prefix := ""
-	lineIndex := "5"
-	if apiclient.ClusterVersionIsBefore118(client) {
-		prefix = `  annotations:\n`
-		lineIndex = "3"
-	}
+	prefix := `  annotations:\n`
+	cmdTpl := `
+		idx=3
+		yaml='%s'
+		annotations='%s'
+		if line=$(grep "annotations" -n ${yaml});then
+			if grep -q "tke.prometheus.io/scrape" ${yaml};then
+				exit
+			else
+				idx=$(echo $line | cut -d":" -f1)
+				annotations='%s'
+			fi
+		fi
+		sed -i "${idx}a\\${annotations}" ${yaml}`
 	fileData := map[string]string{
-		constants.EtcdPodManifestFile:                  prefix + `    scheduler.alpha.kubernetes.io/critical-pod: ""\n    tke.prometheus.io/scrape: "true"\n    prometheus.io/scheme: "https"\n    prometheus.io/port: "2379"`,
-		constants.KubeAPIServerPodManifestFile:         prefix + `    scheduler.alpha.kubernetes.io/critical-pod: ""\n    tke.prometheus.io/scrape: "true"\n    prometheus.io/scheme: "https"\n    prometheus.io/port: "6443"`,
-		constants.KubeControllerManagerPodManifestFile: prefix + `    scheduler.alpha.kubernetes.io/critical-pod: ""\n    tke.prometheus.io/scrape: "true"\n    prometheus.io/scheme: "http"\n    prometheus.io/port: "10252"`,
-		constants.KubeSchedulerPodManifestFile:         prefix + `    scheduler.alpha.kubernetes.io/critical-pod: ""\n    tke.prometheus.io/scrape: "true"\n    prometheus.io/scheme: "http"\n    prometheus.io/port: "10251"`,
+		constants.EtcdPodManifestFile:                  `    scheduler.alpha.kubernetes.io/critical-pod: ""\n    tke.prometheus.io/scrape: "true"\n    prometheus.io/scheme: "https"\n    prometheus.io/port: "2379"`,
+		constants.KubeAPIServerPodManifestFile:         `    scheduler.alpha.kubernetes.io/critical-pod: ""\n    tke.prometheus.io/scrape: "true"\n    prometheus.io/scheme: "https"\n    prometheus.io/port: "6443"`,
+		constants.KubeControllerManagerPodManifestFile: `    scheduler.alpha.kubernetes.io/critical-pod: ""\n    tke.prometheus.io/scrape: "true"\n    prometheus.io/scheme: "https"\n    prometheus.io/port: "10257"`,
+		constants.KubeSchedulerPodManifestFile:         `    scheduler.alpha.kubernetes.io/critical-pod: ""\n    tke.prometheus.io/scrape: "true"\n    prometheus.io/scheme: "https"\n    prometheus.io/port: "10259"`,
 	}
 	for _, machine := range machines {
 		machineSSH, err := machine.SSH()
@@ -1109,7 +1176,7 @@ func (p *Provider) EnsurePatchAnnotation(ctx context.Context, c *v1.Cluster) err
 		}
 
 		for file, data := range fileData {
-			cmd := fmt.Sprintf(`grep 'prometheus.io/port' %s || sed -i '%sa\%s' %s`, file, lineIndex, data, file)
+			cmd := fmt.Sprintf(cmdTpl, file, prefix+data, data)
 			_, stderr, exit, err := machineSSH.Exec(cmd)
 			if err != nil || exit != 0 {
 				return fmt.Errorf("exec %q failed:exit %d:stderr %s:error %s", cmd, exit, stderr, err)
@@ -1308,6 +1375,49 @@ func (p *Provider) EnsureMetricsServer(ctx context.Context, c *v1.Cluster) error
 	return nil
 }
 
+func (p *Provider) EnsureCilium(ctx context.Context, c *v1.Cluster) error {
+	if c.Status.Phase == platformv1.ClusterUpscaling {
+		return nil
+	}
+	if !c.Cluster.Spec.Features.EnableCilium {
+		return nil
+	}
+	// old cilium interface should be deleted
+	if err := util.CleanFlannelInterfaces("cilium"); err != nil {
+		return err
+	}
+	client, err := c.Clientset()
+	if err != nil {
+		return err
+	}
+	// default networkMode is overlay
+	networkMode := "overlay"
+	clusterSpec := c.Cluster.Spec
+	if clusterSpec.NetworkArgs != nil {
+		if networkTypeArg, ok := clusterSpec.NetworkArgs["networkMode"]; ok {
+			networkMode = networkTypeArg
+		}
+	}
+	option := map[string]interface{}{
+		"CiliumImage":         images.Get().Cilium.FullName(),
+		"CiliumOperatorImage": images.Get().CiliumOperator.FullName(),
+		"IpamdImage":          images.Get().Ipamd.FullName(),
+		"MasqImage":           images.Get().Masq.FullName(),
+		"CiliumRouterImage":   images.Get().CiliumRouter.FullName(),
+		"NetworkMode":         networkMode,
+		"ClusterCIDR":         c.Cluster.Spec.ClusterCIDR,
+		"MaskSize":            c.Cluster.Status.NodeCIDRMaskSize,
+		"MaxNodePodNum":       c.Cluster.Spec.Properties.MaxNodePodNum,
+	}
+
+	err = apiclient.CreateResourceWithDir(ctx, client, constants.CiliumManifest, option)
+	if err != nil {
+		return errors.Wrap(err, "install Cilium error")
+	}
+
+	return nil
+}
+
 func (p *Provider) EnsureCSIOperator(ctx context.Context, c *v1.Cluster) error {
 	if c.Status.Phase == platformv1.ClusterUpscaling {
 		return nil
@@ -1432,4 +1542,33 @@ func (p *Provider) EnsureCreateClusterMark(ctx context.Context, c *v1.Cluster) e
 	}
 
 	return mark.Create(ctx, clientset)
+}
+
+func (p *Provider) setAPIServerHost(ctx context.Context, c *v1.Cluster, ip string) error {
+	machines := map[bool][]platformv1.ClusterMachine{
+		true:  c.Spec.ScalingMachines,
+		false: c.Spec.Machines}[len(c.Spec.ScalingMachines) > 0]
+
+	for _, machine := range machines {
+		machineSSH, err := machine.SSH()
+		if err != nil {
+			return err
+		}
+
+		remoteHosts := hosts.RemoteHosts{Host: constants.APIServerHostName, SSH: machineSSH}
+		err = remoteHosts.Set(ip)
+		if err != nil {
+			return errors.Wrap(err, machine.IP)
+		}
+	}
+	return nil
+}
+
+func (p *Provider) EnsureInitAPIServerHost(ctx context.Context, c *v1.Cluster) error {
+	// Set host to master0 IP firstly, when local apiserver is at work, modify the host to 127.0.0.1.
+	return p.setAPIServerHost(ctx, c, c.Spec.Machines[0].IP)
+}
+
+func (p *Provider) EnsureModifyAPIServerHost(ctx context.Context, c *v1.Cluster) error {
+	return p.setAPIServerHost(ctx, c, "127.0.0.1")
 }

@@ -4,11 +4,19 @@ import { connect } from 'react-redux';
 import { FormPanel } from '@tencent/ff-component';
 import { bindActionCreators, isSuccessWorkflow, OperationState } from '@tencent/ff-redux';
 import { t, Trans } from '@tencent/tea-app/lib/i18n';
-import { Bubble, Button, ContentView, Icon, Justify } from '@tencent/tea-component';
+import { Bubble, Button, ContentView, Icon, Justify, List } from '@tencent/tea-component';
 
 import { getWorkflowError, InputField, TipInfo } from '../../../../modules/common';
 import { allActions } from '../../actions';
-import { GPUTYPE, CreateICVipTypeOptions, CreateICVipType } from '../../constants/Config';
+import {
+  GPUTYPE,
+  CreateICVipTypeOptions,
+  CreateICVipType,
+  CreateICCiliumOptions,
+  NetworkModeOptions,
+  ContainerRuntimeOptions,
+  ContainerRuntimeTips
+} from '../../constants/Config';
 import { ICComponter } from '../../models';
 import { router } from '../../router';
 import { RootProps } from '../ClusterApp';
@@ -45,14 +53,14 @@ export class CreateICPanel extends React.Component<RootProps, State> {
   }
 
   onSaveComputer(computer: ICComponter) {
-    let { actions, createIC } = this.props,
-      { computerList } = createIC;
+    const { actions, createIC } = this.props;
+    let { computerList } = createIC;
     computerList = computerList.map(c => (c.isEditing ? computer : c));
     actions.createIC.updateComputerList(computerList.slice(0));
     this.setState({ isAdding: false });
   }
   onCancelComputer() {
-    let { actions, createIC } = this.props,
+    const { actions, createIC } = this.props,
       { computerList } = createIC;
     computerList.forEach(c => {
       c.isEditing = false;
@@ -61,20 +69,20 @@ export class CreateICPanel extends React.Component<RootProps, State> {
     this.setState({ isAdding: false });
   }
   onAddComputer(computer: ICComponter) {
-    let { actions, createIC } = this.props,
+    const { actions, createIC } = this.props,
       { computerList } = createIC;
     computerList.push(computer);
     actions.createIC.updateComputerList(computerList.slice(0));
     this.setState({ isAdding: false });
   }
   onEditComputer(index: number) {
-    let { actions, createIC } = this.props,
+    const { actions, createIC } = this.props,
       { computerList } = createIC;
     computerList[index].isEditing = true;
     actions.createIC.updateComputerList(computerList.slice(0));
   }
   onDeleteComputer(index: number) {
-    let { actions, createIC } = this.props,
+    const { actions, createIC } = this.props,
       { computerList } = createIC;
     computerList.splice(index, 1);
     actions.createIC.updateComputerList(computerList.slice(0));
@@ -102,11 +110,18 @@ export class CreateICPanel extends React.Component<RootProps, State> {
         v_networkDevice,
         gpu,
         gpuType,
-        merticsServer
+        merticsServer,
+        cilium,
+        networkMode,
+        asNumber,
+        switchIp,
+        v_asNumber,
+        v_switchIp,
+        containerRuntime
       } = createIC;
 
-    let hasEditing = computerList.filter(c => c.isEditing).length > 0 || this.state.isAdding;
-    let canAdd = !hasEditing;
+    const hasEditing = computerList.filter(c => c.isEditing).length > 0 || this.state.isAdding;
+    const canAdd = !hasEditing;
 
     let canSave =
       !hasEditing &&
@@ -125,6 +140,8 @@ export class CreateICPanel extends React.Component<RootProps, State> {
       showExistVipUnuseTip = nodeNum > 1 ? false : true;
     } else if (vipType === CreateICVipType.tke) {
       canSave = canSave && v_vipAddress.status === 1;
+    } else if (cilium === 'Cilium' && networkMode === 'underlay') {
+      canSave = canSave && v_asNumber.status === 1 && v_switchIp.status === 1;
     }
 
     const workflow = createICWorkflow;
@@ -183,6 +200,38 @@ export class CreateICPanel extends React.Component<RootProps, State> {
                 onChange: value => actions.createIC.selectK8SVersion(value)
               }}
             />
+
+            <FormPanel.Item label="运行时组件" text message={ContainerRuntimeTips[containerRuntime]}>
+              <FormPanel.Segment
+                value={containerRuntime}
+                options={ContainerRuntimeOptions}
+                onChange={actions.createIC.setEnableContainerRuntime}
+              />
+
+              <Bubble
+                trigger="click"
+                placement="right"
+                content={
+                  <>
+                    <p>TKEStack 支持用户选择 containerd 和 docker 作为运行时组件：</p>
+                    <p>containerd 调用链更短，组件更少，更稳定，占用节点资源更少。 建议选择 containerd。</p>
+                    <p>以下情况，请选择 docker 作为运行时组件：</p>
+
+                    <List type="bullet">
+                      <List.Item>如需使用 docker in docker</List.Item>
+                      <List.Item>如需在 TKE 节点使用 docker build/push/save/load 等命令</List.Item>
+                      <List.Item>如需调用 docker API</List.Item>
+                      <List.Item>如需 docker compose 或 docker swarm</List.Item>
+                    </List>
+                  </>
+                }
+              >
+                <Button type="link" style={{ marginLeft: 10 }}>
+                  如何选择
+                </Button>
+              </Bubble>
+            </FormPanel.Item>
+
             <FormPanel.Item
               validator={v_networkDevice}
               message={t(
@@ -199,7 +248,10 @@ export class CreateICPanel extends React.Component<RootProps, State> {
               <FormPanel.Segment
                 value={vipType}
                 options={CreateICVipTypeOptions}
-                onChange={actions.createIC.selectVipType}
+                onChange={type => {
+                  actions.createIC.selectVipType(type);
+                  actions.createIC.inputVipAddress('');
+                }}
               />
             </FormPanel.Item>
 
@@ -232,6 +284,7 @@ export class CreateICPanel extends React.Component<RootProps, State> {
               {vipType === CreateICVipType.existed && (
                 <React.Fragment>
                   <InputField
+                    disabled
                     type="text"
                     value={vipPort}
                     style={{ width: '120px', marginRight: '5px' }}
@@ -250,6 +303,50 @@ export class CreateICPanel extends React.Component<RootProps, State> {
             <FormPanel.Item label="mertics server" text>
               <FormPanel.Checkbox value={merticsServer} onChange={actions.createIC.useMerticsServer} />
             </FormPanel.Item>
+
+            <FormPanel.Item
+              label={t('CNI')}
+              select={{
+                options: CreateICCiliumOptions,
+                value: cilium,
+                onChange: value => actions.createIC.useCilium(value)
+              }}
+            />
+
+            {cilium === 'Cilium' && (
+              <FormPanel.Item
+                label={t('网络模式')}
+                select={{
+                  options: NetworkModeOptions,
+                  value: networkMode,
+                  onChange: value => actions.createIC.setNetWorkMode(value)
+                }}
+              />
+            )}
+
+            {cilium === 'Cilium' && networkMode === 'underlay' && (
+              <>
+                <FormPanel.Item
+                  validator={v_asNumber}
+                  label={t('自治系统号')}
+                  input={{
+                    value: asNumber,
+                    onChange: value => actions.createIC.setAsNumber(value),
+                    onBlur: actions.validate.createIC.validateAsNumber
+                  }}
+                />
+
+                <FormPanel.Item
+                  validator={v_switchIp}
+                  label={t('交换机IP')}
+                  input={{
+                    value: switchIp,
+                    onChange: value => actions.createIC.setSwitchIp(value),
+                    onBlur: actions.validate.createIC.validateSwitchIp
+                  }}
+                />
+              </>
+            )}
 
             <FormPanel.Item label="GPU" text>
               <FormPanel.Checkbox value={gpu} onChange={actions.createIC.useGPU} />

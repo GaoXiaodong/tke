@@ -4,7 +4,7 @@ import { RecordSet, reduceToPayload } from '@tencent/ff-redux';
 
 import { initValidator } from '../../common/models';
 import * as ActionType from '../constants/ActionType';
-import { GPUTYPE, k8sVersionList, CreateICVipType } from '../constants/Config';
+import { GPUTYPE, k8sVersionList, CreateICVipType, ContainerRuntimeEnum } from '../constants/Config';
 
 const TempReducer = combineReducers({
   name: reduceToPayload(ActionType.IC_Name, ''),
@@ -40,7 +40,19 @@ const TempReducer = combineReducers({
 
   merticsServer: reduceToPayload(ActionType.v_IC_Mertics_server, true),
 
-  gpuType: reduceToPayload(ActionType.v_IC_GpuType, GPUTYPE.PGPU)
+  cilium: reduceToPayload(ActionType.v_IC_Cilium, 'Galaxy'),
+
+  networkMode: reduceToPayload(ActionType.v_IC_NetworkMode, 'overlay'),
+
+  asNumber: reduceToPayload(ActionType.IC_AS, ''),
+  v_asNumber: reduceToPayload(ActionType.v_IC_AS, initValidator),
+
+  switchIp: reduceToPayload(ActionType.IC_SwitchIp, ''),
+  v_switchIp: reduceToPayload(ActionType.v_IC_SwitchIp, initValidator),
+
+  gpuType: reduceToPayload(ActionType.v_IC_GpuType, GPUTYPE.PGPU),
+
+  containerRuntime: reduceToPayload(ActionType.IC_EnableContainerRuntime, ContainerRuntimeEnum.DOCKER)
 });
 
 export const CreateICReducer = (state, action) => {

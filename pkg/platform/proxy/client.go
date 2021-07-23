@@ -26,7 +26,7 @@ import (
 
 	"k8s.io/apiserver/pkg/endpoints/request"
 
-	"tkestack.io/tke/pkg/platform/types"
+	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
 	"tkestack.io/tke/pkg/util/log"
 	"tkestack.io/tke/pkg/util/pkiutil"
 
@@ -56,8 +56,7 @@ func makeClientKey(username string, groups []string) string {
 	return fmt.Sprintf("%s###%v", username, groups)
 }
 
-func ClientSet(ctx context.Context, platformClient platforminternalclient.PlatformInterface) (*kubernetes.Clientset,
-	error) {
+func GetConfig(ctx context.Context, platformClient platforminternalclient.PlatformInterface) (*rest.Config, error) {
 	clusterName := filter.ClusterFrom(ctx)
 	if clusterName == "" {
 		return nil, errors.NewBadRequest("clusterName is required")
@@ -72,12 +71,12 @@ func ClientSet(ctx context.Context, platformClient platforminternalclient.Platfo
 		return nil, fmt.Errorf("cluster %s has been locked", cluster.ObjectMeta.Name)
 	}
 
-	_, tenantID := authentication.UsernameAndTenantID(ctx)
+	username, tenantID := authentication.UsernameAndTenantID(ctx)
 	if len(tenantID) > 0 && cluster.Spec.TenantID != tenantID {
 		return nil, errors.NewNotFound(platform.Resource("clusters"), cluster.ObjectMeta.Name)
 	}
 
-	clusterWrapper, err := types.GetCluster(ctx, platformClient, cluster)
+	clusterWrapper, err := clusterprovider.GetCluster(ctx, platformClient, cluster, username)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +98,15 @@ func ClientSet(ctx context.Context, platformClient platforminternalclient.Platfo
 		}
 	}
 
+	return config, nil
+}
+
+func ClientSet(ctx context.Context, platformClient platforminternalclient.PlatformInterface) (*kubernetes.Clientset,
+	error) {
+	config, err := GetConfig(ctx, platformClient)
+	if err != nil {
+		return nil, err
+	}
 	return kubernetes.NewForConfig(config)
 }
 

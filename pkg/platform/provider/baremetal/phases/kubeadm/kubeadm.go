@@ -51,6 +51,10 @@ import (
 	"tkestack.io/tke/pkg/util/template"
 )
 
+type Option struct {
+	RuntimeType platformv1.ContainerRuntimeType
+}
+
 const (
 	kubeadmKubeletConf = "/usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf"
 
@@ -72,19 +76,19 @@ var (
 	unMigrataleComponents = []string{"tke-platform-api", "tke-platform-controller", "tke-registry-api", "tke-registry-controller", "influxdb"}
 )
 
-func Install(s ssh.Interface, version string) error {
-	dstFile, err := res.Kubeadm.CopyToNode(s, version)
+func Install(s ssh.Interface, version string, option *Option) error {
+	dstFile, err := res.KubernetesNode.CopyToNode(s, version)
 	if err != nil {
 		return err
 	}
 
-	cmd := "tar xvaf %s -C %s "
-	_, stderr, exit, err := s.Execf(cmd, dstFile, constants.DstBinDir)
+	cmd := "tar -C %s -xvaf %s %s --strip-components=3"
+	_, stderr, exit, err := s.Execf(cmd, constants.DstBinDir, dstFile, constants.KubeadmPathInNodePackge)
 	if err != nil || exit != 0 {
 		return fmt.Errorf("exec %q failed:exit %d:stderr %s:error %s", cmd, exit, stderr, err)
 	}
 
-	data, err := template.ParseFile(path.Join(constants.ConfDir, "kubeadm/10-kubeadm.conf"), nil)
+	data, err := template.ParseFile(path.Join(constants.ConfDir, "kubeadm/10-kubeadm.conf"), option)
 	if err != nil {
 		return err
 	}
@@ -123,33 +127,41 @@ func Init(s ssh.Interface, kubeadmConfig *InitConfig, phase string, preActions .
 	return nil
 }
 
-func Join(s ssh.Interface, config *kubeadmv1beta2.JoinConfiguration, phase string) error {
-	configData, err := MarshalToYAML(config)
-	if err != nil {
-		return err
-	}
-	err = s.WriteFile(bytes.NewReader(configData), constants.KubeadmConfigFileName)
-	if err != nil {
-		return err
-	}
-	if phase == "preflight" {
-		phase = fmt.Sprintf("preflight --ignore-preflight-errors=%s", strings.Join(ignoreErrors, ","))
-	}
+func Join(s ssh.Interface, config *kubeadmv1beta2.JoinConfiguration, phase string, endPointIPs []string) error {
+	var errs []error
+	for _, ip := range endPointIPs {
+		config.Discovery.BootstrapToken.APIServerEndpoint = ip + ":6443"
+		configData, err := MarshalToYAML(config)
+		if err != nil {
+			return err
+		}
+		err = s.WriteFile(bytes.NewReader(configData), constants.KubeadmConfigFileName)
+		if err != nil {
+			return err
+		}
+		if phase == "preflight" {
+			phase = fmt.Sprintf("preflight --ignore-preflight-errors=%s", strings.Join(ignoreErrors, ","))
+		}
 
-	cmd, err := template.ParseString(joinCmd, map[string]interface{}{
-		"Phase":  phase,
-		"Config": constants.KubeadmConfigFileName,
-	})
-	if err != nil {
-		return errors.Wrap(err, "parse joinCmd error")
-	}
-	out, err := s.CombinedOutput(string(cmd))
-	if err != nil {
-		return fmt.Errorf("kubeadm.Join error: %w", err)
-	}
-	log.Debug(string(out))
+		cmd, err := template.ParseString(joinCmd, map[string]interface{}{
+			"Phase":  phase,
+			"Config": constants.KubeadmConfigFileName,
+		})
+		if err != nil {
+			return errors.Wrap(err, "parse joinCmd error")
+		}
+		out, err := s.CombinedOutput(string(cmd))
+		if err != nil {
+			err = errors.Wrapf(err, "join %s failed", ip)
+			log.Warnf("kubeadm.Join error: %w", err)
+			errs = append(errs, err)
+			continue
+		}
+		log.Debug(string(out))
 
-	return nil
+		return nil
+	}
+	return fmt.Errorf("no endpoint is available in %v, erros: %v", endPointIPs, errs)
 }
 
 func Reset(s ssh.Interface, phase string) error {
@@ -169,7 +181,7 @@ func Reset(s ssh.Interface, phase string) error {
 	return nil
 }
 
-func RenewCerts(s ssh.Interface) error {
+func RenewCerts(c *v1.Cluster, s ssh.Interface) error {
 	err := fixKubeadmBug1753(s)
 	if err != nil {
 		return fmt.Errorf("fixKubeadmBug1753(https://github.com/kubernetes/kubeadm/issues/1753) error: %w", err)
@@ -181,7 +193,7 @@ func RenewCerts(s ssh.Interface) error {
 		return err
 	}
 
-	err = RestartControlPlane(s)
+	err = RestartControlPlane(c, s)
 	if err != nil {
 		return err
 	}
@@ -240,10 +252,10 @@ func fixKubeadmBug88811(client kubernetes.Interface) error {
 	return nil
 }
 
-func RestartControlPlane(s ssh.Interface) error {
+func RestartControlPlane(c *v1.Cluster, s ssh.Interface) error {
 	targets := []string{"kube-apiserver", "kube-controller-manager", "kube-scheduler"}
 	for _, one := range targets {
-		err := RestartContainerByFilter(s, DockerFilterForControlPlane(one))
+		err := RestartContainerByLabel(c, s, ContainerLabelOfControlPlane(one))
 		if err != nil {
 			return err
 		}
@@ -252,19 +264,29 @@ func RestartControlPlane(s ssh.Interface) error {
 	return nil
 }
 
-func DockerFilterForControlPlane(name string) string {
+func ContainerLabelOfControlPlane(name string) string {
 	return fmt.Sprintf("label=io.kubernetes.container.name=%s", name)
 }
 
-func RestartContainerByFilter(s ssh.Interface, filter string) error {
-	cmd := fmt.Sprintf("docker rm -f $(docker ps -q -f '%s')", filter)
+func RestartContainerByLabel(c *v1.Cluster, s ssh.Interface, label string) error {
+	cmd := ""
+	if c.Cluster.Spec.Features.ContainerRuntime == platformv1.Containerd {
+		cmd = fmt.Sprintf("crictl rm -f $(crictl ps -q --label '%s')", label)
+	} else {
+		cmd = fmt.Sprintf("docker rm -f $(docker ps -q -f '%s')", label)
+	}
 	_, err := s.CombinedOutput(cmd)
 	if err != nil {
 		return err
 	}
 
 	err = wait.PollImmediate(5*time.Second, 5*time.Minute, func() (bool, error) {
-		cmd = fmt.Sprintf("docker ps -q -f '%s'", filter)
+		cmd := ""
+		if c.Cluster.Spec.Features.ContainerRuntime == platformv1.Containerd {
+			cmd = fmt.Sprintf("crictl ps -q -f '%s'", label)
+		} else {
+			cmd = fmt.Sprintf("docker ps -q -f '%s'", label)
+		}
 		output, err := s.CombinedOutput(cmd)
 		if err != nil {
 			return false, nil
@@ -275,7 +297,7 @@ func RestartContainerByFilter(s ssh.Interface, filter string) error {
 		return true, nil
 	})
 	if err != nil {
-		return fmt.Errorf("restart container(%s) error: %w", filter, err)
+		return fmt.Errorf("restart container(%s) error: %w", label, err)
 	}
 
 	return nil
@@ -331,9 +353,12 @@ func UpgradeNode(s ssh.Interface, client kubernetes.Interface, platformClient pl
 
 	// Step 1: install kubeadm
 	// ignore patch version for patch version kubeadm may not exist in platform-controller
+	kubamdOption := &Option{
+		RuntimeType: cluster.Spec.Features.ContainerRuntime,
+	}
 	if !sameMinor {
 		logger.Infof("Start install kubeadm to %s", option.MachineIP)
-		err = Install(s, option.Version)
+		err = Install(s, option.Version, kubamdOption)
 		if err != nil {
 			return upgraded, err
 		}
@@ -666,6 +691,8 @@ func AddNeedUpgradeLabel(platformClient platformv1client.PlatformV1Interface, cl
 }
 
 func sameVersion(ver1, ver2 string, ignorePatchVersion bool) (bool, error) {
+	ver1 = strings.TrimPrefix(ver1, "v")
+	ver2 = strings.TrimPrefix(ver2, "v")
 	semVer1, err := semver.NewVersion(ver1)
 	if err != nil {
 		return false, err
@@ -675,11 +702,11 @@ func sameVersion(ver1, ver2 string, ignorePatchVersion bool) (bool, error) {
 		return false, err
 	}
 
-	sameMinor := semVer1.Major() == semVer2.Major() && semVer1.Minor() == semVer2.Minor()
+	sameMinor := semVer1.IncMajor() == semVer2.IncMajor() && semVer1.IncMinor() == semVer2.IncMinor()
 
 	if ignorePatchVersion {
 		return sameMinor, nil
 	}
 
-	return sameMinor && semVer1.Patch() == semVer2.Patch(), nil
+	return sameMinor && semVer1.IncPatch() == semVer2.IncPatch(), nil
 }

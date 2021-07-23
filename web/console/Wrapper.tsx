@@ -10,20 +10,12 @@ import { ResourceInfo, RequestParams } from './src/modules/common/models';
 import { resourceConfig } from './config';
 import { isEmpty } from './src/modules/common/utils';
 import * as classnames from 'classnames';
-import { Button, Icon, Text, Bubble, NavMenu, List, ExternalLink } from '@tencent/tea-component';
-import { insertCSS } from '@tencent/ff-redux';
-import 'antd/dist/antd.css';
-import zhCN from 'antd/lib/locale/zh_CN';
-import { ConfigProvider } from 'antd';
+import { Icon, Text, Bubble, NavMenu, List, ExternalLink, StatusTip } from 'tea-component';
+import { TkeVersion } from '@/src/modules/common/components/tke-version';
+import { ConsoleModuleEnum } from '@config/platform';
+import 'tea-component/dist/tea.css';
 
-insertCSS(
-  'tkestack-nav-logo',
-  `
-  .tkestack-nav-logo a {
-    display: inline;
-  }
-`
-);
+const { LoadingTip } = StatusTip;
 
 const routerSea = seajs.require('router');
 
@@ -33,36 +25,6 @@ enum UserType {
   member = 'member',
   other = 'other',
   init = 'init'
-}
-
-/** 获取当前控制台modules的 域名映射表 */
-export enum ConsoleModuleEnum {
-  /** tke-apiserver 版本 */
-  PLATFORM = 'platform',
-
-  /** 业务的版本详情 */
-  Business = 'business',
-
-  /** 通知模块 */
-  Notify = 'notify',
-
-  /** 告警模块 */
-  Monitor = 'monitor',
-
-  /** 镜像仓库 */
-  Registry = 'registry',
-
-  /** 日志模块 */
-  LogAgent = 'logagent',
-
-  /** 认证模块 */
-  Auth = 'auth',
-
-  /** 审计模块 */
-  Audit = 'audit',
-
-  /** Helm应用模块 */
-  Application = 'application'
 }
 
 export enum PlatformTypeEnum {
@@ -569,7 +531,23 @@ export class Wrapper extends React.Component<ConsoleWrapperProps, ConsoleWrapper
     }
     return (
       <PlatformContext.Provider value={{ type: this.props.platformType }}>
-        <ConfigProvider locale={zhCN}>{finalContent}</ConfigProvider>
+        <React.Suspense
+          fallback={
+            <div
+              style={{
+                width: '100vw',
+                height: '100vh',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              <LoadingTip />
+            </div>
+          }
+        >
+          {finalContent}
+        </React.Suspense>
       </PlatformContext.Provider>
     );
   }
@@ -582,7 +560,7 @@ export class Wrapper extends React.Component<ConsoleWrapperProps, ConsoleWrapper
       <NavMenu
         left={
           <React.Fragment>
-            <NavMenu.Item type="logo" className={'tkestack-nav-logo'}>
+            <NavMenu.Item>
               <img src="/static/icon/logo.svg" style={{ height: '30px' }} alt="logo" />
             </NavMenu.Item>
           </React.Fragment>
@@ -749,6 +727,7 @@ export class Wrapper extends React.Component<ConsoleWrapperProps, ConsoleWrapper
             </ul>
           </div>
         </div>
+        <TkeVersion />
       </div>
     );
   }

@@ -58,6 +58,7 @@ import (
 	esutil "tkestack.io/tke/pkg/monitor/storage/es/client"
 	monitorutil "tkestack.io/tke/pkg/monitor/util"
 	"tkestack.io/tke/pkg/platform/controller/addon/prometheus/images"
+	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
 	"tkestack.io/tke/pkg/platform/util"
 	"tkestack.io/tke/pkg/util/apiclient"
 	containerregistryutil "tkestack.io/tke/pkg/util/containerregistry"
@@ -734,8 +735,12 @@ func (c *Controller) installPrometheus(ctx context.Context, prometheus *v1.Prome
 	prometheus.Status.SubVersion[AlertManagerService] = components.AlertManagerService.Tag
 
 	log.Infof("Start to create prometheus")
+	provider, err := clusterprovider.GetProvider(cluster.Spec.Type)
+	if err != nil {
+		return fmt.Errorf("get provider failed: %v", err)
+	}
 	// Secret for prometheus-etcd
-	credential, err := util.GetClusterCredentialV1(ctx, c.client.PlatformV1(), cluster)
+	credential, err := provider.GetClusterCredentialV1(ctx, c.client.PlatformV1(), cluster, clusterprovider.AdminUsername)
 	if err != nil {
 		return fmt.Errorf("get credential failed: %v", err)
 	}
@@ -1520,7 +1525,7 @@ func createAlertManagerCRD(components images.Components, prometheus *v1.Promethe
 				},
 			},
 			BaseImage: containerregistryutil.GetImagePrefix(alertManagerImagePath),
-			Replicas:  controllerutil.Int32Ptr(3),
+			Replicas:  controllerutil.Int32Ptr(1),
 			SecurityContext: &corev1.PodSecurityContext{
 				FSGroup:      controllerutil.Int64Ptr(2000),
 				RunAsNonRoot: controllerutil.BoolPtr(true),

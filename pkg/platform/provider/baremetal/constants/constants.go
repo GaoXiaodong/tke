@@ -49,12 +49,17 @@ const (
 	KubeSchedulerPodManifestFile         = KubeletPodManifestDir + "kube-scheduler.yaml"
 	KeepavlivedManifestFile              = KubeletPodManifestDir + "keepalived.yaml"
 
-	DstTmpDir  = "/tmp/k8s/"
-	DstBinDir  = "/usr/bin/"
-	CNIBinDir  = "/opt/cni/bin/"
-	CNIDataDir = "/var/lib/cni/"
-	CNIConfDIr = "/etc/cni"
-	AppCertDir = "/app/certs/"
+	KubeadmPathInNodePackge = "kubernetes/node/bin/kubeadm"
+	KubeletPathInNodePackge = "kubernetes/node/bin/kubelet"
+	KubectlPathInNodePackge = "kubernetes/node/bin/kubectl"
+
+	DstTmpDir           = "/tmp/k8s/"
+	DstBinDir           = "/usr/bin/"
+	DstContainerdBinDir = "/"
+	CNIBinDir           = "/opt/cni/bin/"
+	CNIDataDir          = "/var/lib/cni/"
+	CNIConfDIr          = "/etc/cni"
+	AppCertDir          = "/app/certs/"
 
 	// AppCert
 	AppAdminCertFile = AppCertDir + AdminCertName
@@ -114,6 +119,7 @@ const (
 	GPUManagerManifest    = ManifestsDir + "gpu-manager/gpu-manager.yaml"
 	CSIOperatorManifest   = ManifestsDir + "csi-operator/csi-operator.yaml"
 	MetricsServerManifest = ManifestsDir + "metrics-server/metrics-server.yaml"
+	CiliumManifest        = ManifestsDir + "cilium/*.yaml"
 
 	KUBERNETES                   = 1
 	DNSIPIndex                   = 10
@@ -127,4 +133,8 @@ const (
 
 	// MinNumCPU mininum cpu number.
 	MinNumCPU = 2
+
+	APIServerHostName = "api.tke.com"
+
+	NeedUpgradeCoreDNSK8sVersion = "1.19.0"
 )

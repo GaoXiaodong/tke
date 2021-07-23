@@ -1,6 +1,7 @@
 import { deepClone, ReduxAction, uuid } from '@tencent/ff-redux';
 
 import * as ActionType from '../constants/ActionType';
+import { ContainerRuntimeEnum } from '../constants/Config';
 import { ICComponter, LabelsKeyValue, RootState } from '../models';
 import * as WebAPI from '../WebAPI';
 
@@ -17,7 +18,7 @@ export const createICAction = {
 
   fetchK8sVersion: () => {
     return async (dispatch: Redux.Dispatch, getState: GetState) => {
-      let response = await WebAPI.fetchCreateICK8sVersion();
+      const response = await WebAPI.fetchCreateICK8sVersion();
       dispatch({
         type: ActionType.IC_FetchK8SVersion,
         payload: response
@@ -81,6 +82,34 @@ export const createICAction = {
     };
   },
 
+  useCilium: (cilium: string): ReduxAction<string> => {
+    return {
+      type: ActionType.v_IC_Cilium,
+      payload: cilium
+    };
+  },
+
+  setNetWorkMode: (networkMode: string) => {
+    return {
+      type: ActionType.v_IC_NetworkMode,
+      payload: networkMode
+    };
+  },
+
+  setAsNumber: (asNumber: string) => {
+    return {
+      type: ActionType.IC_AS,
+      payload: asNumber
+    };
+  },
+
+  setSwitchIp: (ip: string) => {
+    return {
+      type: ActionType.IC_SwitchIp,
+      payload: ip
+    };
+  },
+
   inputGPUType: (type: string): ReduxAction<string> => {
     return {
       type: ActionType.v_IC_GpuType,
@@ -115,6 +144,13 @@ export const createICAction = {
     return {
       type: ActionType.IC_ComputerEdit,
       payload: computerEdit
+    };
+  },
+
+  setEnableContainerRuntime: (runtime: ContainerRuntimeEnum) => {
+    return {
+      type: ActionType.IC_EnableContainerRuntime,
+      payload: runtime
     };
   },
 

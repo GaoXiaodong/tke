@@ -23,7 +23,7 @@ set -o pipefail
 REGISTRY_PREFIX=${REGISTRY_PREFIX:-tkestack}
 BUILDER=${BUILDER:-default}
 VERSION=${VERSION:-$(git describe --dirty --always --tags | sed 's/-/./g')}
-PROVIDER_RES_VERSION=v1.18.3-3
+PROVIDER_RES_VERSION=v1.20.4-2
 K8S_VERSION=${PROVIDER_RES_VERSION%-*}
 DOCKER_VERSION=19.03.14
 OSS=(linux)
@@ -65,6 +65,8 @@ function prepare::tke_installer() {
 
   curl -L "https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/${os}/${arch}/kubectl" -o "${DST_DIR}/bin/kubectl"
   chmod +x "${DST_DIR}/bin/kubectl"
+
+  curl -L "https://tke-release-1251707795.cos.ap-guangzhou.myqcloud.com/public.charts.tar.gz" -o "${DST_DIR}/public.charts.tar.gz"
 
   make build BINS="tke-installer" OS="${os}" ARCH="${arch}" VERSION="${VERSION}"
 
@@ -111,7 +113,9 @@ function build::installer() {
     echo "build tke-installer success! OUTPUT => $OUTPUT_DIR/${installer}"
     (cd $OUTPUT_DIR && sha256sum "${installer}" > "${installer}.sha256")
 
+    echo "current builder is ${BUILDER}"
     if [[ "${BUILDER}" == "tke" ]]; then
+      echo "start upload process"
       coscmd upload "${INSTALLER_DIR}/$installer" "$installer"
       coscmd upload "$OUTPUT_DIR/$installer.sha256" "$installer.sha256"
     fi

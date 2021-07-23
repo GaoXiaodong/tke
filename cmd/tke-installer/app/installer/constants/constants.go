@@ -23,6 +23,13 @@ const (
 	ClusterFile    = DataDir + "tke.json"
 	ClusterLogFile = DataDir + "tke.log"
 
+	DefaultCustomResourceDir  = DataDir + "custom_upgrade_resource"
+	DefaultCustomChartsName   = "custom.charts.tar.gz"
+	CustomK8sImageDirName     = "images/"
+	CustomK8sBinaryDirName    = "bins/"
+	CustomK8sBinaryAmdDirName = "bins/linux-amd64/"
+	CustomK8sBinaryArmDirName = "bins/linux-arm64/"
+
 	ProviderConfigFile = "provider/baremetal/conf/config.yaml"
 
 	HooksDir             = "hooks/"
@@ -32,7 +39,11 @@ const (
 
 	DockerCertsDir = "/etc/docker/certs.d"
 
-	DefaultTeantID = "default"
+	DefaultTeantID                 = "default"
+	DefaultChartGroupName          = "public"
+	DefaultExpansionChartGroupName = "expansion"
+	DefaultCustomChartGroupName    = "custom"
+	GlobalClusterName              = "global"
 
 	DevRegistryDomain    = "docker.io"
 	DevRegistryNamespace = "tkestack"
@@ -62,6 +73,9 @@ const (
 	KubeconfigFileBaseName = "admin.kubeconfig"
 
 	AuthzWebhookNodePort = 31138
+
+	DefaultApplicationInstallDriverType = "HelmV3"
+	DefaultApplicationInstallValueType  = "yaml"
 )
 
 const (
