@@ -63,6 +63,12 @@ type Storage struct {
 	LBCFBackendRecord *LBCFBackendRecordREST
 	Drain             *DrainREST
 	Proxy             *ProxyREST
+
+	HPC              *HPCREST
+	GameApp          *GameAppREST
+	CLSLogConfig     *CLSLogConfigREST
+	NginxIngressREST *NginxIngressREST
+	OLM              *OLMREST
 }
 
 // NewStorage returns a Storage object that will work against clusters.

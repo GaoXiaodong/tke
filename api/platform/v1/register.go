@@ -106,6 +106,12 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&LBCF{},
 		&LBCFList{},
 		&LBCFProxyOptions{},
+
+		&NginxIngressProxyOptions{},
+		&HPCProxyOptions{},
+		&CLSLogConfigProxyOptions{},
+		&GameAppProxyOptions{},
+		&OLMProxyOptions{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

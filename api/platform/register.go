@@ -118,6 +118,12 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&LBCF{},
 		&LBCFList{},
 		&LBCFProxyOptions{},
+
+		&NginxIngressProxyOptions{},
+		&HPCProxyOptions{},
+		&CLSLogConfigProxyOptions{},
+		&GameAppProxyOptions{},
+		&OLMProxyOptions{},
 	)
 	return nil
 }

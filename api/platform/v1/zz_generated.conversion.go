@@ -70,6 +70,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*CLSLogConfigProxyOptions)(nil), (*platform.CLSLogConfigProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_CLSLogConfigProxyOptions_To_platform_CLSLogConfigProxyOptions(a.(*CLSLogConfigProxyOptions), b.(*platform.CLSLogConfigProxyOptions), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*platform.CLSLogConfigProxyOptions)(nil), (*CLSLogConfigProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_platform_CLSLogConfigProxyOptions_To_v1_CLSLogConfigProxyOptions(a.(*platform.CLSLogConfigProxyOptions), b.(*CLSLogConfigProxyOptions), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*CSIOperator)(nil), (*platform.CSIOperator)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1_CSIOperator_To_platform_CSIOperator(a.(*CSIOperator), b.(*platform.CSIOperator), scope)
 	}); err != nil {
@@ -450,6 +460,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*GameAppProxyOptions)(nil), (*platform.GameAppProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_GameAppProxyOptions_To_platform_GameAppProxyOptions(a.(*GameAppProxyOptions), b.(*platform.GameAppProxyOptions), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*platform.GameAppProxyOptions)(nil), (*GameAppProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_platform_GameAppProxyOptions_To_v1_GameAppProxyOptions(a.(*platform.GameAppProxyOptions), b.(*GameAppProxyOptions), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*HA)(nil), (*platform.HA)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1_HA_To_platform_HA(a.(*HA), b.(*platform.HA), scope)
 	}); err != nil {
@@ -457,6 +477,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*platform.HA)(nil), (*HA)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_platform_HA_To_v1_HA(a.(*platform.HA), b.(*HA), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*HPCProxyOptions)(nil), (*platform.HPCProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_HPCProxyOptions_To_platform_HPCProxyOptions(a.(*HPCProxyOptions), b.(*platform.HPCProxyOptions), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*platform.HPCProxyOptions)(nil), (*HPCProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_platform_HPCProxyOptions_To_v1_HPCProxyOptions(a.(*platform.HPCProxyOptions), b.(*HPCProxyOptions), scope)
 	}); err != nil {
 		return err
 	}
@@ -737,6 +767,26 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*platform.MachineSystemInfo)(nil), (*MachineSystemInfo)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_platform_MachineSystemInfo_To_v1_MachineSystemInfo(a.(*platform.MachineSystemInfo), b.(*MachineSystemInfo), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NginxIngressProxyOptions)(nil), (*platform.NginxIngressProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_NginxIngressProxyOptions_To_platform_NginxIngressProxyOptions(a.(*NginxIngressProxyOptions), b.(*platform.NginxIngressProxyOptions), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*platform.NginxIngressProxyOptions)(nil), (*NginxIngressProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_platform_NginxIngressProxyOptions_To_v1_NginxIngressProxyOptions(a.(*platform.NginxIngressProxyOptions), b.(*NginxIngressProxyOptions), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*OLMProxyOptions)(nil), (*platform.OLMProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_OLMProxyOptions_To_platform_OLMProxyOptions(a.(*OLMProxyOptions), b.(*platform.OLMProxyOptions), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*platform.OLMProxyOptions)(nil), (*OLMProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_platform_OLMProxyOptions_To_v1_OLMProxyOptions(a.(*platform.OLMProxyOptions), b.(*OLMProxyOptions), scope)
 	}); err != nil {
 		return err
 	}
@@ -1120,6 +1170,26 @@ func autoConvert_platform_BuiltinAuthzWebhookAddr_To_v1_BuiltinAuthzWebhookAddr(
 // Convert_platform_BuiltinAuthzWebhookAddr_To_v1_BuiltinAuthzWebhookAddr is an autogenerated conversion function.
 func Convert_platform_BuiltinAuthzWebhookAddr_To_v1_BuiltinAuthzWebhookAddr(in *platform.BuiltinAuthzWebhookAddr, out *BuiltinAuthzWebhookAddr, s conversion.Scope) error {
 	return autoConvert_platform_BuiltinAuthzWebhookAddr_To_v1_BuiltinAuthzWebhookAddr(in, out, s)
+}
+
+func autoConvert_v1_CLSLogConfigProxyOptions_To_platform_CLSLogConfigProxyOptions(in *CLSLogConfigProxyOptions, out *platform.CLSLogConfigProxyOptions, s conversion.Scope) error {
+	out.Name = in.Name
+	return nil
+}
+
+// Convert_v1_CLSLogConfigProxyOptions_To_platform_CLSLogConfigProxyOptions is an autogenerated conversion function.
+func Convert_v1_CLSLogConfigProxyOptions_To_platform_CLSLogConfigProxyOptions(in *CLSLogConfigProxyOptions, out *platform.CLSLogConfigProxyOptions, s conversion.Scope) error {
+	return autoConvert_v1_CLSLogConfigProxyOptions_To_platform_CLSLogConfigProxyOptions(in, out, s)
+}
+
+func autoConvert_platform_CLSLogConfigProxyOptions_To_v1_CLSLogConfigProxyOptions(in *platform.CLSLogConfigProxyOptions, out *CLSLogConfigProxyOptions, s conversion.Scope) error {
+	out.Name = in.Name
+	return nil
+}
+
+// Convert_platform_CLSLogConfigProxyOptions_To_v1_CLSLogConfigProxyOptions is an autogenerated conversion function.
+func Convert_platform_CLSLogConfigProxyOptions_To_v1_CLSLogConfigProxyOptions(in *platform.CLSLogConfigProxyOptions, out *CLSLogConfigProxyOptions, s conversion.Scope) error {
+	return autoConvert_platform_CLSLogConfigProxyOptions_To_v1_CLSLogConfigProxyOptions(in, out, s)
 }
 
 func autoConvert_v1_CSIOperator_To_platform_CSIOperator(in *CSIOperator, out *platform.CSIOperator, s conversion.Scope) error {
@@ -2255,6 +2325,30 @@ func Convert_platform_File_To_v1_File(in *platform.File, out *File, s conversion
 	return autoConvert_platform_File_To_v1_File(in, out, s)
 }
 
+func autoConvert_v1_GameAppProxyOptions_To_platform_GameAppProxyOptions(in *GameAppProxyOptions, out *platform.GameAppProxyOptions, s conversion.Scope) error {
+	out.Namespace = in.Namespace
+	out.Name = in.Name
+	out.Action = in.Action
+	return nil
+}
+
+// Convert_v1_GameAppProxyOptions_To_platform_GameAppProxyOptions is an autogenerated conversion function.
+func Convert_v1_GameAppProxyOptions_To_platform_GameAppProxyOptions(in *GameAppProxyOptions, out *platform.GameAppProxyOptions, s conversion.Scope) error {
+	return autoConvert_v1_GameAppProxyOptions_To_platform_GameAppProxyOptions(in, out, s)
+}
+
+func autoConvert_platform_GameAppProxyOptions_To_v1_GameAppProxyOptions(in *platform.GameAppProxyOptions, out *GameAppProxyOptions, s conversion.Scope) error {
+	out.Namespace = in.Namespace
+	out.Name = in.Name
+	out.Action = in.Action
+	return nil
+}
+
+// Convert_platform_GameAppProxyOptions_To_v1_GameAppProxyOptions is an autogenerated conversion function.
+func Convert_platform_GameAppProxyOptions_To_v1_GameAppProxyOptions(in *platform.GameAppProxyOptions, out *GameAppProxyOptions, s conversion.Scope) error {
+	return autoConvert_platform_GameAppProxyOptions_To_v1_GameAppProxyOptions(in, out, s)
+}
+
 func autoConvert_v1_HA_To_platform_HA(in *HA, out *platform.HA, s conversion.Scope) error {
 	out.TKEHA = (*platform.TKEHA)(unsafe.Pointer(in.TKEHA))
 	out.ThirdPartyHA = (*platform.ThirdPartyHA)(unsafe.Pointer(in.ThirdPartyHA))
@@ -2275,6 +2369,30 @@ func autoConvert_platform_HA_To_v1_HA(in *platform.HA, out *HA, s conversion.Sco
 // Convert_platform_HA_To_v1_HA is an autogenerated conversion function.
 func Convert_platform_HA_To_v1_HA(in *platform.HA, out *HA, s conversion.Scope) error {
 	return autoConvert_platform_HA_To_v1_HA(in, out, s)
+}
+
+func autoConvert_v1_HPCProxyOptions_To_platform_HPCProxyOptions(in *HPCProxyOptions, out *platform.HPCProxyOptions, s conversion.Scope) error {
+	out.Namespace = in.Namespace
+	out.Name = in.Name
+	out.Action = in.Action
+	return nil
+}
+
+// Convert_v1_HPCProxyOptions_To_platform_HPCProxyOptions is an autogenerated conversion function.
+func Convert_v1_HPCProxyOptions_To_platform_HPCProxyOptions(in *HPCProxyOptions, out *platform.HPCProxyOptions, s conversion.Scope) error {
+	return autoConvert_v1_HPCProxyOptions_To_platform_HPCProxyOptions(in, out, s)
+}
+
+func autoConvert_platform_HPCProxyOptions_To_v1_HPCProxyOptions(in *platform.HPCProxyOptions, out *HPCProxyOptions, s conversion.Scope) error {
+	out.Namespace = in.Namespace
+	out.Name = in.Name
+	out.Action = in.Action
+	return nil
+}
+
+// Convert_platform_HPCProxyOptions_To_v1_HPCProxyOptions is an autogenerated conversion function.
+func Convert_platform_HPCProxyOptions_To_v1_HPCProxyOptions(in *platform.HPCProxyOptions, out *HPCProxyOptions, s conversion.Scope) error {
+	return autoConvert_platform_HPCProxyOptions_To_v1_HPCProxyOptions(in, out, s)
 }
 
 func autoConvert_v1_Helm_To_platform_Helm(in *Helm, out *platform.Helm, s conversion.Scope) error {
@@ -3051,6 +3169,50 @@ func autoConvert_platform_MachineSystemInfo_To_v1_MachineSystemInfo(in *platform
 // Convert_platform_MachineSystemInfo_To_v1_MachineSystemInfo is an autogenerated conversion function.
 func Convert_platform_MachineSystemInfo_To_v1_MachineSystemInfo(in *platform.MachineSystemInfo, out *MachineSystemInfo, s conversion.Scope) error {
 	return autoConvert_platform_MachineSystemInfo_To_v1_MachineSystemInfo(in, out, s)
+}
+
+func autoConvert_v1_NginxIngressProxyOptions_To_platform_NginxIngressProxyOptions(in *NginxIngressProxyOptions, out *platform.NginxIngressProxyOptions, s conversion.Scope) error {
+	out.Name = in.Name
+	return nil
+}
+
+// Convert_v1_NginxIngressProxyOptions_To_platform_NginxIngressProxyOptions is an autogenerated conversion function.
+func Convert_v1_NginxIngressProxyOptions_To_platform_NginxIngressProxyOptions(in *NginxIngressProxyOptions, out *platform.NginxIngressProxyOptions, s conversion.Scope) error {
+	return autoConvert_v1_NginxIngressProxyOptions_To_platform_NginxIngressProxyOptions(in, out, s)
+}
+
+func autoConvert_platform_NginxIngressProxyOptions_To_v1_NginxIngressProxyOptions(in *platform.NginxIngressProxyOptions, out *NginxIngressProxyOptions, s conversion.Scope) error {
+	out.Name = in.Name
+	return nil
+}
+
+// Convert_platform_NginxIngressProxyOptions_To_v1_NginxIngressProxyOptions is an autogenerated conversion function.
+func Convert_platform_NginxIngressProxyOptions_To_v1_NginxIngressProxyOptions(in *platform.NginxIngressProxyOptions, out *NginxIngressProxyOptions, s conversion.Scope) error {
+	return autoConvert_platform_NginxIngressProxyOptions_To_v1_NginxIngressProxyOptions(in, out, s)
+}
+
+func autoConvert_v1_OLMProxyOptions_To_platform_OLMProxyOptions(in *OLMProxyOptions, out *platform.OLMProxyOptions, s conversion.Scope) error {
+	out.Namespace = in.Namespace
+	out.Name = in.Name
+	out.Action = in.Action
+	return nil
+}
+
+// Convert_v1_OLMProxyOptions_To_platform_OLMProxyOptions is an autogenerated conversion function.
+func Convert_v1_OLMProxyOptions_To_platform_OLMProxyOptions(in *OLMProxyOptions, out *platform.OLMProxyOptions, s conversion.Scope) error {
+	return autoConvert_v1_OLMProxyOptions_To_platform_OLMProxyOptions(in, out, s)
+}
+
+func autoConvert_platform_OLMProxyOptions_To_v1_OLMProxyOptions(in *platform.OLMProxyOptions, out *OLMProxyOptions, s conversion.Scope) error {
+	out.Namespace = in.Namespace
+	out.Name = in.Name
+	out.Action = in.Action
+	return nil
+}
+
+// Convert_platform_OLMProxyOptions_To_v1_OLMProxyOptions is an autogenerated conversion function.
+func Convert_platform_OLMProxyOptions_To_v1_OLMProxyOptions(in *platform.OLMProxyOptions, out *OLMProxyOptions, s conversion.Scope) error {
+	return autoConvert_platform_OLMProxyOptions_To_v1_OLMProxyOptions(in, out, s)
 }
 
 func autoConvert_v1_PVCRProxyOptions_To_platform_PVCRProxyOptions(in *PVCRProxyOptions, out *platform.PVCRProxyOptions, s conversion.Scope) error {

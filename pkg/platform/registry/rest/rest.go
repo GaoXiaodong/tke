@@ -97,6 +97,12 @@ func (s *StorageProvider) v1Storage(apiResourceConfigSource serverstorage.APIRes
 		storageMap["clusters/lbcfbackendgroups"] = clusterREST.LBCFBackendGroup
 		storageMap["clusters/lbcfbackendrecords"] = clusterREST.LBCFBackendRecord
 
+		storageMap["clusters/hpc"] = clusterREST.HPC
+		storageMap["clusters/gameapp"] = clusterREST.GameApp
+		storageMap["clusters/logconfig"] = clusterREST.CLSLogConfig
+		storageMap["clusters/nginxingresses"] = clusterREST.NginxIngressREST
+		storageMap["clusters/olm"] = clusterREST.OLM
+
 		machineREST := machinestorage.NewStorage(restOptionsGetter, platformClient, s.PrivilegedUsername)
 		storageMap["machines"] = machineREST.Machine
 		storageMap["machines/status"] = machineREST.Status

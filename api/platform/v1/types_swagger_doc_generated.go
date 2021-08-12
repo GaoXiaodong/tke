@@ -37,6 +37,14 @@ func (AddonSpec) SwaggerDoc() map[string]string {
 	return map_AddonSpec
 }
 
+var map_CLSLogConfigProxyOptions = map[string]string{
+	"": "CLSLogConfigProxyOptions is the query options to a kube-apiserver proxy call for CLS LogConfig crd object.",
+}
+
+func (CLSLogConfigProxyOptions) SwaggerDoc() map[string]string {
+	return map_CLSLogConfigProxyOptions
+}
+
 var map_CSIOperator = map[string]string{
 	"":     "CSIOperator is a operator to manages CSI external components.",
 	"spec": "Spec defines the desired identities of storage operator.",
@@ -383,6 +391,22 @@ func (ExternalEtcd) SwaggerDoc() map[string]string {
 	return map_ExternalEtcd
 }
 
+var map_GameAppProxyOptions = map[string]string{
+	"": "GameAppProxyOptions is the query options to a gameapp proxy call.",
+}
+
+func (GameAppProxyOptions) SwaggerDoc() map[string]string {
+	return map_GameAppProxyOptions
+}
+
+var map_HPCProxyOptions = map[string]string{
+	"": "HPCProxyOptions is the query options to a hpc proxy call.",
+}
+
+func (HPCProxyOptions) SwaggerDoc() map[string]string {
+	return map_HPCProxyOptions
+}
+
 var map_Helm = map[string]string{
 	"":     "Helm is a kubernetes package manager.",
 	"spec": "Spec defines the desired identities of clusters in this set.",
@@ -661,6 +685,22 @@ var map_MachineSystemInfo = map[string]string{
 
 func (MachineSystemInfo) SwaggerDoc() map[string]string {
 	return map_MachineSystemInfo
+}
+
+var map_NginxIngressProxyOptions = map[string]string{
+	"": "NginxIngressProxyOptions is the query options to a kube-apiserver proxy call for LogCollector crd object.",
+}
+
+func (NginxIngressProxyOptions) SwaggerDoc() map[string]string {
+	return map_NginxIngressProxyOptions
+}
+
+var map_OLMProxyOptions = map[string]string{
+	"": "OLMProxyOptions is the query options to a OLM proxy call.",
+}
+
+func (OLMProxyOptions) SwaggerDoc() map[string]string {
+	return map_OLMProxyOptions
 }
 
 var map_PVCRProxyOptions = map[string]string{

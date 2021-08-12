@@ -52,6 +52,11 @@ message AuthzWebhookAddr {
 message BuiltinAuthzWebhookAddr {
 }
 
+// CLSLogConfigProxyOptions is the query options to a kube-apiserver proxy call for CLS LogConfig crd object.
+message CLSLogConfigProxyOptions {
+  optional string name = 1;
+}
+
 // CSIOperator is a operator to manages CSI external components.
 message CSIOperator {
   // +optional
@@ -729,10 +734,34 @@ message File {
   optional string dst = 2;
 }
 
+// GameAppProxyOptions is the query options to a gameapp proxy call.
+message GameAppProxyOptions {
+  // +optional
+  optional string namespace = 1;
+
+  // +optional
+  optional string name = 2;
+
+  // +optional
+  optional string action = 3;
+}
+
 message HA {
   optional TKEHA tke = 1;
 
   optional ThirdPartyHA thirdParty = 2;
+}
+
+// HPCProxyOptions is the query options to a hpc proxy call.
+message HPCProxyOptions {
+  // +optional
+  optional string namespace = 1;
+
+  // +optional
+  optional string name = 2;
+
+  // +optional
+  optional string action = 3;
 }
 
 // Helm is a kubernetes package manager.
@@ -1153,6 +1182,23 @@ message MachineSystemInfo {
 
   // The Architecture reported by the node
   optional string architecture = 10;
+}
+
+// NginxIngressProxyOptions is the query options to a kube-apiserver proxy call for LogCollector crd object.
+message NginxIngressProxyOptions {
+  optional string name = 2;
+}
+
+// OLMProxyOptions is the query options to a OLM proxy call.
+message OLMProxyOptions {
+  // +optional
+  optional string namespace = 1;
+
+  // +optional
+  optional string name = 2;
+
+  // +optional
+  optional string action = 3;
 }
 
 // PVCRProxyOptions is the query options to a kube-apiserver proxy call for PVCR crd object.

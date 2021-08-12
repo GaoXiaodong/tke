@@ -1699,3 +1699,60 @@ type LBCFStatus struct {
 	// +optional
 	LastReInitializingTimestamp metav1.Time `json:"lastReInitializingTimestamp" protobuf:"bytes,5,name=lastReInitializingTimestamp"`
 }
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// HPCProxyOptions is the query options to a hpc proxy call.
+type HPCProxyOptions struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	Namespace string `protobuf:"bytes,1,opt,name=namespace"`
+	// +optional
+	Name string `protobuf:"bytes,2,opt,name=name"`
+	// +optional
+	Action string `protobuf:"bytes,3,opt,name=action"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// NginxIngressProxyOptions is the query options to a kube-apiserver proxy call for LogCollector crd object.
+type NginxIngressProxyOptions struct {
+	metav1.TypeMeta `json:",inline"`
+
+	Name string `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// OLMProxyOptions is the query options to a OLM proxy call.
+type OLMProxyOptions struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	Namespace string `protobuf:"bytes,1,opt,name=namespace"`
+	// +optional
+	Name string `protobuf:"bytes,2,opt,name=name"`
+	// +optional
+	Action string `protobuf:"bytes,3,opt,name=action"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// CLSLogConfigProxyOptions is the query options to a kube-apiserver proxy call for CLS LogConfig crd object.
+type CLSLogConfigProxyOptions struct {
+	metav1.TypeMeta `json:",inline"`
+
+	Name string `protobuf:"bytes,1,opt,name=name"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// GameAppProxyOptions is the query options to a gameapp proxy call.
+type GameAppProxyOptions struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	Namespace string `protobuf:"bytes,1,opt,name=namespace"`
+	// +optional
+	Name string `protobuf:"bytes,2,opt,name=name"`
+	// +optional
+	Action string `protobuf:"bytes,3,opt,name=action"`
+}
