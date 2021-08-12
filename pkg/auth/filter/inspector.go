@@ -23,9 +23,6 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
-	"tkestack.io/tke/pkg/apiserver/util"
-
 	platformv1 "tkestack.io/tke/api/client/clientset/versioned/typed/platform/v1"
 	"tkestack.io/tke/pkg/apiserver/authentication"
 	"tkestack.io/tke/pkg/util/apiclient"
@@ -34,15 +31,11 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	genericfilters "k8s.io/apiserver/pkg/endpoints/filters"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	genericapiserver "k8s.io/apiserver/pkg/server"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	rbaclisters "k8s.io/client-go/listers/rbac/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
 var (
@@ -54,9 +47,9 @@ type Inspector interface {
 }
 
 type clusterInspector struct {
-	k8sClient          kubernetes.Interface
-	crbLister          rbaclisters.ClusterRoleBindingLister
-	crLister           rbaclisters.ClusterRoleLister
+	k8sClient kubernetes.Interface
+	// crbLister          rbaclisters.ClusterRoleBindingLister
+	// crLister           rbaclisters.ClusterRoleLister
 	platformClient     platformv1.PlatformV1Interface
 	privilegedUsername string
 }
@@ -66,21 +59,21 @@ func NewClusterInspector(platformClient platformv1.PlatformV1Interface, privileg
 	if err != nil {
 		return nil, err
 	}
-	informerFactory := informers.NewSharedInformerFactory(k8sClient, time.Minute)
-	clusterRoleBindingInformer := informerFactory.Rbac().V1().ClusterRoleBindings()
-	clusterRoleBindingLister := clusterRoleBindingInformer.Lister()
-	clusterRoleInformer := informerFactory.Rbac().V1().ClusterRoles()
-	clusterRoleLister := clusterRoleInformer.Lister()
-	stopCh := util.SetupSignalHandler()
-	informerFactory.Start(stopCh)
-	if ok := cache.WaitForCacheSync(stopCh, clusterRoleBindingInformer.Informer().HasSynced,
-		clusterRoleInformer.Informer().HasSynced); !ok {
-		return nil, fmt.Errorf("failed to wait for namespaces caches to sync")
-	}
+	// informerFactory := informers.NewSharedInformerFactory(k8sClient, time.Minute)
+	// clusterRoleBindingInformer := informerFactory.Rbac().V1().ClusterRoleBindings()
+	// clusterRoleBindingLister := clusterRoleBindingInformer.Lister()
+	// clusterRoleInformer := informerFactory.Rbac().V1().ClusterRoles()
+	// clusterRoleLister := clusterRoleInformer.Lister()
+	// stopCh := util.SetupSignalHandler()
+	// informerFactory.Start(stopCh)
+	// if ok := cache.WaitForCacheSync(stopCh, clusterRoleBindingInformer.Informer().HasSynced,
+	// 	clusterRoleInformer.Informer().HasSynced); !ok {
+	// 	return nil, fmt.Errorf("failed to wait for namespaces caches to sync")
+	// }
 	return &clusterInspector{
-		k8sClient:          k8sClient,
-		crbLister:          clusterRoleBindingLister,
-		crLister:           clusterRoleLister,
+		k8sClient: k8sClient,
+		// crbLister:          clusterRoleBindingLister,
+		// crLister:           clusterRoleLister,
 		platformClient:     platformClient,
 		privilegedUsername: privilegedUsername,
 	}, nil
@@ -113,36 +106,36 @@ func (i *clusterInspector) needInspect(ctx context.Context, privilegedUsername s
 		return false
 	}
 
-	clusterRoleBindings, err := i.crbLister.List(labels.Everything())
-	if err != nil {
-		log.Errorf("query clusterRoleBindings failed: %+v", err)
-		return true
-	}
+	// clusterRoleBindings, err := i.crbLister.List(labels.Everything())
+	// if err != nil {
+	// 	log.Errorf("query clusterRoleBindings failed: %+v", err)
+	// 	return true
+	// }
 	matches := serviceAccountRegExp.FindStringSubmatch(username)
 	if len(matches) != 3 {
 		return true
 	}
-	namespace := matches[1]
-	username = matches[2]
-	for _, crb := range clusterRoleBindings {
-		for _, sub := range crb.Subjects {
-			if sub.Name == username && sub.Namespace == namespace {
-				cr, err := i.crLister.Get(crb.RoleRef.Name)
-				if err != nil {
-					log.Errorf("query clusterRole: %+v failed: %+v", crb.RoleRef.Name, err)
-					continue
-				}
-				if len(cr.Rules) != 2 {
-					continue
-				}
-				log.Debugf("needInspect: username: %+v, namespace: %+v, clusterRole: %+v->%v",
-					username, namespace, cr.Name, cr.Rules)
-				if isClusterAdmin(cr.Rules) {
-					return false
-				}
-			}
-		}
-	}
+	// namespace := matches[1]
+	// username = matches[2]
+	// for _, crb := range clusterRoleBindings {
+	// 	for _, sub := range crb.Subjects {
+	// 		if sub.Name == username && sub.Namespace == namespace {
+	// 			cr, err := i.crLister.Get(crb.RoleRef.Name)
+	// 			if err != nil {
+	// 				log.Errorf("query clusterRole: %+v failed: %+v", crb.RoleRef.Name, err)
+	// 				continue
+	// 			}
+	// 			if len(cr.Rules) != 2 {
+	// 				continue
+	// 			}
+	// 			log.Debugf("needInspect: username: %+v, namespace: %+v, clusterRole: %+v->%v",
+	// 				username, namespace, cr.Name, cr.Rules)
+	// 			if isClusterAdmin(cr.Rules) {
+	// 				return false
+	// 			}
+	// 		}
+	// 	}
+	// }
 	return true
 }
 

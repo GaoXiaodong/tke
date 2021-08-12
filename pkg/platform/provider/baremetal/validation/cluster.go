@@ -71,15 +71,15 @@ func ValidatClusterSpec(platformClient platformv1client.PlatformV1Interface, clu
 func ValidateClusterSpecVersion(platformClient platformv1client.PlatformV1Interface, clsName, version string, fldPath *field.Path, phase platform.ClusterPhase) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	k8sValidVersions, err := getK8sValidVersions(platformClient, clsName)
-	if err != nil {
-		allErrs = append(allErrs, field.InternalError(fldPath, err))
-		return allErrs
-	}
-
-	if phase == platform.ClusterInitializing {
-		allErrs = utilvalidation.ValidateEnum(version, fldPath, k8sValidVersions)
-	}
+	// k8sValidVersions, err := getK8sValidVersions(platformClient, clsName)
+	// if err != nil {
+	// 	allErrs = append(allErrs, field.InternalError(fldPath, err))
+	// 	return allErrs
+	// }
+	//
+	// if phase == platform.ClusterInitializing {
+	// 	allErrs = utilvalidation.ValidateEnum(version, fldPath, k8sValidVersions)
+	// }
 	if phase == platform.ClusterUpgrading {
 		c, err := platformClient.Clusters().Get(context.Background(), clsName, metav1.GetOptions{})
 		if err != nil {
