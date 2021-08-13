@@ -86,7 +86,7 @@ func ClientSet(ctx context.Context, platformClient platforminternalclient.Platfo
 	if uin != "" {
 		log.Infof("proxy/ClientSet: case1[uin%s exist]", uin)
 		// 转发给api-server的请求，都需要使用当前用户的证书去访问，如果没有证书，则生成证书
-		clientCertData, clientKeyData, err := getOrCreateClientCert(ctx, clusterWrapper)
+		clientCertData, clientKeyData, err := GetOrCreateClientCert(ctx, clusterWrapper)
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +105,7 @@ func ClientSet(ctx context.Context, platformClient platforminternalclient.Platfo
 	return kubernetes.NewForConfig(config)
 }
 
-func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) ([]byte, []byte, error) {
+func GetOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) ([]byte, []byte, error) {
 	credential := clusterWrapper.ClusterCredential
 	// todo:
 	// 	1.取到了错误的group(访问platform-api的请求的group)
@@ -162,7 +162,7 @@ func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) (
 					"clientKeyData":  clientKeyData,
 				},
 			}
-			_,err = client.CoreV1().ConfigMaps("kube-system").Create(ctx, confMap, metav1.CreateOptions{})
+			_, err = client.CoreV1().ConfigMaps("kube-system").Create(ctx, confMap, metav1.CreateOptions{})
 			if err != nil {
 				msg := fmt.Sprintf("CreateK8s ConfigMaps of cluster %s failed, err: %s", clusterName, err.Error())
 				log.Errorf(msg)

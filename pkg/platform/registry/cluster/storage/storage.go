@@ -55,7 +55,7 @@ type Storage struct {
 	PVCR              *PVCRREST
 	LogCollector      *LogCollectorREST
 	CLSLogConfig      *CLSLogConfigREST
-	HpcConfig		  *HpcREST
+	HpcConfig         *HpcREST
 	CronHPA           *CronHPAREST
 	Addon             *AddonREST
 	AddonType         *AddonTypeREST
@@ -65,6 +65,7 @@ type Storage struct {
 	LBCFBackendRecord *LBCFBackendRecordREST
 	Drain             *DrainREST
 	Proxy             *ProxyREST
+	APIResources      *APIResourcesREST
 }
 
 // NewStorage returns a Storage object that will work against clusters.
@@ -173,6 +174,10 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 		Proxy: &ProxyREST{
 			store: store,
 			host:  host,
+		},
+		APIResources: &APIResourcesREST{
+			store:          store,
+			platformClient: platformClient,
 		},
 	}
 }
