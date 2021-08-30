@@ -74,7 +74,8 @@ func NewProvider() (*Provider, error) {
 
 			p.EnsureNvidiaDriver,
 			p.EnsureNvidiaContainerRuntime,
-			p.EnsureDocker,
+			p.EnsureContainerRuntime,
+			p.EnsureKubernetesImages,
 			p.EnsureKubelet,
 			p.EnsureCNIPlugins,
 			p.EnsureConntrackTools,
@@ -93,6 +94,9 @@ func NewProvider() (*Provider, error) {
 			p.EnsurePreUpgradeHook,
 			p.EnsureUpgrade,
 			p.EnsurePostUpgradeHook,
+		},
+		DeleteHandlers: []machineprovider.Handler{
+			p.EnsureRemoveNode,
 		},
 	}
 

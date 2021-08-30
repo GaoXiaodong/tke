@@ -3,7 +3,7 @@
 # Tencent is pleased to support the open source community by making TKEStack
 # available.
 #
-# Copyright (C) 2012-2019 Tencent. All Rights Reserved.
+# Copyright (C) 2012-2021 Tencent. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 # this file except in compliance with the License. You may obtain a copy of the
@@ -23,7 +23,7 @@ set -o pipefail
 REGISTRY_PREFIX=${REGISTRY_PREFIX:-tkestack}
 BUILDER=${BUILDER:-default}
 VERSION=${VERSION:-$(git describe --dirty --always --tags | sed 's/-/./g')}
-PROVIDER_RES_VERSION=v1.20.4-1
+PROVIDER_RES_VERSION=v1.20.4-2
 K8S_VERSION=${PROVIDER_RES_VERSION%-*}
 DOCKER_VERSION=19.03.14
 OSS=(linux)

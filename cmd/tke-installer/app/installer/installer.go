@@ -753,6 +753,7 @@ func (t *TKE) setClusterDefault(cluster *platformv1.Cluster, config *types.Confi
 	}
 	cluster.Spec.Features.EnableMasterSchedule = true
 
+	cluster.Spec.PublicAlternativeNames = append(cluster.Spec.PublicAlternativeNames, t.Para.Config.Gateway.Domain)
 	if config.HA != nil {
 		if t.Para.Config.HA.TKEHA != nil {
 			cluster.Spec.Features.HA = &platformv1.HA{
@@ -1128,14 +1129,18 @@ func (t *TKE) runAfterClusterReady() bool {
 
 func (t *TKE) generateCertificates(ctx context.Context) error {
 	var dnsNames []string
+	ips := []net.IP{net.ParseIP("127.0.0.1")}
 	if t.Para.Config.Gateway != nil && t.Para.Config.Gateway.Domain != "" {
-		dnsNames = append(dnsNames, t.Para.Config.Gateway.Domain)
+		if ip := net.ParseIP(t.Para.Config.Gateway.Domain); ip != nil {
+			ips = append(ips, ip)
+		} else {
+			dnsNames = append(dnsNames, t.Para.Config.Gateway.Domain)
+		}
 	}
 	if t.Para.Config.Registry.TKERegistry != nil {
 		dnsNames = append(dnsNames, t.Para.Config.Registry.TKERegistry.Domain, "*."+t.Para.Config.Registry.TKERegistry.Domain)
 	}
 
-	ips := []net.IP{net.ParseIP("127.0.0.1")}
 	for _, one := range t.Cluster.Spec.Machines {
 		ips = append(ips, net.ParseIP(one.IP))
 	}
@@ -1491,6 +1496,7 @@ func (t *TKE) prepareBaremetalProviderConfig(ctx context.Context) error {
 		providerConfig.Business.Enabled = true
 	}
 	providerConfig.PlatformAPIClientConfig = "conf/tke-platform-config.yaml"
+	providerConfig.ApplicationAPIClientConfig = "conf/tke-application-config.yaml"
 	// todo using ingress to expose authz service for ha.(
 	//  users do not known nodeport when assigned vport in third party loadbalance)
 	providerConfig.AuthzWebhook.Endpoint = t.authzWebhookBuiltinEndpoint()
@@ -1572,7 +1578,7 @@ func (t *TKE) prepareImages(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		cmdString := fmt.Sprintf("docker pull %s", images.Get().TKEGateway.FullName())
+		cmdString := fmt.Sprintf("nerdctl --insecure-registry --namespace k8s.io pull %s", images.Get().TKEGateway.FullName())
 		_, err = machineSSH.CombinedOutput(cmdString)
 		if err != nil {
 			return errors.Wrap(err, machine.IP)
