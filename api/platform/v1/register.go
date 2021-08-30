@@ -112,6 +112,9 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&CLSLogConfigProxyOptions{},
 		&GameAppProxyOptions{},
 		&OLMProxyOptions{},
+
+		&ClusterGroupAPIResourceItems{},
+		&ClusterGroupAPIResourceItemsList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

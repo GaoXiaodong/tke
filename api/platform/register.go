@@ -124,6 +124,9 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&CLSLogConfigProxyOptions{},
 		&GameAppProxyOptions{},
 		&OLMProxyOptions{},
+
+		&ClusterGroupAPIResourceItems{},
+		&ClusterGroupAPIResourceItemsList{},
 	)
 	return nil
 }

@@ -69,6 +69,7 @@ type Storage struct {
 	CLSLogConfig     *CLSLogConfigREST
 	NginxIngressREST *NginxIngressREST
 	OLM              *OLMREST
+	APIResources     *APIResourcesREST
 }
 
 // NewStorage returns a Storage object that will work against clusters.
@@ -170,6 +171,10 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 		Proxy: &ProxyREST{
 			store:          store,
 			host:           host,
+			platformClient: platformClient,
+		},
+		APIResources: &APIResourcesREST{
+			store:          store,
 			platformClient: platformClient,
 		},
 	}

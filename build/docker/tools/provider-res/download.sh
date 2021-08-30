@@ -3,7 +3,7 @@
 # Tencent is pleased to support the open source community by making TKEStack
 # available.
 #
-# Copyright (C) 2012-2019 Tencent. All Rights Reserved.
+# Copyright (C) 2012-2021 Tencent. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 # this file except in compliance with the License. You may obtain a copy of the
@@ -53,6 +53,41 @@ function download::docker() {
   for version in ${DOCKER_VERSIONS}; do
     wget -c "https://download.docker.com/${os}/static/stable/${docker_arch}/docker-${version}.tgz" \
       -O "docker-${platform}-${version}.tar.gz"
+  done
+}
+
+function download::containerd() {
+  if [ "${arch}" == "amd64" ]; then
+    containerd_arch=amd64
+    for version in ${CONTAINERD_VERSIONS}; do
+      wget -c "https://github.com/containerd/containerd/releases/download/v${version}/cri-containerd-cni-${version}-linux-${containerd_arch}.tar.gz" \
+        -O "containerd-${platform}-${version}.tar.gz"
+    done
+  elif [ "${arch}" == "arm64" ]; then
+    containerd_arch=arm64
+    for version in ${CONTAINERD_VERSIONS}; do
+      wget -c "https://tke-release-1251707795.cos.ap-guangzhou.myqcloud.com/cri-containerd-cni-${version}-linux-${containerd_arch}.tar.gz" \
+        -O "containerd-${platform}-${version}.tar.gz"
+    done
+  else
+    echo "[ERROR] Fail to get containerd ${arch} on ${platform} platform."
+    exit 255
+  fi
+}
+
+function download::nerdctl() {
+  if [ "${arch}" == "amd64" ]; then
+    nerdctl_arch=x86_64
+  elif [ "${arch}" == "arm64" ]; then
+    nerdctl_arch=arm64
+  else
+    echo "[ERROR] Fail to get nerdctl ${arch} on ${platform} platform."
+    exit 255
+  fi
+
+  for version in ${NERDCTL_VERSIONS}; do
+    wget -c "https://github.com/containerd/nerdctl/releases/download/v${version}/nerdctl-${version}-linux-${arch}.tar.gz" \
+      -O "nerdctl-${platform}-${version}.tar.gz"
   done
 }
 
@@ -115,6 +150,8 @@ for os in ${OSS}; do
 
     download::cni_plugins
     download::docker
+    download::containerd
+    download::nerdctl
     download::kubernetes
     download::nvidia_driver
     download::nvidia_container_runtime
