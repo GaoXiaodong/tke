@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	applicationv1 "tkestack.io/tke/api/application/v1"
 )
 
 // +genclient
@@ -67,6 +68,31 @@ type ClusterMachine struct {
 	Labels     map[string]string
 	Taints     []corev1.Taint
 }
+
+// KubeVendorType describe the kubernetes provider of the cluster
+// ref https://github.com/open-cluster-management/multicloud-operators-foundation/blob/e94b719de6d5f3541e948dd70ad8f1ff748aa452/pkg/apis/internal.open-cluster-management.io/v1beta1/clusterinfo_types.go#L137
+type KubeVendorType string
+
+const (
+	// KubeVendorTKE TKE
+	KubeVendorTKE KubeVendorType = "TKE"
+	// KubeVendorOpenShift OpenShift
+	KubeVendorOpenShift KubeVendorType = "OpenShift"
+	// KubeVendorAKS Azure Kuberentes Service
+	KubeVendorAKS KubeVendorType = "AKS"
+	// KubeVendorEKS Elastic Kubernetes Service
+	KubeVendorEKS KubeVendorType = "EKS"
+	// KubeVendorGKE Google Kubernetes Engine
+	KubeVendorGKE KubeVendorType = "GKE"
+	// KubeVendorICP IBM Cloud Private
+	KubeVendorICP KubeVendorType = "ICP"
+	// KubeVendorIKS IBM Kubernetes Service
+	KubeVendorIKS KubeVendorType = "IKS"
+	// KubeVendorOSD OpenShiftDedicated
+	KubeVendorOSD KubeVendorType = "OpenShiftDedicated"
+	// KubeVendorOther other (unable to auto detect)
+	KubeVendorOther KubeVendorType = "Other"
+)
 
 // ClusterSpec is a description of a cluster.
 type ClusterSpec struct {
@@ -125,6 +151,9 @@ type ClusterSpec struct {
 	HostnameAsNodename bool
 	// +optional
 	NetworkArgs map[string]string
+	// BootstrapApps will install apps during creating cluster
+	// +optional
+	BootstrapApps BootstrapApps
 }
 
 // ClusterStatus represents information about the status of a cluster.
@@ -174,6 +203,8 @@ type ClusterStatus struct {
 	NodeCIDRMaskSizeIPv4 int32
 	// +optional
 	NodeCIDRMaskSizeIPv6 int32
+	// +optional
+	KubeVendor KubeVendorType
 }
 
 // FinalizerName is the name identifying a finalizer during cluster lifecycle.
@@ -198,6 +229,13 @@ const (
 	GPUPhysical GPUType = "Physical"
 	// GPUVirtual indicates the gpu type of cluster is virtual.
 	GPUVirtual GPUType = "Virtual"
+)
+
+type ContainerRuntimeType = string
+
+const (
+	Containerd ContainerRuntimeType = "containerd"
+	Docker     ContainerRuntimeType = "docker"
 )
 
 // ClusterPhase defines the phase of cluster constructor.
@@ -355,10 +393,27 @@ type ClusterFeature struct {
 	// +optional
 	EnableMetricsServer bool
 	// +optional
+	EnableCilium bool
+	// +optional
+	ContainerRuntime ContainerRuntimeType
+	// +optional
 	IPv6DualStack bool
 	// Upgrade control upgrade process.
 	// +optional
 	Upgrade Upgrade
+}
+
+type BootstrapApps []BootstapApp
+
+type BootstapApp struct {
+	App App
+}
+
+type App struct {
+	// +optional
+	metav1.ObjectMeta
+	// +optional
+	Spec applicationv1.AppSpec
 }
 
 type HA struct {
@@ -769,6 +824,7 @@ type StorageBackEndES struct {
 	ReserveDays int32
 }
 
+// +k8s:conversion-gen:explicit-from=net/url.Values
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // HelmProxyOptions is the query options to a Helm-api proxy call.
@@ -1067,6 +1123,7 @@ type AddonSpec struct {
 	Version     string
 }
 
+// +k8s:conversion-gen:explicit-from=net/url.Values
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TappControllerProxyOptions is the query options to a kube-apiserver proxy call.
@@ -1283,7 +1340,7 @@ type VolumeDecoratorStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// LogCollectorProxyOptions is the query options to a kube-apiserver prforoxy call  LogCollector crd object.
+// LogCollectorProxyOptions is the query options to a kube-apiserver proxy call for LogCollector crd object.
 type LogCollectorProxyOptions struct {
 	metav1.TypeMeta
 
@@ -1527,6 +1584,7 @@ type MachineList struct {
 	Items []Machine
 }
 
+// +k8s:conversion-gen:explicit-from=net/url.Values
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // CronHPAProxyOptions is the query options to a kube-apiserver proxy call.
@@ -1713,4 +1771,11 @@ type ClusterGroupAPIResourceItem struct {
 	ShortNames []string
 	// categories is a list of the grouped resources this resource belongs to (e.g. 'all')
 	Categories []string
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ClusterGroupAPIResourceOptions is the query options.
+type ClusterGroupAPIResourceOptions struct {
+	metav1.TypeMeta
 }
