@@ -237,6 +237,13 @@ const (
 	GPUVirtual GPUType = "Virtual"
 )
 
+type ContainerRuntimeType = string
+
+const (
+	Containerd ContainerRuntimeType = "containerd"
+	Docker     ContainerRuntimeType = "docker"
+)
+
 // ClusterPhase defines the phase of cluster constructor.
 type ClusterPhase string
 
@@ -395,6 +402,8 @@ type ClusterFeature struct {
 	IPv6DualStack bool `json:"ipv6DualStack,omitempty" protobuf:"bytes,13,opt,name=ipv6DualStack"`
 	// +optional
 	EnableCilium bool `json:"enableCilium,omitempty" protobuf:"bytes,14,opt,name=enableCilium"`
+	// +optional
+	ContainerRuntime ContainerRuntimeType `json:"containerRuntime,omitempty" protobuf:"bytes,15,opt,name=containerRuntime"`
 	// Upgrade control upgrade process.
 	// +optional
 	Upgrade Upgrade `json:"upgrade,omitempty" protobuf:"bytes,22,opt,name=upgrade"`
@@ -1352,6 +1361,7 @@ type VolumeDecoratorStatus struct {
 	LastReInitializingTimestamp metav1.Time `json:"lastReInitializingTimestamp" protobuf:"bytes,8,name=lastReInitializingTimestamp"`
 }
 
+// +k8s:conversion-gen:explicit-from=net/url.Values
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // LogCollectorProxyOptions is the query options to a kube-apiserver proxy call for LogCollector crd object.
@@ -1770,4 +1780,11 @@ type ClusterGroupAPIResourceItem struct {
 	ShortNames []string `protobuf:"bytes,8,rep,name=shortNames"`
 	// categories is a list of the grouped resources this resource belongs to (e.g. 'all')
 	Categories []string `protobuf:"bytes,9,rep,name=categories"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ClusterGroupAPIResourceOptions is the query options.
+type ClusterGroupAPIResourceOptions struct {
+	metav1.TypeMeta `json:",inline"`
 }

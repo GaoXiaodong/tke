@@ -31,7 +31,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	goruntime "runtime"
 	"sort"
 	"strings"
 	"time"
@@ -753,6 +752,7 @@ func (t *TKE) setClusterDefault(cluster *platformv1.Cluster, config *types.Confi
 	}
 	cluster.Spec.Features.EnableMasterSchedule = true
 
+	cluster.Spec.PublicAlternativeNames = append(cluster.Spec.PublicAlternativeNames, t.Para.Config.Gateway.Domain)
 	if config.HA != nil {
 		if t.Para.Config.HA.TKEHA != nil {
 			cluster.Spec.Features.HA = &platformv1.HA{
@@ -1262,18 +1262,13 @@ func (t *TKE) tagImages(ctx context.Context) error {
 func (t *TKE) setupLocalRegistry(ctx context.Context) error {
 	server := t.Para.Config.Registry.Domain()
 
-	err := t.startLocalRegistry()
-	if err != nil {
-		return errors.Wrap(err, "start local registry error")
-	}
-
 	// for push image to local registry
 	localHosts := hosts.LocalHosts{Host: server, File: "hosts"}
-	err = localHosts.Set("127.0.0.1")
+	err := localHosts.Set("127.0.0.1")
 	if err != nil {
 		return err
 	}
-	localHosts.File = "/etc/hosts"
+	localHosts.File = "/app/hosts"
 	err = localHosts.Set("127.0.0.1")
 	if err != nil {
 		return err
@@ -1284,33 +1279,6 @@ func (t *TKE) setupLocalRegistry(ctx context.Context) error {
 		return err
 	}
 	t.log.Info(string(data))
-
-	return nil
-}
-
-func (t *TKE) startLocalRegistry() error {
-	err := t.stopLocalRegistry(context.Background())
-	if err != nil {
-		return err
-	}
-
-	err = t.docker.ClearLocalManifests()
-	if err != nil {
-		return err
-	}
-
-	registryImage := strings.ReplaceAll(images.Get().Registry.FullName(), ":", fmt.Sprintf("-%s:", goruntime.GOARCH))
-
-	err = t.docker.RunImage(registryImage, constants.RegistryHTTPOptions, "")
-	if err != nil {
-		return err
-	}
-
-	// for docker manifest create which --insecure is not working
-	err = t.docker.RunImage(registryImage, constants.RegistryHTTPSOptions, "")
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -1577,7 +1545,7 @@ func (t *TKE) prepareImages(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		cmdString := fmt.Sprintf("docker pull %s", images.Get().TKEGateway.FullName())
+		cmdString := fmt.Sprintf("nerdctl --insecure-registry --namespace k8s.io pull %s", images.Get().TKEGateway.FullName())
 		_, err = machineSSH.CombinedOutput(cmdString)
 		if err != nil {
 			return errors.Wrap(err, machine.IP)
@@ -2350,7 +2318,7 @@ func (t *TKE) preparePushImagesToTKERegistry(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		localHosts.File = "/etc/hosts"
+		localHosts.File = "/app/hosts"
 		err = localHosts.Set(t.servers[0])
 		if err != nil {
 			return err

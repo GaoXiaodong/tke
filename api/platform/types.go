@@ -231,6 +231,13 @@ const (
 	GPUVirtual GPUType = "Virtual"
 )
 
+type ContainerRuntimeType = string
+
+const (
+	Containerd ContainerRuntimeType = "containerd"
+	Docker     ContainerRuntimeType = "docker"
+)
+
 // ClusterPhase defines the phase of cluster constructor.
 type ClusterPhase string
 
@@ -387,6 +394,8 @@ type ClusterFeature struct {
 	EnableMetricsServer bool
 	// +optional
 	EnableCilium bool
+	// +optional
+	ContainerRuntime ContainerRuntimeType
 	// +optional
 	IPv6DualStack bool
 	// Upgrade control upgrade process.
@@ -1329,6 +1338,7 @@ type VolumeDecoratorStatus struct {
 	LastReInitializingTimestamp metav1.Time
 }
 
+// +k8s:conversion-gen:explicit-from=net/url.Values
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // LogCollectorProxyOptions is the query options to a kube-apiserver proxy call for LogCollector crd object.
@@ -1742,4 +1752,11 @@ type ClusterGroupAPIResourceItem struct {
 	ShortNames []string
 	// categories is a list of the grouped resources this resource belongs to (e.g. 'all')
 	Categories []string
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ClusterGroupAPIResourceOptions is the query options.
+type ClusterGroupAPIResourceOptions struct {
+	metav1.TypeMeta
 }

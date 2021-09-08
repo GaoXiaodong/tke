@@ -393,6 +393,9 @@ message ClusterFeature {
   // +optional
   optional bool enableCilium = 14;
 
+  // +optional
+  optional string containerRuntime = 15;
+
   // Upgrade control upgrade process.
   // +optional
   optional Upgrade upgrade = 22;
@@ -452,6 +455,10 @@ message ClusterGroupAPIResourceItemsList {
 
   // List of ClusterGroupAPIResourceItems
   repeated ClusterGroupAPIResourceItems items = 2;
+}
+
+// ClusterGroupAPIResourceOptions is the query options.
+message ClusterGroupAPIResourceOptions {
 }
 
 // ClusterList is the whole list of all clusters which owned by a tenant.

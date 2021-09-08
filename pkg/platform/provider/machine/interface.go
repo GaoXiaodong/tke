@@ -46,21 +46,6 @@ const (
 	ConditionTypeDone = "EnsureDone"
 )
 
-// APIProvider APIProvider
-type APIProvider interface {
-	Validate(machine *platform.Machine) field.ErrorList
-	ValidateUpdate(machine *platform.Machine, oldMachine *platform.Machine) field.ErrorList
-	PreCreate(machine *platform.Machine) error
-	AfterCreate(machine *platform.Machine) error
-}
-
-// ControllerProvider ControllerProvider
-type ControllerProvider interface {
-	OnCreate(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error
-	OnUpdate(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error
-	OnDelete(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error
-}
-
 // Provider defines a set of response interfaces for specific machine
 // types in machine management.
 type Provider interface {
@@ -68,6 +53,23 @@ type Provider interface {
 
 	APIProvider
 	ControllerProvider
+}
+
+type APIProvider interface {
+	Validate(machine *platform.Machine) field.ErrorList
+	ValidateUpdate(machine *platform.Machine, oldMachine *platform.Machine) field.ErrorList
+}
+
+type ControllerProvider interface {
+	// NeedUpdate could be implemented by user to judge whether machine need update or not.
+	NeedUpdate(old, new *platformv1.Machine) bool
+
+	PreCreate(machine *platform.Machine) error
+	AfterCreate(machine *platform.Machine) error
+
+	OnCreate(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error
+	OnUpdate(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error
+	OnDelete(ctx context.Context, machine *platformv1.Machine, cluster *typesv1.Cluster) error
 }
 
 var _ Provider = &DelegateProvider{}
@@ -229,6 +231,10 @@ func (p *DelegateProvider) OnDelete(ctx context.Context, machine *platformv1.Mac
 	cluster.Status.Message = ""
 
 	return nil
+}
+
+func (p *DelegateProvider) NeedUpdate(old, new *platformv1.Machine) bool {
+	return false
 }
 
 func (p *DelegateProvider) getNextConditionType(conditionType string) string {
