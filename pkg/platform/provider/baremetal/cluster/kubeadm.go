@@ -189,8 +189,7 @@ func (p *Provider) getClusterConfiguration(c *v1.Cluster) *kubeadmv1beta2.Cluste
 			"IPv6DualStack": c.Cluster.Spec.Features.IPv6DualStack},
 	}
 
-	// since k8s 1.19 will use offical coreDNS version
-	if version.Compare(c.Spec.Version, constants.NeedUpgradeCoreDNSK8sVersion) < 0 {
+	if p.needSetCoreDNS(c.Spec.Version) {
 		config.DNS.ImageTag = images.Get().CoreDNS.Tag
 	}
 
@@ -200,6 +199,11 @@ func (p *Provider) getClusterConfiguration(c *v1.Cluster) *kubeadmv1beta2.Cluste
 	}
 
 	return config
+}
+
+func (Provider) needSetCoreDNS(k8sVersion string) bool {
+	return version.Compare(k8sVersion, constants.NeedUpgradeCoreDNSLowerK8sVersion) < 0 ||
+		version.Compare(k8sVersion, constants.NeedUpgradeCoreDNSUpperK8sVersion) >= 0
 }
 
 func (p *Provider) getKubeProxyConfiguration(c *v1.Cluster) *kubeproxyv1alpha1.KubeProxyConfiguration {

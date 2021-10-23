@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations under the License.
 
 IMAGE = provider-res
-VERSION = v1.20.4-2
+VERSION = v1.21.4-1
 REGISTRY_PREFIX ?= tkestack
 
 COMMON_SELF_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
@@ -35,6 +35,8 @@ include $(ROOT_DIR)/build/lib/docker-buildx.mk
 per.build: download
 	@cp "$(ROOT_DIR)/build/docker/tools/$(IMAGE)/Dockerfile" "$(WORK_DIR)/Dockerfile"
 	@cp -r "$(ROOT_DIR)/pkg/platform/provider/baremetal/conf/containerd" "$(WORK_DIR)/containerd"
+	@cp -r "$(ROOT_DIR)/pkg/platform/provider/baremetal/manifests/cilium" "$(WORK_DIR)/cilium"
+	@cp -r "$(ROOT_DIR)/pkg/platform/provider/baremetal/manifests/gpu-manager" "$(WORK_DIR)/gpu-manager"
 
 .PHONY: download
 download:
