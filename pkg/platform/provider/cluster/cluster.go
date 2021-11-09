@@ -118,11 +118,23 @@ func GetCluster(ctx context.Context, platformClient internalversion.PlatformInte
 	if err != nil {
 		return nil, err
 	}
-	clusterCredential, err := provider.GetClusterCredential(ctx, platformClient, cluster, username)
+
+	platformv1Custer := new(platformv1.Cluster)
+	err = platform.Scheme.Convert(cluster, platformv1Custer, nil)
+	if err != nil {
+		return nil, err
+	}
+	platformv1ClusterCredential, err := provider.GetClusterCredentialV1(ctx, platformv1Custer, username)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return result, err
 	}
-	result.ClusterCredential = clusterCredential
+
+	platformClusterCredential := new(platform.ClusterCredential)
+	err = platform.Scheme.Convert(platformv1ClusterCredential, platformClusterCredential, nil)
+	if err != nil {
+		return nil, err
+	}
+	result.ClusterCredential = platformClusterCredential
 
 	return result, nil
 }
@@ -143,7 +155,7 @@ func GetV1Cluster(ctx context.Context, platformClient platformversionedclient.Pl
 	if err != nil {
 		return nil, err
 	}
-	clusterCredential, err := provider.GetClusterCredentialV1(ctx, platformClient, cluster, username)
+	clusterCredential, err := provider.GetClusterCredentialV1(ctx, cluster, username)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return result, err
 	}

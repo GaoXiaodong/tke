@@ -25,7 +25,6 @@ import (
 	"net/url"
 	"path"
 
-	"tkestack.io/tke/pkg/apiserver/authentication"
 	"tkestack.io/tke/pkg/platform/apiserver/filter"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -33,16 +32,11 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/request"
 	platforminternalclient "tkestack.io/tke/api/client/clientset/internalversion/typed/platform/internalversion"
 	"tkestack.io/tke/api/platform"
-	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
 )
 
 // APIServerLocationByCluster returns a URL and transport which one can use to
 // send traffic for the specified cluster api server.
 func APIServerLocationByCluster(ctx context.Context, cluster *platform.Cluster, platformClient platforminternalclient.PlatformInterface) (*url.URL, http.RoundTripper, string, error) {
-	username, tenantID := authentication.UsernameAndTenantID(ctx)
-	if len(tenantID) > 0 && cluster.Spec.TenantID != tenantID {
-		return nil, nil, "", errors.NewNotFound(platform.Resource("clusters"), cluster.ObjectMeta.Name)
-	}
 	if cluster.Status.Phase != platform.ClusterRunning {
 		return nil, nil, "", errors.NewServiceUnavailable(fmt.Sprintf("cluster %s status is abnormal", cluster.ObjectMeta.Name))
 	}
@@ -51,14 +45,9 @@ func APIServerLocationByCluster(ctx context.Context, cluster *platform.Cluster, 
 		return nil, nil, "", errors.NewForbidden(platform.Resource("clusters"), cluster.ObjectMeta.Name, fmt.Errorf("cluster is been locked"))
 	}
 
-	provider, err := clusterprovider.GetProvider(cluster.Spec.Type)
+	clusterCredential, err := getCredentialByCluster(ctx, cluster, platformClient)
 	if err != nil {
-		return nil, nil, "", errors.NewInternalError(err)
-	}
-
-	clusterCredential, err := provider.GetClusterCredential(ctx, platformClient, cluster, username)
-	if err != nil {
-		return nil, nil, "", errors.NewInternalError(err)
+		return nil, nil, "", err
 	}
 
 	transport, err := BuildTransport(clusterCredential)

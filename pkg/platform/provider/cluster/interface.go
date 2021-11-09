@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apiserver/pkg/server/mux"
-	platforminternalclient "tkestack.io/tke/api/client/clientset/internalversion/typed/platform/internalversion"
 	platformversionedclient "tkestack.io/tke/api/client/clientset/versioned/typed/platform/v1"
 	"tkestack.io/tke/api/platform"
 	platformv1 "tkestack.io/tke/api/platform/v1"
@@ -84,8 +83,7 @@ type ControllerProvider interface {
 }
 
 type CredentialProvider interface {
-	GetClusterCredential(ctx context.Context, client platforminternalclient.PlatformInterface, cluster *platform.Cluster, username string) (*platform.ClusterCredential, error)
-	GetClusterCredentialV1(ctx context.Context, client platformversionedclient.PlatformV1Interface, cluster *platformv1.Cluster, username string) (*platformv1.ClusterCredential, error)
+	GetClusterCredentialV1(ctx context.Context, cluster *platformv1.Cluster, username string) (*platformv1.ClusterCredential, error)
 }
 
 // Provider defines a set of response interfaces for specific cluster
@@ -112,7 +110,8 @@ func (h Handler) Name() string {
 }
 
 type DelegateProvider struct {
-	ProviderName string
+	PlatformClient platformversionedclient.PlatformV1Interface
+	ProviderName   string
 
 	ValidateFunc       func(cluster *types.Cluster) field.ErrorList
 	ValidateUpdateFunc func(cluster *types.Cluster, oldCluster *types.Cluster) field.ErrorList
@@ -436,50 +435,22 @@ func (p *DelegateProvider) getCurrentCondition(c *v1.Cluster, phase platformv1.C
 	return nil, errors.New("no condition need process")
 }
 
-// GetClusterCredential returns the cluster's credential
-func (p *DelegateProvider) GetClusterCredential(ctx context.Context, client platforminternalclient.PlatformInterface, cluster *platform.Cluster, username string) (*platform.ClusterCredential, error) {
-	var (
-		credential *platform.ClusterCredential
-		err        error
-	)
-
-	if cluster.Spec.ClusterCredentialRef != nil {
-		credential, err = client.ClusterCredentials().Get(ctx, cluster.Spec.ClusterCredentialRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return credential, err
-		}
-	} else if client != nil {
-		clusterName := cluster.Name
-		fieldSelector := fields.OneTermEqualSelector("clusterName", clusterName).String()
-		clusterCredentials, err := client.ClusterCredentials().List(ctx, metav1.ListOptions{FieldSelector: fieldSelector})
-		if err != nil && !apierrors.IsNotFound(err) {
-			return credential, err
-		}
-		if clusterCredentials == nil || clusterCredentials.Items == nil || len(clusterCredentials.Items) == 0 {
-			return credential, apierrors.NewNotFound(platform.Resource("ClusterCredential"), clusterName)
-		}
-		credential = &clusterCredentials.Items[0]
-	}
-
-	return credential, nil
-}
-
 // GetClusterCredentialV1 returns the versioned cluster's credential
-func (p *DelegateProvider) GetClusterCredentialV1(ctx context.Context, client platformversionedclient.PlatformV1Interface, cluster *platformv1.Cluster, username string) (*platformv1.ClusterCredential, error) {
+func (p *DelegateProvider) GetClusterCredentialV1(ctx context.Context, cluster *platformv1.Cluster, username string) (*platformv1.ClusterCredential, error) {
 	var (
 		credential *platformv1.ClusterCredential
 		err        error
 	)
 
 	if cluster.Spec.ClusterCredentialRef != nil {
-		credential, err = client.ClusterCredentials().Get(ctx, cluster.Spec.ClusterCredentialRef.Name, metav1.GetOptions{})
+		credential, err = p.PlatformClient.ClusterCredentials().Get(ctx, cluster.Spec.ClusterCredentialRef.Name, metav1.GetOptions{})
 		if err != nil && !apierrors.IsNotFound(err) {
 			return credential, err
 		}
-	} else if client != nil {
+	} else if p.PlatformClient != nil {
 		clusterName := cluster.Name
 		fieldSelector := fields.OneTermEqualSelector("clusterName", clusterName).String()
-		clusterCredentials, err := client.ClusterCredentials().List(ctx, metav1.ListOptions{FieldSelector: fieldSelector})
+		clusterCredentials, err := p.PlatformClient.ClusterCredentials().List(ctx, metav1.ListOptions{FieldSelector: fieldSelector})
 		if err != nil {
 			return credential, err
 		}

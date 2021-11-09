@@ -181,6 +181,7 @@ func NewProvider() (*Provider, error) {
 			}
 		}
 	}
+	p.DelegateProvider.PlatformClient = p.platformClient
 	return p, nil
 }
 

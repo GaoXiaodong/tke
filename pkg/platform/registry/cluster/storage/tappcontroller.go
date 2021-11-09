@@ -100,7 +100,17 @@ func (r *TappControllerREST) Connect(ctx context.Context, clusterName string, op
 	}
 
 	username, _ := authentication.UsernameAndTenantID(ctx)
-	credential, err := provider.GetClusterCredential(ctx, r.platformClient, cluster, username)
+	platformv1Custer := new(platformv1.Cluster)
+	err = platform.Scheme.Convert(cluster, platformv1Custer, nil)
+	if err != nil {
+		return nil, err
+	}
+	platformv1ClusterCredential, err := provider.GetClusterCredentialV1(ctx, platformv1Custer, username)
+	if err != nil {
+		return nil, err
+	}
+	credential := new(platform.ClusterCredential)
+	err = platform.Scheme.Convert(platformv1ClusterCredential, credential, nil)
 	if err != nil {
 		return nil, err
 	}
