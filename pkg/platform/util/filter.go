@@ -88,19 +88,6 @@ func FilterPersistentEvent(ctx context.Context, pe *platform.PersistentEvent) er
 	return nil
 }
 
-// FilterHelm is used to filter helm that do not belong
-// to the tenant.
-func FilterHelm(ctx context.Context, helm *platform.Helm) error {
-	_, tenantID := authentication.UsernameAndTenantID(ctx)
-	if tenantID == "" {
-		return nil
-	}
-	if helm.Spec.TenantID != tenantID {
-		return errors.NewNotFound(v1.Resource("helm"), helm.ObjectMeta.Name)
-	}
-	return nil
-}
-
 // FilterTappController is used to filter tapp controller that do not belong
 // to the tenant.
 func FilterTappController(ctx context.Context, tappController *platform.TappController) error {
@@ -127,32 +114,6 @@ func FilterCSIOperator(ctx context.Context, csiOperator *platform.CSIOperator) e
 	return nil
 }
 
-// FilterVolumeDecorator is used to filter volume decorator that do not belong
-// to the tenant.
-func FilterVolumeDecorator(ctx context.Context, decorator *platform.VolumeDecorator) error {
-	_, tenantID := authentication.UsernameAndTenantID(ctx)
-	if tenantID == "" {
-		return nil
-	}
-	if decorator.Spec.TenantID != tenantID {
-		return errors.NewNotFound(v1.Resource("volumedecorator"), decorator.ObjectMeta.Name)
-	}
-	return nil
-}
-
-// FilterLogCollector is used to filter log collector that do not belong
-// to the tenant.
-func FilterLogCollector(ctx context.Context, decorator *platform.LogCollector) error {
-	_, tenantID := authentication.UsernameAndTenantID(ctx)
-	if tenantID == "" {
-		return nil
-	}
-	if decorator.Spec.TenantID != tenantID {
-		return errors.NewNotFound(v1.Resource("logcollector"), decorator.ObjectMeta.Name)
-	}
-	return nil
-}
-
 // FilterCronHPA is used to filter CronHPA that do not belong
 // to the tenant.
 func FilterCronHPA(ctx context.Context, cronHPA *platform.CronHPA) error {
@@ -175,31 +136,6 @@ func FilterPrometheus(ctx context.Context, prom *platform.Prometheus) error {
 	}
 	if prom.Spec.TenantID != tenantID {
 		return errors.NewNotFound(v1.Resource("prometheus"), prom.ObjectMeta.Name)
-	}
-	return nil
-}
-
-// FilterIPAM is used to filter ipam that do not belong
-// to the tenant.
-func FilterIPAM(ctx context.Context, ipam *platform.IPAM) error {
-	_, tenantID := authentication.UsernameAndTenantID(ctx)
-	if tenantID == "" {
-		return nil
-	}
-	if ipam.Spec.TenantID != tenantID {
-		return errors.NewNotFound(v1.Resource("ipam"), ipam.ObjectMeta.Name)
-	}
-	return nil
-}
-
-// FilterLBCF is used to filter LBCF that do not belong to the tenant.
-func FilterLBCF(ctx context.Context, lbcf *platform.LBCF) error {
-	_, tenantID := authentication.UsernameAndTenantID(ctx)
-	if tenantID == "" {
-		return nil
-	}
-	if lbcf.Spec.TenantID != tenantID {
-		return errors.NewNotFound(v1.Resource("lbcf"), lbcf.ObjectMeta.Name)
 	}
 	return nil
 }

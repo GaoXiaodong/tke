@@ -202,14 +202,19 @@ func (ClusterCondition) SwaggerDoc() map[string]string {
 }
 
 var map_ClusterCredential = map[string]string{
-	"":               "ClusterCredential records the credential information needed to access the cluster.",
-	"etcdCACert":     "For TKE in global reuse",
-	"caCert":         "For connect the cluster",
-	"clientCert":     "For kube-apiserver X509 auth",
-	"clientKey":      "For kube-apiserver X509 auth",
-	"token":          "For kube-apiserver token auth",
-	"bootstrapToken": "For kubeadm init or join",
-	"certificateKey": "For kubeadm init or join",
+	"":                  "ClusterCredential records the credential information needed to access the cluster.",
+	"etcdCACert":        "For TKE in global reuse",
+	"etcdAPIClientCert": "For TKE in global reuse",
+	"etcdAPIClientKey":  "For TKE in global reuse",
+	"caCert":            "For connect the cluster",
+	"clientCert":        "For kube-apiserver X509 auth",
+	"clientKey":         "For kube-apiserver X509 auth",
+	"token":             "For kube-apiserver token auth",
+	"bootstrapToken":    "For kubeadm init or join",
+	"certificateKey":    "For kubeadm init or join",
+	"as":                "Impersonate is the username to act-as.",
+	"as-groups":         "ImpersonateGroups is the groups to imperonate.",
+	"as-user-extra":     "ImpersonateUserExtra contains additional information for impersonated user.",
 }
 
 func (ClusterCredential) SwaggerDoc() map[string]string {
@@ -318,8 +323,8 @@ func (ClusterResource) SwaggerDoc() map[string]string {
 var map_ClusterSpec = map[string]string{
 	"":                     "ClusterSpec is a description of a cluster.",
 	"finalizers":           "Finalizers is an opaque list of values that must be empty to permanently remove object from storage.",
-	"serviceCIDR":          "ServiceCIDR is used to set a separated CIDR for k8s service, it's exclusive with MaxClusterServiceNum.",
 	"dnsDomain":            "DNSDomain is the dns domain used by k8s services. Defaults to \"cluster.local\".",
+	"serviceCIDR":          "ServiceCIDR is used to set a separated CIDR for k8s service, it's exclusive with MaxClusterServiceNum.",
 	"clusterCredentialRef": "ClusterCredentialRef for isolate sensitive information. If not specified, cluster controller will create one; If specified, provider must make sure is valid.",
 	"etcd":                 "Etcd holds configuration for etcd.",
 	"hostnameAsNodename":   "If true will use hostname as nodename, if false will use machine IP as nodename.",

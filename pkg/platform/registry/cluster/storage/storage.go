@@ -45,25 +45,18 @@ import (
 
 // Storage includes storage for clusters and all sub resources.
 type Storage struct {
-	Cluster           *REST
-	Status            *StatusREST
-	Finalize          *FinalizeREST
-	Apply             *ApplyREST
-	Helm              *HelmREST
-	TappController    *TappControllerREST
-	CSI               *CSIREST
-	PVCR              *PVCRREST
-	LogCollector      *LogCollectorREST
-	CronHPA           *CronHPAREST
-	Addon             *AddonREST
-	AddonType         *AddonTypeREST
-	LBCFDriver        *LBCFDriverREST
-	LBCFLoadBalancer  *LBCFLoadBalancerREST
-	LBCFBackendGroup  *LBCFBackendGroupREST
-	LBCFBackendRecord *LBCFBackendRecordREST
-	Drain             *DrainREST
-	Proxy             *ProxyREST
-	APIResources      *APIResourcesREST
+	Cluster        *REST
+	Status         *StatusREST
+	Finalize       *FinalizeREST
+	Apply          *ApplyREST
+	TappController *TappControllerREST
+	CSI            *CSIREST
+	CronHPA        *CronHPAREST
+	Addon          *AddonREST
+	AddonType      *AddonTypeREST
+	Drain          *DrainREST
+	Proxy          *ProxyREST
+	APIResources   *APIResourcesREST
 }
 
 // NewStorage returns a Storage object that will work against clusters.
@@ -110,23 +103,11 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 			store:          store,
 			platformClient: platformClient,
 		},
-		Helm: &HelmREST{
-			store:          store,
-			platformClient: platformClient,
-		},
 		TappController: &TappControllerREST{
 			store:          store,
 			platformClient: platformClient,
 		},
 		CSI: &CSIREST{
-			store:          store,
-			platformClient: platformClient,
-		},
-		PVCR: &PVCRREST{
-			store:          store,
-			platformClient: platformClient,
-		},
-		LogCollector: &LogCollectorREST{
 			store:          store,
 			platformClient: platformClient,
 		},
@@ -141,22 +122,6 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 		AddonType: &AddonTypeREST{
 			platformClient: platformClient,
 			store:          store,
-		},
-		LBCFDriver: &LBCFDriverREST{
-			store:          store,
-			platformClient: platformClient,
-		},
-		LBCFLoadBalancer: &LBCFLoadBalancerREST{
-			store:          store,
-			platformClient: platformClient,
-		},
-		LBCFBackendGroup: &LBCFBackendGroupREST{
-			store:          store,
-			platformClient: platformClient,
-		},
-		LBCFBackendRecord: &LBCFBackendRecordREST{
-			store:          store,
-			platformClient: platformClient,
 		},
 		Drain: &DrainREST{
 			store:          store,

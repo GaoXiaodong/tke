@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"strings"
 	applicationv1 "tkestack.io/tke/api/application/v1"
 )
 
@@ -98,21 +99,16 @@ const (
 type ClusterSpec struct {
 	// Finalizers is an opaque list of values that must be empty to permanently remove object from storage.
 	// +optional
-	Finalizers []FinalizerName
-	TenantID   string
-	// +optional
+	Finalizers  []FinalizerName
+	TenantID    string
 	DisplayName string
 	Type        string
 	Version     string
-	// +optional
 	NetworkType NetworkType
 	// +optional
 	NetworkDevice string
 	// +optional
 	ClusterCIDR string
-	// ServiceCIDR is used to set a separated CIDR for k8s service, it's exclusive with MaxClusterServiceNum.
-	// +optional
-	ServiceCIDR *string
 	// +optional
 	// DNSDomain is the dns domain used by k8s services. Defaults to "cluster.local".
 	DNSDomain string
@@ -124,8 +120,9 @@ type ClusterSpec struct {
 	Properties ClusterProperty
 	// +optional
 	Machines []ClusterMachine
+	// ServiceCIDR is used to set a separated CIDR for k8s service, it's exclusive with MaxClusterServiceNum.
 	// +optional
-	ScalingMachines []ClusterMachine
+	ServiceCIDR *string
 	// +optional
 	DockerExtraArgs map[string]string
 	// +optional
@@ -151,6 +148,8 @@ type ClusterSpec struct {
 	HostnameAsNodename bool
 	// +optional
 	NetworkArgs map[string]string
+	// +optional
+	ScalingMachines []ClusterMachine
 	// BootstrapApps will install apps during creating cluster
 	// +optional
 	BootstrapApps BootstrapApps
@@ -313,6 +312,7 @@ type ClusterAddress struct {
 
 // ClusterCredential records the credential information needed to access the cluster.
 type ClusterCredential struct {
+	// +optional
 	metav1.TypeMeta
 	// +optional
 	metav1.ObjectMeta
@@ -323,18 +323,16 @@ type ClusterCredential struct {
 	// For TKE in global reuse
 	// +optional
 	ETCDCACert []byte
-	// +optional
-	ETCDCAKey []byte
+	// For TKE in global reuse
 	// +optional
 	ETCDAPIClientCert []byte
+	// For TKE in global reuse
 	// +optional
 	ETCDAPIClientKey []byte
 
-	// For validate the server cert
+	// For connect the cluster
 	// +optional
 	CACert []byte
-	// +optional
-	CAKey []byte
 	// For kube-apiserver X509 auth
 	// +optional
 	ClientCert []byte
@@ -350,6 +348,29 @@ type ClusterCredential struct {
 	// For kubeadm init or join
 	// +optional
 	CertificateKey *string
+	// +optional
+	ETCDCAKey []byte
+	// +optional
+	CAKey []byte
+	// Impersonate is the username to act-as.
+	// +optional
+	Impersonate string
+	// ImpersonateGroups is the groups to imperonate.
+	// +optional
+	ImpersonateGroups []string
+	// ImpersonateUserExtra contains additional information for impersonated user.
+	// +optional
+	ImpersonateUserExtra ImpersonateUserExtra
+}
+
+type ImpersonateUserExtra map[string]string
+
+func (i ImpersonateUserExtra) ExtraToHeaders() map[string][]string {
+	res := map[string][]string{}
+	for k, v := range i {
+		res[k] = strings.Split(v, ",")
+	}
+	return res
 }
 
 // +genclient:nonNamespaced

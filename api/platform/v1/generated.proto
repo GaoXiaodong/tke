@@ -302,41 +302,55 @@ message ClusterCredential {
   // +optional
   optional bytes etcdCACert = 4;
 
+  // For TKE in global reuse
   // +optional
-  optional bytes etcdCAKey = 5;
+  optional bytes etcdAPIClientCert = 5;
 
+  // For TKE in global reuse
   // +optional
-  optional bytes etcdAPIClientCert = 6;
-
-  // +optional
-  optional bytes etcdAPIClientKey = 7;
+  optional bytes etcdAPIClientKey = 6;
 
   // For connect the cluster
   // +optional
-  optional bytes caCert = 8;
-
-  // +optional
-  optional bytes caKey = 9;
+  optional bytes caCert = 7;
 
   // For kube-apiserver X509 auth
   // +optional
-  optional bytes clientCert = 10;
+  optional bytes clientCert = 8;
 
   // For kube-apiserver X509 auth
   // +optional
-  optional bytes clientKey = 11;
+  optional bytes clientKey = 9;
 
   // For kube-apiserver token auth
   // +optional
-  optional string token = 12;
+  optional string token = 10;
 
   // For kubeadm init or join
   // +optional
-  optional string bootstrapToken = 13;
+  optional string bootstrapToken = 11;
 
   // For kubeadm init or join
   // +optional
-  optional string certificateKey = 14;
+  optional string certificateKey = 12;
+
+  // +optional
+  optional bytes etcdCAKey = 13;
+
+  // +optional
+  optional bytes caKey = 14;
+
+  // Impersonate is the username to act-as.
+  // +optional
+  optional string as = 15;
+
+  // ImpersonateGroups is the groups to imperonate.
+  // +optional
+  repeated string asGroups = 16;
+
+  // ImpersonateUserExtra contains additional information for impersonated user.
+  // +optional
+  map<string, string> asUserExtra = 17;
 }
 
 // ClusterCredentialList is the whole list of all ClusterCredential which owned by a tenant.
@@ -530,14 +544,12 @@ message ClusterSpec {
 
   optional string tenantID = 2;
 
-  // +optional
   optional string displayName = 3;
 
   optional string type = 4;
 
   optional string version = 5;
 
-  // +optional
   optional string networkType = 6;
 
   // +optional
@@ -545,10 +557,6 @@ message ClusterSpec {
 
   // +optional
   optional string clusterCIDR = 8;
-
-  // ServiceCIDR is used to set a separated CIDR for k8s service, it's exclusive with MaxClusterServiceNum.
-  // +optional
-  optional string serviceCIDR = 19;
 
   // DNSDomain is the dns domain used by k8s services. Defaults to "cluster.local".
   optional string dnsDomain = 9;
@@ -579,6 +587,10 @@ message ClusterSpec {
 
   // +optional
   map<string, string> schedulerExtraArgs = 18;
+
+  // ServiceCIDR is used to set a separated CIDR for k8s service, it's exclusive with MaxClusterServiceNum.
+  // +optional
+  optional string serviceCIDR = 19;
 
   // ClusterCredentialRef for isolate sensitive information.
   // If not specified, cluster controller will create one;

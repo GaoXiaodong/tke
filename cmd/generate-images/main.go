@@ -28,13 +28,8 @@ import (
 	logagent "tkestack.io/tke/pkg/logagent/controller/logagent/images"
 	mesh "tkestack.io/tke/pkg/mesh/controller/meshmanager/images"
 	cronhpa "tkestack.io/tke/pkg/platform/controller/addon/cronhpa/images"
-	helm "tkestack.io/tke/pkg/platform/controller/addon/helm/images"
-	ipam "tkestack.io/tke/pkg/platform/controller/addon/ipam/images"
-	lbcf "tkestack.io/tke/pkg/platform/controller/addon/lbcf/images"
-	logcollector "tkestack.io/tke/pkg/platform/controller/addon/logcollector/images"
 	persistentevent "tkestack.io/tke/pkg/platform/controller/addon/persistentevent/images"
 	prometheus "tkestack.io/tke/pkg/platform/controller/addon/prometheus/images"
-	volumedecorator "tkestack.io/tke/pkg/platform/controller/addon/storage/volumedecorator/images"
 	tappcontroller "tkestack.io/tke/pkg/platform/controller/addon/tappcontroller/images"
 	baremetal "tkestack.io/tke/pkg/platform/provider/baremetal/images"
 	csioperator "tkestack.io/tke/pkg/platform/provider/baremetal/phases/csioperator/images"
@@ -51,13 +46,9 @@ func main() {
 	pflag.Parse()
 	unsupportMultiArchImages := []func() []string{
 		cronhpa.List,
-		helm.List,
-		lbcf.List,
-		logcollector.List,
 		persistentevent.List,
 		prometheus.List,
 		csioperator.List,
-		volumedecorator.List,
 		tappcontroller.List,
 		logagent.List,
 	}
@@ -65,7 +56,6 @@ func main() {
 		baremetal.List,
 		installer.List,
 		galaxy.List,
-		ipam.List,
 		mesh.List,
 	}
 

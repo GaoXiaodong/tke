@@ -46789,22 +46789,18 @@ func schema_tke_api_platform_v1_ClusterCredential(ref common.ReferenceCallback) 
 							Format:      "byte",
 						},
 					},
-					"etcdCAKey": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "byte",
-						},
-					},
 					"etcdAPIClientCert": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "byte",
+							Description: "For TKE in global reuse",
+							Type:        []string{"string"},
+							Format:      "byte",
 						},
 					},
 					"etcdAPIClientKey": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "byte",
+							Description: "For TKE in global reuse",
+							Type:        []string{"string"},
+							Format:      "byte",
 						},
 					},
 					"caCert": {
@@ -46812,12 +46808,6 @@ func schema_tke_api_platform_v1_ClusterCredential(ref common.ReferenceCallback) 
 							Description: "For connect the cluster",
 							Type:        []string{"string"},
 							Format:      "byte",
-						},
-					},
-					"caKey": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "byte",
 						},
 					},
 					"clientCert": {
@@ -46853,6 +46843,54 @@ func schema_tke_api_platform_v1_ClusterCredential(ref common.ReferenceCallback) 
 							Description: "For kubeadm init or join",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"etcdCAKey": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "byte",
+						},
+					},
+					"caKey": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "byte",
+						},
+					},
+					"as": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Impersonate is the username to act-as.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"as-groups": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ImpersonateGroups is the groups to imperonate.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"as-user-extra": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ImpersonateUserExtra contains additional information for impersonated user.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -47556,13 +47594,6 @@ func schema_tke_api_platform_v1_ClusterSpec(ref common.ReferenceCallback) common
 							Format: "",
 						},
 					},
-					"serviceCIDR": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ServiceCIDR is used to set a separated CIDR for k8s service, it's exclusive with MaxClusterServiceNum.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"dnsDomain": {
 						SchemaProps: spec.SchemaProps{
 							Description: "DNSDomain is the dns domain used by k8s services. Defaults to \"cluster.local\".",
@@ -47675,6 +47706,13 @@ func schema_tke_api_platform_v1_ClusterSpec(ref common.ReferenceCallback) common
 							},
 						},
 					},
+					"serviceCIDR": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceCIDR is used to set a separated CIDR for k8s service, it's exclusive with MaxClusterServiceNum.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"clusterCredentialRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ClusterCredentialRef for isolate sensitive information. If not specified, cluster controller will create one; If specified, provider must make sure is valid.",
@@ -47734,7 +47772,7 @@ func schema_tke_api_platform_v1_ClusterSpec(ref common.ReferenceCallback) common
 						},
 					},
 				},
-				Required: []string{"tenantID", "type", "version"},
+				Required: []string{"tenantID", "displayName", "type", "version"},
 			},
 		},
 		Dependencies: []string{

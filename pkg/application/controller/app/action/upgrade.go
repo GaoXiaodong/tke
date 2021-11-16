@@ -38,7 +38,7 @@ func Upgrade(ctx context.Context,
 	platformClient platformversionedclient.PlatformV1Interface,
 	app *applicationv1.App,
 	repo appconfig.RepoConfiguration,
-	updateStatusFunc updateStatusFunc) (*applicationv1.App, error) {
+	updateStatusFunc UpdateStatusFunc) (*applicationv1.App, error) {
 	hooks := getHooks(app)
 	err := hooks.PreUpgrade(ctx, applicationClient, platformClient, app, repo, updateStatusFunc)
 	if err != nil {
@@ -76,6 +76,7 @@ func Upgrade(ctx context.Context,
 		DependencyUpdate: true,
 		Install:          true,
 		Values:           values,
+		Timeout:          clientTimeOut,
 		ChartPathOptions: chartPathBasicOptions,
 	})
 

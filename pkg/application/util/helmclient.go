@@ -29,6 +29,9 @@ import (
 	helmaction "tkestack.io/tke/pkg/application/helm/action"
 	helmconfig "tkestack.io/tke/pkg/application/helm/config"
 	platformutil "tkestack.io/tke/pkg/platform/util"
+
+	"encoding/json"
+	"tkestack.io/tke/pkg/util/log"
 )
 
 // NewHelmClient return a new client used to run helm cmd
@@ -50,8 +53,13 @@ func NewHelmClient(ctx context.Context,
 	} else if len(list.Items) == 0 {
 		return nil, fmt.Errorf("get cluster's credential error, no cluster credential")
 	}
+	log.Errorf("credentials length is %d", len(list.Items))
+	for _, item := range list.Items {
+		log.Errorf("credentials item is %s", ToString(item))
+	}
+	log.Errorf("credentials list is %s", ToString(list.Items))
 	credential := list.Items[0]
-
+	log.Errorf("credential is %s", ToString(credential))
 	restConfig, err := platformutil.GetExternalRestConfig(cluster, &credential)
 	if err != nil {
 		return nil, fmt.Errorf("get cluster's externalRestConfig error: %w", err)
@@ -67,4 +75,9 @@ func NewHelmClient(ctx context.Context,
 func NewHelmClientWithoutRESTClient() *helmaction.Client {
 	client := helmaction.NewClient("", nil)
 	return client
+}
+
+func ToString(v interface{}) string {
+	json, _ := json.Marshal(v)
+	return string(json)
 }

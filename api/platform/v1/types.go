@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"strings"
 	applicationv1 "tkestack.io/tke/api/application/v1"
 )
 
@@ -104,21 +105,16 @@ const (
 type ClusterSpec struct {
 	// Finalizers is an opaque list of values that must be empty to permanently remove object from storage.
 	// +optional
-	Finalizers []FinalizerName `json:"finalizers,omitempty" protobuf:"bytes,1,rep,name=finalizers,casttype=FinalizerName"`
-	TenantID   string          `json:"tenantID" protobuf:"bytes,2,opt,name=tenantID"`
-	// +optional
-	DisplayName string `json:"displayName" protobuf:"bytes,3,opt,name=displayName"`
-	Type        string `json:"type" protobuf:"bytes,4,opt,name=type"`
-	Version     string `json:"version" protobuf:"bytes,5,opt,name=version"`
-	// +optional
-	NetworkType NetworkType `json:"networkType,omitempty" protobuf:"bytes,6,opt,name=networkType,casttype=NetworkType"`
+	Finalizers  []FinalizerName `json:"finalizers,omitempty" protobuf:"bytes,1,rep,name=finalizers,casttype=FinalizerName"`
+	TenantID    string          `json:"tenantID" protobuf:"bytes,2,opt,name=tenantID"`
+	DisplayName string          `json:"displayName" protobuf:"bytes,3,opt,name=displayName"`
+	Type        string          `json:"type" protobuf:"bytes,4,opt,name=type"`
+	Version     string          `json:"version" protobuf:"bytes,5,opt,name=version"`
+	NetworkType NetworkType     `json:"networkType,omitempty" protobuf:"bytes,6,opt,name=networkType,casttype=NetworkType"`
 	// +optional
 	NetworkDevice string `json:"networkDevice,omitempty" protobuf:"bytes,7,opt,name=networkDevice"`
 	// +optional
 	ClusterCIDR string `json:"clusterCIDR,omitempty" protobuf:"bytes,8,opt,name=clusterCIDR"`
-	// ServiceCIDR is used to set a separated CIDR for k8s service, it's exclusive with MaxClusterServiceNum.
-	// +optional
-	ServiceCIDR *string `json:"serviceCIDR,omitempty" protobuf:"bytes,19,opt,name=serviceCIDR"`
 	// DNSDomain is the dns domain used by k8s services. Defaults to "cluster.local".
 	DNSDomain string `json:"dnsDomain,omitempty" protobuf:"bytes,9,opt,name=dnsDomain"`
 	// +optional
@@ -140,6 +136,10 @@ type ClusterSpec struct {
 	ControllerManagerExtraArgs map[string]string `json:"controllerManagerExtraArgs,omitempty" protobuf:"bytes,17,name=controllerManagerExtraArgs"`
 	// +optional
 	SchedulerExtraArgs map[string]string `json:"schedulerExtraArgs,omitempty" protobuf:"bytes,18,name=schedulerExtraArgs"`
+
+	// ServiceCIDR is used to set a separated CIDR for k8s service, it's exclusive with MaxClusterServiceNum.
+	// +optional
+	ServiceCIDR *string `json:"serviceCIDR,omitempty" protobuf:"bytes,19,opt,name=serviceCIDR"`
 
 	// ClusterCredentialRef for isolate sensitive information.
 	// If not specified, cluster controller will create one;
@@ -319,6 +319,7 @@ type ClusterAddress struct {
 
 // ClusterCredential records the credential information needed to access the cluster.
 type ClusterCredential struct {
+	// +optional
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
@@ -329,33 +330,54 @@ type ClusterCredential struct {
 	// For TKE in global reuse
 	// +optional
 	ETCDCACert []byte `json:"etcdCACert,omitempty" protobuf:"bytes,4,opt,name=etcdCACert"`
+	// For TKE in global reuse
 	// +optional
-	ETCDCAKey []byte `json:"etcdCAKey,omitempty" protobuf:"bytes,5,opt,name=etcdCAKey"`
+	ETCDAPIClientCert []byte `json:"etcdAPIClientCert,omitempty" protobuf:"bytes,5,opt,name=etcdAPIClientCert"`
+	// For TKE in global reuse
 	// +optional
-	ETCDAPIClientCert []byte `json:"etcdAPIClientCert,omitempty" protobuf:"bytes,6,opt,name=etcdAPIClientCert"`
-	// +optional
-	ETCDAPIClientKey []byte `json:"etcdAPIClientKey,omitempty" protobuf:"bytes,7,opt,name=etcdAPIClientKey"`
+	ETCDAPIClientKey []byte `json:"etcdAPIClientKey,omitempty" protobuf:"bytes,6,opt,name=etcdAPIClientKey"`
 
 	// For connect the cluster
 	// +optional
-	CACert []byte `json:"caCert,omitempty" protobuf:"bytes,8,opt,name=caCert"`
-	// +optional
-	CAKey []byte `json:"caKey,omitempty" protobuf:"bytes,9,opt,name=caKey"`
+	CACert []byte `json:"caCert,omitempty" protobuf:"bytes,7,opt,name=caCert"`
 	// For kube-apiserver X509 auth
 	// +optional
-	ClientCert []byte `json:"clientCert,omitempty" protobuf:"bytes,10,opt,name=clientCert"`
+	ClientCert []byte `json:"clientCert,omitempty" protobuf:"bytes,8,opt,name=clientCert"`
 	// For kube-apiserver X509 auth
 	// +optional
-	ClientKey []byte `json:"clientKey,omitempty" protobuf:"bytes,11,opt,name=clientKey"`
+	ClientKey []byte `json:"clientKey,omitempty" protobuf:"bytes,9,opt,name=clientKey"`
 	// For kube-apiserver token auth
 	// +optional
-	Token *string `json:"token,omitempty" protobuf:"bytes,12,opt,name=token"`
+	Token *string `json:"token,omitempty" protobuf:"bytes,10,opt,name=token"`
 	// For kubeadm init or join
 	// +optional
-	BootstrapToken *string `json:"bootstrapToken,omitempty" protobuf:"bytes,13,opt,name=bootstrapToken"`
+	BootstrapToken *string `json:"bootstrapToken,omitempty" protobuf:"bytes,11,opt,name=bootstrapToken"`
 	// For kubeadm init or join
 	// +optional
-	CertificateKey *string `json:"certificateKey,omitempty" protobuf:"bytes,14,opt,name=certificateKey"`
+	CertificateKey *string `json:"certificateKey,omitempty" protobuf:"bytes,12,opt,name=certificateKey"`
+	// +optional
+	ETCDCAKey []byte `json:"etcdCAKey,omitempty" protobuf:"bytes,13,opt,name=etcdCAKey"`
+	// +optional
+	CAKey []byte `json:"caKey,omitempty" protobuf:"bytes,14,opt,name=caKey"`
+	// Impersonate is the username to act-as.
+	// +optional
+	Impersonate string `json:"as,omitempty" protobuf:"bytes,15,opt,name=as"`
+	// ImpersonateGroups is the groups to imperonate.
+	// +optional
+	ImpersonateGroups []string `json:"as-groups,omitempty" protobuf:"bytes,16,opt,name=asGroups"`
+	// ImpersonateUserExtra contains additional information for impersonated user.
+	// +optional
+	ImpersonateUserExtra ImpersonateUserExtra `json:"as-user-extra,omitempty" protobuf:"bytes,17,opt,name=asUserExtra"`
+}
+
+type ImpersonateUserExtra map[string]string
+
+func (i ImpersonateUserExtra) ExtraToHeaders() map[string][]string {
+	res := map[string][]string{}
+	for k, v := range i {
+		res[k] = strings.Split(v, ",")
+	}
+	return res
 }
 
 // +genclient:nonNamespaced

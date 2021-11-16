@@ -1741,16 +1741,19 @@ func autoConvert_v1_ClusterCredential_To_platform_ClusterCredential(in *ClusterC
 	out.TenantID = in.TenantID
 	out.ClusterName = in.ClusterName
 	out.ETCDCACert = *(*[]byte)(unsafe.Pointer(&in.ETCDCACert))
-	out.ETCDCAKey = *(*[]byte)(unsafe.Pointer(&in.ETCDCAKey))
 	out.ETCDAPIClientCert = *(*[]byte)(unsafe.Pointer(&in.ETCDAPIClientCert))
 	out.ETCDAPIClientKey = *(*[]byte)(unsafe.Pointer(&in.ETCDAPIClientKey))
 	out.CACert = *(*[]byte)(unsafe.Pointer(&in.CACert))
-	out.CAKey = *(*[]byte)(unsafe.Pointer(&in.CAKey))
 	out.ClientCert = *(*[]byte)(unsafe.Pointer(&in.ClientCert))
 	out.ClientKey = *(*[]byte)(unsafe.Pointer(&in.ClientKey))
 	out.Token = (*string)(unsafe.Pointer(in.Token))
 	out.BootstrapToken = (*string)(unsafe.Pointer(in.BootstrapToken))
 	out.CertificateKey = (*string)(unsafe.Pointer(in.CertificateKey))
+	out.ETCDCAKey = *(*[]byte)(unsafe.Pointer(&in.ETCDCAKey))
+	out.CAKey = *(*[]byte)(unsafe.Pointer(&in.CAKey))
+	out.Impersonate = in.Impersonate
+	out.ImpersonateGroups = *(*[]string)(unsafe.Pointer(&in.ImpersonateGroups))
+	out.ImpersonateUserExtra = *(*platform.ImpersonateUserExtra)(unsafe.Pointer(&in.ImpersonateUserExtra))
 	return nil
 }
 
@@ -1764,16 +1767,19 @@ func autoConvert_platform_ClusterCredential_To_v1_ClusterCredential(in *platform
 	out.TenantID = in.TenantID
 	out.ClusterName = in.ClusterName
 	out.ETCDCACert = *(*[]byte)(unsafe.Pointer(&in.ETCDCACert))
-	out.ETCDCAKey = *(*[]byte)(unsafe.Pointer(&in.ETCDCAKey))
 	out.ETCDAPIClientCert = *(*[]byte)(unsafe.Pointer(&in.ETCDAPIClientCert))
 	out.ETCDAPIClientKey = *(*[]byte)(unsafe.Pointer(&in.ETCDAPIClientKey))
 	out.CACert = *(*[]byte)(unsafe.Pointer(&in.CACert))
-	out.CAKey = *(*[]byte)(unsafe.Pointer(&in.CAKey))
 	out.ClientCert = *(*[]byte)(unsafe.Pointer(&in.ClientCert))
 	out.ClientKey = *(*[]byte)(unsafe.Pointer(&in.ClientKey))
 	out.Token = (*string)(unsafe.Pointer(in.Token))
 	out.BootstrapToken = (*string)(unsafe.Pointer(in.BootstrapToken))
 	out.CertificateKey = (*string)(unsafe.Pointer(in.CertificateKey))
+	out.ETCDCAKey = *(*[]byte)(unsafe.Pointer(&in.ETCDCAKey))
+	out.CAKey = *(*[]byte)(unsafe.Pointer(&in.CAKey))
+	out.Impersonate = in.Impersonate
+	out.ImpersonateGroups = *(*[]string)(unsafe.Pointer(&in.ImpersonateGroups))
+	out.ImpersonateUserExtra = *(*ImpersonateUserExtra)(unsafe.Pointer(&in.ImpersonateUserExtra))
 	return nil
 }
 
@@ -2102,7 +2108,6 @@ func autoConvert_v1_ClusterSpec_To_platform_ClusterSpec(in *ClusterSpec, out *pl
 	out.NetworkType = platform.NetworkType(in.NetworkType)
 	out.NetworkDevice = in.NetworkDevice
 	out.ClusterCIDR = in.ClusterCIDR
-	out.ServiceCIDR = (*string)(unsafe.Pointer(in.ServiceCIDR))
 	out.DNSDomain = in.DNSDomain
 	out.PublicAlternativeNames = *(*[]string)(unsafe.Pointer(&in.PublicAlternativeNames))
 	if err := Convert_v1_ClusterFeature_To_platform_ClusterFeature(&in.Features, &out.Features, s); err != nil {
@@ -2117,6 +2122,7 @@ func autoConvert_v1_ClusterSpec_To_platform_ClusterSpec(in *ClusterSpec, out *pl
 	out.APIServerExtraArgs = *(*map[string]string)(unsafe.Pointer(&in.APIServerExtraArgs))
 	out.ControllerManagerExtraArgs = *(*map[string]string)(unsafe.Pointer(&in.ControllerManagerExtraArgs))
 	out.SchedulerExtraArgs = *(*map[string]string)(unsafe.Pointer(&in.SchedulerExtraArgs))
+	out.ServiceCIDR = (*string)(unsafe.Pointer(in.ServiceCIDR))
 	out.ClusterCredentialRef = (*corev1.LocalObjectReference)(unsafe.Pointer(in.ClusterCredentialRef))
 	out.Etcd = (*platform.Etcd)(unsafe.Pointer(in.Etcd))
 	out.HostnameAsNodename = in.HostnameAsNodename
@@ -2140,7 +2146,6 @@ func autoConvert_platform_ClusterSpec_To_v1_ClusterSpec(in *platform.ClusterSpec
 	out.NetworkType = NetworkType(in.NetworkType)
 	out.NetworkDevice = in.NetworkDevice
 	out.ClusterCIDR = in.ClusterCIDR
-	out.ServiceCIDR = (*string)(unsafe.Pointer(in.ServiceCIDR))
 	out.DNSDomain = in.DNSDomain
 	out.PublicAlternativeNames = *(*[]string)(unsafe.Pointer(&in.PublicAlternativeNames))
 	if err := Convert_platform_ClusterFeature_To_v1_ClusterFeature(&in.Features, &out.Features, s); err != nil {
@@ -2150,7 +2155,7 @@ func autoConvert_platform_ClusterSpec_To_v1_ClusterSpec(in *platform.ClusterSpec
 		return err
 	}
 	out.Machines = *(*[]ClusterMachine)(unsafe.Pointer(&in.Machines))
-	out.ScalingMachines = *(*[]ClusterMachine)(unsafe.Pointer(&in.ScalingMachines))
+	out.ServiceCIDR = (*string)(unsafe.Pointer(in.ServiceCIDR))
 	out.DockerExtraArgs = *(*map[string]string)(unsafe.Pointer(&in.DockerExtraArgs))
 	out.KubeletExtraArgs = *(*map[string]string)(unsafe.Pointer(&in.KubeletExtraArgs))
 	out.APIServerExtraArgs = *(*map[string]string)(unsafe.Pointer(&in.APIServerExtraArgs))
@@ -2160,6 +2165,7 @@ func autoConvert_platform_ClusterSpec_To_v1_ClusterSpec(in *platform.ClusterSpec
 	out.Etcd = (*Etcd)(unsafe.Pointer(in.Etcd))
 	out.HostnameAsNodename = in.HostnameAsNodename
 	out.NetworkArgs = *(*map[string]string)(unsafe.Pointer(&in.NetworkArgs))
+	out.ScalingMachines = *(*[]ClusterMachine)(unsafe.Pointer(&in.ScalingMachines))
 	out.BootstrapApps = *(*BootstrapApps)(unsafe.Pointer(&in.BootstrapApps))
 	return nil
 }
