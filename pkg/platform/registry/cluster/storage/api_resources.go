@@ -83,9 +83,10 @@ func (r *APIResourcesREST) Get(ctx context.Context, clusterName string, options 
 		return nil, err
 	}
 	lists, err := discoveryclient.ServerPreferredResources()
+	failedGroup := ""
 	if err != nil {
 		log.Infof("APIResources GET: get ServerPreferredResources failed,err: %s", err)
-		return nil, err
+		failedGroup = err.Error()
 	}
 	items := make([]platform.ClusterGroupAPIResourceItems, 0)
 	for _, list := range lists {
@@ -112,6 +113,7 @@ func (r *APIResourcesREST) Get(ctx context.Context, clusterName string, options 
 		})
 	}
 	return &platform.ClusterGroupAPIResourceItemsList{
-		Items: items,
+		Items:            items,
+		FailedGroupError: failedGroup,
 	}, nil
 }

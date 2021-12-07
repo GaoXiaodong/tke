@@ -1832,6 +1832,7 @@ func Convert_platform_ClusterGroupAPIResourceItems_To_v1_ClusterGroupAPIResource
 func autoConvert_v1_ClusterGroupAPIResourceItemsList_To_platform_ClusterGroupAPIResourceItemsList(in *ClusterGroupAPIResourceItemsList, out *platform.ClusterGroupAPIResourceItemsList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
 	out.Items = *(*[]platform.ClusterGroupAPIResourceItems)(unsafe.Pointer(&in.Items))
+	out.FailedGroupError = in.FailedGroupError
 	return nil
 }
 
@@ -1843,6 +1844,7 @@ func Convert_v1_ClusterGroupAPIResourceItemsList_To_platform_ClusterGroupAPIReso
 func autoConvert_platform_ClusterGroupAPIResourceItemsList_To_v1_ClusterGroupAPIResourceItemsList(in *platform.ClusterGroupAPIResourceItemsList, out *ClusterGroupAPIResourceItemsList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
 	out.Items = *(*[]ClusterGroupAPIResourceItems)(unsafe.Pointer(&in.Items))
+	out.FailedGroupError = in.FailedGroupError
 	return nil
 }
 
