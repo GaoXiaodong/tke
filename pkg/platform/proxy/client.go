@@ -75,7 +75,7 @@ func ClientSet(ctx context.Context, platformClient platforminternalclient.Platfo
 	if len(tenantID) > 0 && cluster.Spec.TenantID != tenantID {
 		return nil, errors.NewNotFound(platform.Resource("clusters"), cluster.ObjectMeta.Name)
 	}
-
+	log.Infof("proxy/ClientSet: tenantID:%s", tenantID)
 	clusterWrapper, err := types.GetCluster(ctx, platformClient, cluster)
 	if err != nil {
 		return nil, err
@@ -84,6 +84,7 @@ func ClientSet(ctx context.Context, platformClient platforminternalclient.Platfo
 	config := &rest.Config{}
 	uin := filter.UinFrom(ctx)
 	if uin != "" {
+		log.Infof("proxy/ClientSet: case1[uin%s exist]", uin)
 		// 转发给api-server的请求，都需要使用当前用户的证书去访问，如果没有证书，则生成证书
 		clientCertData, clientKeyData, err := getOrCreateClientCert(ctx, clusterWrapper)
 		if err != nil {
@@ -94,6 +95,7 @@ func ClientSet(ctx context.Context, platformClient platforminternalclient.Platfo
 			return nil, err
 		}
 	} else {
+		log.Infof("proxy/ClientSet: case2[uin doesnit exist]")
 		config, err = clusterWrapper.RESTConfig(config)
 		if err != nil {
 			return nil, err
@@ -105,6 +107,9 @@ func ClientSet(ctx context.Context, platformClient platforminternalclient.Platfo
 
 func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) ([]byte, []byte, error) {
 	credential := clusterWrapper.ClusterCredential
+	// todo:
+	// 	1.取到了错误的group(访问platform-api的请求的group)
+	//	2.利用filter,从"x-remote-group"中取(类似uin)
 	groups := authentication.Groups(ctx)
 	uin := filter.UinFrom(ctx)
 	ns := filter.NamespaceFrom(ctx)
@@ -122,6 +127,7 @@ func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) (
 
 	if err != nil {
 		if IsNotFoundError(err) {
+			log.Infof("proxy/getOrCreateClientCert case1[generateClientCert]:uin:%s,groups:%v", uin, groups)
 			configmap, err := client.CoreV1().ConfigMaps("kube-system").Get(ctx, "config", metav1.GetOptions{})
 			if err != nil {
 				msg := fmt.Sprintf("GetK8s ConfigMaps of cluster %s failed, err: %s", clusterName, err.Error())
@@ -129,7 +135,10 @@ func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) (
 			}
 			credential.CACert = []byte(configmap.Data["ca.crt"])
 			credential.CAKey = []byte(configmap.Data["ca.key"])
-			clientCertData, clientKeyData, err = pkiutil.GenerateClientCertAndKey(uin, groups, credential.CACert,
+			// org置nil的原因:
+			// 	1.本函数取的group错误
+			//	2.目前,私有云未运行客户自行传入group
+			clientCertData, clientKeyData, err = pkiutil.GenerateClientCertAndKey(uin, nil, credential.CACert,
 				credential.CAKey)
 			if err != nil {
 				return nil, nil, err
@@ -153,7 +162,12 @@ func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) (
 					"clientKeyData":  clientKeyData,
 				},
 			}
-			client.CoreV1().ConfigMaps("kube-system").Create(ctx, confMap, metav1.CreateOptions{})
+			_,err = client.CoreV1().ConfigMaps("kube-system").Create(ctx, confMap, metav1.CreateOptions{})
+			if err != nil {
+				msg := fmt.Sprintf("CreateK8s ConfigMaps of cluster %s failed, err: %s", clusterName, err.Error())
+				log.Errorf(msg)
+				return nil, nil, err
+			}
 			log.Infof("generateClientCert success. username:%s groups:%v\n clientCertData:\n %s clientKeyData:\n %s",
 				uin, groups, clientCertData, clientKeyData)
 		} else {
@@ -161,6 +175,7 @@ func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) (
 			return nil, nil, err
 		}
 	} else {
+		log.Infof("proxy/getOrCreateClientCert case2[getClientCert]:uin:%s,groups:%v", uin, groups)
 		clientCertData = cache.BinaryData["clientCertData"]
 		clientKeyData = cache.BinaryData["clientKeyData"]
 	}

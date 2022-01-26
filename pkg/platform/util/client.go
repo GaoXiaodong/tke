@@ -23,6 +23,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"math/rand"
 	"net"
 	"net/http"
@@ -32,8 +34,6 @@ import (
 	"tkestack.io/tke/pkg/platform/apiserver/filter"
 	"tkestack.io/tke/pkg/platform/types"
 	"tkestack.io/tke/pkg/util/pkiutil"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/fields"
 
 	monitoringclient "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	pkgerrors "github.com/pkg/errors"
@@ -75,17 +75,28 @@ func DynamicClientByCluster(ctx context.Context, cluster *platform.Cluster, plat
 	return BuildInternalDynamicClientSet(cluster, credential)
 }
 
+//
 // ClientSetByCluster returns the backend kubernetes clientSet by given cluster object
 func ClientSetByCluster(ctx context.Context, cluster *platform.Cluster, platformClient platforminternalclient.PlatformInterface) (*kubernetes.Clientset, error) {
+	//
+	log.Infof("ClientSetByCluster begin :cluster %v+", cluster)
+	// tenantID:主账号ID
 	_, tenantID := authentication.UsernameAndTenantID(ctx)
+	log.Infof("ClientSetByCluster :tenantID %s", tenantID)
+	log.Infof("ClientSetByCluster :cluster.Spec.TenantID %s", cluster.Spec.TenantID)
 	if len(tenantID) > 0 && cluster.Spec.TenantID != tenantID {
 		return nil, errors.NewNotFound(platform.Resource("clusters"), cluster.ObjectMeta.Name)
 	}
+	// 情况1：
+	// 	无tenantID
+	// 情况2:
+	//	存在tenantID,且和集群的tenantID一致
+	// 获取集群的credential[一个集群始终使用同一个(主账号,子账号)]
 	credential, err := GetClusterCredential(ctx, platformClient, cluster)
 	if err != nil {
 		return nil, err
 	}
-
+	// 创建UIN的clientSet
 	return BuildClientSetWithAuth(ctx, cluster, credential, platformClient)
 }
 
@@ -454,17 +465,20 @@ func BuildClientSet(ctx context.Context, cluster *platform.Cluster, credential *
 	return kubernetes.NewForConfig(restConfig)
 }
 
-func BuildClientSetWithAuth(ctx context.Context, cluster *platform.Cluster, credential *platform.ClusterCredential,platformClient platforminternalclient.PlatformInterface) (*kubernetes.Clientset, error) {
+func BuildClientSetWithAuth(ctx context.Context, cluster *platform.Cluster, credential *platform.ClusterCredential, platformClient platforminternalclient.PlatformInterface) (*kubernetes.Clientset, error) {
 	if cluster.Status.Locked != nil && *cluster.Status.Locked {
 		return nil, fmt.Errorf("cluster %s has been locked", cluster.ObjectMeta.Name)
 	}
+	// 获取集群的地址
 	host, err := ClusterHost(cluster)
 	if err != nil {
 		return nil, err
 	}
+	//
 	config := api.NewConfig()
-	config.CurrentContext = contextName
+	config.CurrentContext = contextName // tke
 
+	// CA证书
 	if credential.CACert == nil {
 		config.Clusters[contextName] = &api.Cluster{
 			Server:                fmt.Sprintf("https://%s", host),
@@ -476,15 +490,23 @@ func BuildClientSetWithAuth(ctx context.Context, cluster *platform.Cluster, cred
 			CertificateAuthorityData: credential.CACert,
 		}
 	}
-
+	// 从上下文获取"uin" "X-Remote-User"
 	uin := filter.UinFrom(ctx)
+	log.Infof("uildClientSetWithAuth :uin %s", uin)
 	if uin != "" {
+		log.Infof("uildClientSetWithAuth case1[uin exist].")
+		// 情况1:存在UIN,使用证书
+		// 将下面两个结构封装在一起
+		// 结构
+		//	1.platform.Cluster
+		//	2.ClusterCredential
 		clusterWrapper, err := types.GetCluster(ctx, platformClient, cluster)
 		if err != nil {
 			return nil, err
 		}
 		// 转发给api-server的请求，都需要使用当前用户的证书去访问，如果没有证书，则生成证书
-		clientCertData, clientKeyData, err := getOrCreateClientCert(ctx,  clusterWrapper)
+		// 存放地址:ConfigMap"uin"
+		clientCertData, clientKeyData, err := getOrCreateClientCert(ctx, clusterWrapper)
 		if err != nil {
 			return nil, err
 		}
@@ -493,14 +515,18 @@ func BuildClientSetWithAuth(ctx context.Context, cluster *platform.Cluster, cred
 			ClientKeyData:         clientKeyData,
 		}
 	} else {
+		log.Infof("uildClientSetWithAuth case2[uin doesnot exist,use token admin]")
+		// 情况2:不存在UIN,使用token[直接admin权限]
 		config.AuthInfos[contextName] = &api.AuthInfo{
 			Token: *credential.Token,
 		}
 	}
+
 	config.Contexts[contextName] = &api.Context{
 		Cluster:  contextName,
 		AuthInfo: contextName,
 	}
+	// 创建clientset[context:"tke"]
 	clientConfig := clientcmd.NewNonInteractiveClientConfig(*config, contextName, &clientcmd.ConfigOverrides{Timeout: "30s"}, nil)
 	restConfig, err := clientConfig.ClientConfig()
 	if err != nil {
@@ -517,24 +543,35 @@ func IsNotFoundError(err error) bool {
 	}
 	return false
 }
+
+// 获取/创建ClientCert
 func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) ([]byte, []byte, error) {
 	credential := clusterWrapper.ClusterCredential
+	// 组,nin,ns
+	// todo:
+	// 	1.取到了错误的group(访问platform-api的请求的group)
+	//	2.利用filter,从"x-remote-group"中取(类似uin)
+	// 	3.项目在两个地方创建clientcert,注意同时处理
 	groups := authentication.Groups(ctx)
 	uin := filter.UinFrom(ctx)
 	ns := filter.NamespaceFrom(ctx)
 	if ns != "" {
 		groups = append(groups, fmt.Sprintf("namespace:%s", ns))
 	}
-
+	// 集群名
 	clusterName := filter.ClusterFrom(ctx)
 	if clusterName == "" {
 		return nil, nil, errors.NewBadRequest("clusterName is required")
 	}
 	var clientCertData, clientKeyData []byte
 	client, _ := clusterWrapper.Clientset()
+	// 根据用户UIN,获取证书
+	// 证书存放在configmap中[名字为:UIN]
 	cache, err := client.CoreV1().ConfigMaps("kube-system").Get(ctx, uin, metav1.GetOptions{})
 	if err != nil {
 		if IsNotFoundError(err) {
+			log.Infof("getOrCreateClientCert case1[generateClientCert]:uin:%s,groups:%v", uin, groups)
+			// 获取CA证书
 			configmap, err := client.CoreV1().ConfigMaps("kube-system").Get(ctx, "config", metav1.GetOptions{})
 			if err != nil {
 				msg := fmt.Sprintf("GetK8s ConfigMaps of cluster %s failed, err: %s", clusterName, err.Error())
@@ -542,11 +579,15 @@ func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) (
 			}
 			credential.CACert = []byte(configmap.Data["ca.crt"])
 			credential.CAKey = []byte(configmap.Data["ca.key"])
-			clientCertData, clientKeyData, err = pkiutil.GenerateClientCertAndKey(uin, groups, credential.CACert,
+			// org置nil的原因:
+			// 	1.本函数取的group错误
+			//	2.目前,私有云未运行客户自行传入group
+			clientCertData, clientKeyData, err = pkiutil.GenerateClientCertAndKey(uin, nil, credential.CACert,
 				credential.CAKey)
 			if err != nil {
 				return nil, nil, err
 			}
+			// 将证书保存到configmap
 			confMap := &v1.ConfigMap{
 				TypeMeta: metav1.TypeMeta{},
 				ObjectMeta: metav1.ObjectMeta{
@@ -566,7 +607,12 @@ func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) (
 					"clientKeyData":  clientKeyData,
 				},
 			}
-			client.CoreV1().ConfigMaps("kube-system").Create(ctx, confMap, metav1.CreateOptions{})
+			_,err = client.CoreV1().ConfigMaps("kube-system").Create(ctx, confMap, metav1.CreateOptions{})
+			if err != nil {
+				msg := fmt.Sprintf("CreateK8s ConfigMaps of cluster %s failed, err: %s", clusterName, err.Error())
+				log.Errorf(msg)
+				return nil, nil, err
+			}
 			log.Infof("generateClientCert success. username:%s groups:%v\n clientCertData:\n %s clientKeyData:\n %s",
 				uin, groups, clientCertData, clientKeyData)
 		} else {
@@ -574,6 +620,7 @@ func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) (
 			return nil, nil, err
 		}
 	} else {
+		log.Infof("getOrCreateClientCert case2[getClientCert]:uin:%s,groups:%v", uin, groups)
 		clientCertData = cache.BinaryData["clientCertData"]
 		clientKeyData = cache.BinaryData["clientKeyData"]
 	}
@@ -583,6 +630,7 @@ func getOrCreateClientCert(ctx context.Context, clusterWrapper *types.Cluster) (
 
 	return clientCertData, clientKeyData, nil
 }
+
 // ClusterHost returns host and port for kube-apiserver of cluster.
 func ClusterHost(cluster *platform.Cluster) (string, error) {
 	address, err := ClusterAddress(cluster)
@@ -671,7 +719,7 @@ func GetClusterCredential(ctx context.Context, client platforminternalclient.Pla
 		credential *platform.ClusterCredential
 		err        error
 	)
-
+	// ClusterCredentialRef{name:""}
 	if cluster.Spec.ClusterCredentialRef != nil {
 		credential, err = client.ClusterCredentials().Get(ctx, cluster.Spec.ClusterCredentialRef.Name, metav1.GetOptions{})
 		if err != nil && !errors.IsNotFound(err) {

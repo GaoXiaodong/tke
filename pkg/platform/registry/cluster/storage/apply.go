@@ -25,6 +25,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"tkestack.io/tke/pkg/util/log"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -92,19 +93,26 @@ func (r *ApplyREST) New() runtime.Object {
 	return &platform.Cluster{}
 }
 
+// 返回处理API调用的http.Handler
 // Connect returns an http.Handler that will handle the request/response for a
 // given API invocation.
 func (r *ApplyREST) Connect(ctx context.Context, clusterName string, opts runtime.Object, _ rest.Responder) (http.Handler, error) {
+	log.Infof("Apply connect:clusterName %s", clusterName)
+	// 获取集群
 	clusterObject, err := r.store.Get(ctx, clusterName, &metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	cluster := clusterObject.(*platform.Cluster)
+	// 客户端使用特定用户"uin"的证书
+	// Client:操作内置资源
+	// dynamicClient:操作内置资源和自定义资源
+	// 获取集群的clientSet
 	client, err := util.ClientSetByCluster(ctx, cluster, r.platformClient)
 	if err != nil {
 		return nil, err
 	}
-
+	// 获取集群的dynamicClient
 	dynamicClient, err := util.DynamicClientByCluster(ctx, cluster, r.platformClient)
 	if err != nil {
 		return nil, err
@@ -150,8 +158,19 @@ func (r *ApplyREST) ProducesObject(_ string) interface{} {
 
 type handler struct {
 	clusterName       string
+	// 客户端
+	// Client:操作内置资源
+	// dynamicClient:操作内置资源和自定义资源
 	client            *kubernetes.Clientset
 	dynamicClient     dynamic.Interface
+	// 存放请求体的结构
+	// {
+	//	"kind":"MyAPIObject",
+	//	"apiVersion":"v1",
+	//	"myPlugin": {
+	//		"kind":"PluginA",
+	//		"aOption":"foo",
+	//	},
 	exts              []*runtime.RawExtension
 	groupVersionKinds []*schema.GroupVersionKind
 	metaAccessor      meta.MetadataAccessor
@@ -172,6 +191,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	defer func() {
 		_ = req.Body.Close()
 	}()
+	// 解码请求到ext
 	if err := h.decode(req.Body); err != nil {
 		responsewriters.WriteRawJSON(http.StatusBadRequest, errors.NewBadRequest(err.Error()).Status(), writer)
 		return
@@ -180,6 +200,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		responsewriters.WriteRawJSON(http.StatusBadRequest, errors.NewBadRequest("must special at lease one resource").Status(), writer)
 		return
 	}
+	// 执行请求
 	status := h.apply(req.Context())
 	responsewriters.WriteRawJSON(int(status.Code), status, writer)
 }
@@ -187,6 +208,14 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 func (h *handler) decode(r io.Reader) error {
 	decoder := yaml.NewYAMLOrJSONDecoder(r, 4096)
 	for {
+		// 将内容解码到ext
+		// {
+		//	"kind":"MyAPIObject",
+		//	"apiVersion":"v1",
+		//	"myPlugin": {
+		//		"kind":"PluginA",
+		//		"aOption":"foo",
+		//	},
 		ext := runtime.RawExtension{}
 		if err := decoder.Decode(&ext); err != nil {
 			if err == io.EOF {
@@ -194,6 +223,7 @@ func (h *handler) decode(r io.Reader) error {
 			}
 			return fmt.Errorf("error parsing: %v", err)
 		}
+		// 去除空格
 		ext.Raw = bytes.TrimSpace(ext.Raw)
 		if len(ext.Raw) == 0 || bytes.Equal(ext.Raw, []byte("null")) {
 			continue
@@ -209,8 +239,9 @@ func (h *handler) decode(r io.Reader) error {
 }
 
 func (h *handler) apply(ctx context.Context) *metav1.Status {
+	// 要操作的内容
 	applyObjects := make([]*applyObject, len(h.exts))
-
+	//
 	for idx, ext := range h.exts {
 		obj := ext.Object
 		gvk := h.groupVersionKinds[idx]
@@ -219,12 +250,23 @@ func (h *handler) apply(ctx context.Context) *metav1.Status {
 		if objectStatus != nil {
 			return objectStatus
 		}
-
+		// -----------------------
+		// 创建applyObject
+		// {
+		//		1.obj             runtime.Object
+		//		2.isCreateRequest bool
+		//		3.客户端 restClient,dynamicClient:根据(client, gvk.Group, gvk.Version)创建
+		//		4.namespace
+		//		5.kind
+		//		6.name:GroupVersionKind
+		//}
 		var ao *applyObject
 		var status *metav1.Status
 		if dynamicResource := matchCRD(h.dynamicClient, gvk.Group, gvk.Version, gvk.Kind); dynamicResource != nil {
+			// 针对"networking.istio.io","tkestack.io","cloud.tencent.com"
 			ao, status = applyObjectFromDynamicClient(ctx, dynamicResource, gvk, name, namespace, h.notUpdate, h.metaAccessor, obj)
 		} else {
+			// 其他
 			ao, status = applyObjectFromClientSet(ctx, h.client, gvk, name, namespace, h.notUpdate, h.metaAccessor, obj)
 		}
 		if status != nil {
@@ -232,7 +274,8 @@ func (h *handler) apply(ctx context.Context) *metav1.Status {
 		}
 		applyObjects[idx] = ao
 	}
-
+	// -----------------------
+	// 调用clientset执行更新/创建
 	var messages []string
 	for _, applyObj := range applyObjects {
 		var message string

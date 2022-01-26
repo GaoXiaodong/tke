@@ -37,6 +37,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"tkestack.io/tke/pkg/util/log"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -103,6 +104,7 @@ func DecodeRawCertAndKey(rawCert []byte, rawKey []byte) (*x509.Certificate, cryp
 
 func GenerateClientCertAndKey(cn string, org []string, certCA []byte, certKey []byte) ([]byte, []byte,
 	error) {
+	log.Infof("GenerateClientCertAndKey: cn[%s] org[%v+] ", cn, org)
 	caCert, caKey, err := DecodeRawCertAndKey(certCA, certKey)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to decode ca cert and ca key:%s", err)
