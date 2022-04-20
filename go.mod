@@ -88,23 +88,23 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools v2.2.0+incompatible
 	helm.sh/chartmuseum v0.13.1
-	helm.sh/helm/v3 v3.8.2
+	helm.sh/helm/v3 v3.7.2
 	istio.io/api v0.0.0-20200715212100-dbf5277541ef
 	istio.io/client-go v0.0.0-20200715214203-1ab538406cd1
-	k8s.io/api v0.23.5
-	k8s.io/apiextensions-apiserver v0.23.5
-	k8s.io/apimachinery v0.23.5
-	k8s.io/apiserver v0.23.5
-	k8s.io/cli-runtime v0.23.5
+	k8s.io/api v0.22.4
+	k8s.io/apiextensions-apiserver v0.22.4
+	k8s.io/apimachinery v0.22.4
+	k8s.io/apiserver v0.22.4
+	k8s.io/cli-runtime v0.22.4
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/cluster-bootstrap v0.22.3
-	k8s.io/component-base v0.23.5
+	k8s.io/component-base v0.22.4
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.22.3
-	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
-	k8s.io/kubectl v0.23.5
-	k8s.io/metrics v0.23.5
-	k8s.io/utils v0.0.0-20211116205334-6203023598ed
+	k8s.io/kube-openapi v0.0.0-20211109043538-20434351676c
+	k8s.io/kubectl v0.22.4
+	k8s.io/metrics v0.22.4
+	k8s.io/utils v0.0.0-20210819203725-bdf08cb9a70a
 	sigs.k8s.io/controller-runtime v0.6.0
 	sigs.k8s.io/yaml v1.3.0
 	yunion.io/x/pkg v0.0.0-20200603123312-ad58e621aec0
