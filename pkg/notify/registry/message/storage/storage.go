@@ -22,7 +22,6 @@ import (
 	"context"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	metainternal "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,7 +29,6 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"tkestack.io/tke/api/notify"
-	"tkestack.io/tke/pkg/apiserver/authentication"
 	apiserverutil "tkestack.io/tke/pkg/apiserver/util"
 	messagestrategy "tkestack.io/tke/pkg/notify/registry/message"
 	"tkestack.io/tke/pkg/notify/util"
@@ -59,7 +57,6 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, privilegedUsername
 		CreateStrategy: strategy,
 		UpdateStrategy: strategy,
 		DeleteStrategy: strategy,
-		ExportStrategy: strategy,
 	}
 	store.TableConvertor = rest.NewDefaultTableConvertor(store.DefaultQualifiedResource)
 	options := &genericregistry.StoreOptions{
@@ -73,7 +70,6 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, privilegedUsername
 
 	statusStore := *store
 	statusStore.UpdateStrategy = messagestrategy.NewStatusStrategy(strategy)
-	statusStore.ExportStrategy = messagestrategy.NewStatusStrategy(strategy)
 
 	return &Storage{
 		Message: &REST{store, privilegedUsername},
@@ -84,20 +80,6 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, privilegedUsername
 // ValidateGetObjectAndTenantID validate name and tenantID, if success return Message
 func ValidateGetObjectAndTenantID(ctx context.Context, store *registry.Store, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	obj, err := store.Get(ctx, name, options)
-	if err != nil {
-		return nil, err
-	}
-
-	message := obj.(*notify.Message)
-	if err := util.FilterMessage(ctx, message); err != nil {
-		return nil, err
-	}
-	return message, nil
-}
-
-// ValidateExportObjectAndTenantID validate name and tenantID, if success return Message
-func ValidateExportObjectAndTenantID(ctx context.Context, store *registry.Store, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	obj, err := store.Export(ctx, name, options)
 	if err != nil {
 		return nil, err
 	}
@@ -131,21 +113,12 @@ func (r *REST) List(ctx context.Context, options *metainternal.ListOptions) (run
 // DeleteCollection selects all resources in the storage matching given 'listOptions'
 // and deletes them.
 func (r *REST) DeleteCollection(ctx context.Context, deleteValidation rest.ValidateObjectFunc, options *metav1.DeleteOptions, listOptions *metainternal.ListOptions) (runtime.Object, error) {
-	if !authentication.IsAdministrator(ctx, r.privilegedUsername) {
-		return nil, errors.NewMethodNotSupported(notify.Resource("messages"), "delete collection")
-	}
 	return r.Store.DeleteCollection(ctx, deleteValidation, options, listOptions)
 }
 
 // Get finds a resource in the storage by name and returns it.
 func (r *REST) Get(ctx context.Context, messageName string, options *metav1.GetOptions) (runtime.Object, error) {
 	return ValidateGetObjectAndTenantID(ctx, r.Store, messageName, options)
-}
-
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *REST) Export(ctx context.Context, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.Store, name, options)
 }
 
 // Update finds a resource in the storage and updates it.
@@ -181,12 +154,6 @@ func (r *StatusREST) New() runtime.Object {
 // Get retrieves the object from the storage. It is required to support Patch.
 func (r *StatusREST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return ValidateGetObjectAndTenantID(ctx, r.store, name, options)
-}
-
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *StatusREST) Export(ctx context.Context, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.store, name, options)
 }
 
 // Update alters the status subset of an object.

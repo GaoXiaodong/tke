@@ -21,6 +21,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"helm.sh/helm/v3/pkg/release"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -63,7 +64,6 @@ type ApplicationStorage interface {
 	rest.CreaterUpdater
 	rest.GracefulDeleter
 	rest.Watcher
-	rest.Exporter
 	rest.StorageVersionProvider
 }
 
@@ -127,10 +127,6 @@ func (rs *REST) List(ctx context.Context, options *metainternalversion.ListOptio
 
 func (rs *REST) Watch(ctx context.Context, options *metainternalversion.ListOptions) (watch.Interface, error) {
 	return rs.application.Watch(ctx, options)
-}
-
-func (rs *REST) Export(ctx context.Context, name string, opts metav1.ExportOptions) (runtime.Object, error) {
-	return rs.application.Export(ctx, name, opts)
 }
 
 func (rs *REST) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, options *metav1.CreateOptions) (runtime.Object, error) {
@@ -237,11 +233,9 @@ func (rs *REST) Update(ctx context.Context, name string, objInfo rest.UpdatedObj
 		}
 	}
 
-	// if app.Status.RollbackRevision > 0 {
-	// app.Status.Phase = applicationapi.AppPhaseRollingBack
-	// } else {
-	app.Status.Phase = applicationapi.AppPhaseUpgrading
-	// }
+	if !reflect.DeepEqual(oldApp.Spec, app.Spec) {
+		app.Status.Phase = applicationapi.AppPhaseUpgrading
+	}
 
 	return rs.application.Update(ctx, name, rest.DefaultUpdatedObjectInfo(app), createValidation, updateValidation, forceAllowCreate, options)
 }

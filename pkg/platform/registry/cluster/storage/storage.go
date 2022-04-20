@@ -34,7 +34,6 @@ import (
 	"k8s.io/apiserver/pkg/util/dryrun"
 	platforminternalclient "tkestack.io/tke/api/client/clientset/internalversion/typed/platform/internalversion"
 	"tkestack.io/tke/api/platform"
-	"tkestack.io/tke/pkg/apiserver/authentication"
 	apiserverutil "tkestack.io/tke/pkg/apiserver/util"
 	clusterstrategy "tkestack.io/tke/pkg/platform/registry/cluster"
 	"tkestack.io/tke/pkg/platform/util"
@@ -45,25 +44,18 @@ import (
 
 // Storage includes storage for clusters and all sub resources.
 type Storage struct {
-	Cluster           *REST
-	Status            *StatusREST
-	Finalize          *FinalizeREST
-	Apply             *ApplyREST
-	Helm              *HelmREST
-	TappController    *TappControllerREST
-	CSI               *CSIREST
-	PVCR              *PVCRREST
-	LogCollector      *LogCollectorREST
-	CronHPA           *CronHPAREST
-	Addon             *AddonREST
-	AddonType         *AddonTypeREST
-	LBCFDriver        *LBCFDriverREST
-	LBCFLoadBalancer  *LBCFLoadBalancerREST
-	LBCFBackendGroup  *LBCFBackendGroupREST
-	LBCFBackendRecord *LBCFBackendRecordREST
-	Drain             *DrainREST
-	Proxy             *ProxyREST
-	APIResources      *APIResourcesREST
+	Cluster        *REST
+	Status         *StatusREST
+	Finalize       *FinalizeREST
+	Apply          *ApplyREST
+	TappController *TappControllerREST
+	CSI            *CSIREST
+	CronHPA        *CronHPAREST
+	Addon          *AddonREST
+	AddonType      *AddonTypeREST
+	Drain          *DrainREST
+	Proxy          *ProxyREST
+	APIResources   *APIResourcesREST
 }
 
 // NewStorage returns a Storage object that will work against clusters.
@@ -80,11 +72,9 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 		AfterCreate:    strategy.AfterCreate,
 		UpdateStrategy: strategy,
 		DeleteStrategy: strategy,
-		ExportStrategy: strategy,
 
 		TableConvertor: printerstorage.TableConvertor{TableGenerator: printers.NewTableGenerator().With(AddHandlers)},
 	}
-	store.TableConvertor = rest.NewDefaultTableConvertor(store.DefaultQualifiedResource)
 	options := &genericregistry.StoreOptions{
 		RESTOptions: optsGetter,
 		AttrFunc:    clusterstrategy.GetAttrs,
@@ -96,10 +86,8 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 
 	statusStore := *store
 	statusStore.UpdateStrategy = clusterstrategy.NewStatusStrategy(strategy)
-	statusStore.ExportStrategy = clusterstrategy.NewStatusStrategy(strategy)
 
 	finalizeStore := *store
-	finalizeStore.UpdateStrategy = clusterstrategy.NewFinalizerStrategy(strategy)
 	finalizeStore.UpdateStrategy = clusterstrategy.NewFinalizerStrategy(strategy)
 
 	return &Storage{
@@ -110,23 +98,11 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 			store:          store,
 			platformClient: platformClient,
 		},
-		Helm: &HelmREST{
-			store:          store,
-			platformClient: platformClient,
-		},
 		TappController: &TappControllerREST{
 			store:          store,
 			platformClient: platformClient,
 		},
 		CSI: &CSIREST{
-			store:          store,
-			platformClient: platformClient,
-		},
-		PVCR: &PVCRREST{
-			store:          store,
-			platformClient: platformClient,
-		},
-		LogCollector: &LogCollectorREST{
 			store:          store,
 			platformClient: platformClient,
 		},
@@ -141,22 +117,6 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 		AddonType: &AddonTypeREST{
 			platformClient: platformClient,
 			store:          store,
-		},
-		LBCFDriver: &LBCFDriverREST{
-			store:          store,
-			platformClient: platformClient,
-		},
-		LBCFLoadBalancer: &LBCFLoadBalancerREST{
-			store:          store,
-			platformClient: platformClient,
-		},
-		LBCFBackendGroup: &LBCFBackendGroupREST{
-			store:          store,
-			platformClient: platformClient,
-		},
-		LBCFBackendRecord: &LBCFBackendRecordREST{
-			store:          store,
-			platformClient: platformClient,
 		},
 		Drain: &DrainREST{
 			store:          store,
@@ -177,20 +137,6 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, platformClient pla
 // ValidateGetObjectAndTenantID validate name and tenantID, if success return cluster
 func ValidateGetObjectAndTenantID(ctx context.Context, store *registry.Store, clusterName string, options *metav1.GetOptions) (runtime.Object, error) {
 	obj, err := store.Get(ctx, clusterName, options)
-	if err != nil {
-		return nil, err
-	}
-
-	cluster := obj.(*platform.Cluster)
-	if err := util.FilterCluster(ctx, cluster); err != nil {
-		return nil, err
-	}
-	return cluster, nil
-}
-
-// ValidateExportObjectAndTenantID validate name and tenantID, if success return cluster
-func ValidateExportObjectAndTenantID(ctx context.Context, store *registry.Store, clusterName string, options metav1.ExportOptions) (runtime.Object, error) {
-	obj, err := store.Export(ctx, clusterName, options)
 	if err != nil {
 		return nil, err
 	}
@@ -224,21 +170,12 @@ func (r *REST) List(ctx context.Context, options *metainternal.ListOptions) (run
 // DeleteCollection selects all resources in the storage matching given 'listOptions'
 // and deletes them.
 func (r *REST) DeleteCollection(ctx context.Context, deleteValidation rest.ValidateObjectFunc, options *metav1.DeleteOptions, listOptions *metainternal.ListOptions) (runtime.Object, error) {
-	if !authentication.IsAdministrator(ctx, r.privilegedUsername) {
-		return nil, apierrors.NewMethodNotSupported(platform.Resource("clusters"), "delete collection")
-	}
 	return r.Store.DeleteCollection(ctx, deleteValidation, options, listOptions)
 }
 
 // Get finds a resource in the storage by name and returns it.
 func (r *REST) Get(ctx context.Context, clusterName string, options *metav1.GetOptions) (runtime.Object, error) {
 	return ValidateGetObjectAndTenantID(ctx, r.Store, clusterName, options)
-}
-
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *REST) Export(ctx context.Context, clusterName string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.Store, clusterName, options)
 }
 
 // Update finds a resource in the storage and updates it.
@@ -340,6 +277,7 @@ func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.Va
 				return existingCluster, nil
 			}),
 			dryrun.IsDryRun(options.DryRun),
+			nil,
 		)
 
 		if err != nil {
@@ -382,12 +320,6 @@ func (r *StatusREST) Get(ctx context.Context, name string, options *metav1.GetOp
 	return ValidateGetObjectAndTenantID(ctx, r.store, name, options)
 }
 
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *StatusREST) Export(ctx context.Context, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.store, name, options)
-}
-
 // Update alters the status subset of an object.
 func (r *StatusREST) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, options *metav1.UpdateOptions) (runtime.Object, bool, error) {
 	// We are explicitly setting forceAllowCreate to false in the call to the underlying storage because
@@ -413,12 +345,6 @@ func (r *FinalizeREST) New() runtime.Object {
 // Get retrieves the status finalizers subset of an object.
 func (r *FinalizeREST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return ValidateGetObjectAndTenantID(ctx, r.store, name, options)
-}
-
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *FinalizeREST) Export(ctx context.Context, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.store, name, options)
 }
 
 // Update alters the status finalizers subset of an object.

@@ -44,7 +44,7 @@ const (
 	name = "Baremetal"
 )
 
-func init() {
+func RegisterProvider() {
 	p, err := NewProvider()
 	if err != nil {
 		log.Errorf("init cluster provider error: %s", err)
@@ -56,8 +56,7 @@ func init() {
 type Provider struct {
 	*clusterprovider.DelegateProvider
 
-	config         *config.Config
-	platformClient platformv1client.PlatformV1Interface
+	config *config.Config
 }
 
 var _ clusterprovider.Provider = &Provider{}
@@ -132,7 +131,6 @@ func NewProvider() (*Provider, error) {
 
 			p.EnsureCleanup,
 			p.EnsureCreateClusterMark,
-			p.EnsureDisableOffloading, // will remove it when upgrade to k8s v1.18.5
 			p.EnsurePostInstallHook,
 			p.EnsurePostClusterInstallHook,
 		},
@@ -175,7 +173,7 @@ func NewProvider() (*Provider, error) {
 		if err != nil {
 			log.Errorf("read PlatformAPIClientConfig error: %w", err)
 		} else {
-			p.platformClient, err = platformv1client.NewForConfig(restConfig)
+			p.PlatformClient, err = platformv1client.NewForConfig(restConfig)
 			if err != nil {
 				return nil, err
 			}
@@ -191,7 +189,11 @@ func (p *Provider) RegisterHandler(mux *mux.PathRecorderMux) {
 }
 
 func (p *Provider) Validate(cluster *types.Cluster) field.ErrorList {
-	return validation.ValidateCluster(p.platformClient, cluster)
+	return validation.ValidateCluster(p.PlatformClient, cluster)
+}
+
+func (p *Provider) ValidateUpdate(cluster *types.Cluster, oldCluster *types.Cluster) field.ErrorList {
+	return validation.ValidateClusterUpdate(p.PlatformClient, cluster, oldCluster)
 }
 
 func (p *Provider) PreCreate(cluster *types.Cluster) error {

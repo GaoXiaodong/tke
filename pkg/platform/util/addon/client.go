@@ -28,7 +28,6 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	kubeaggregatorclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
@@ -36,7 +35,6 @@ import (
 	"tkestack.io/tke/api/platform"
 	platformv1 "tkestack.io/tke/api/platform/v1"
 	"tkestack.io/tke/pkg/platform/util"
-	"tkestack.io/tke/pkg/util/log"
 )
 
 // BuildExternalMonitoringClientSetNoStatus creates the monitoring clientset of prometheus operator by given
@@ -46,11 +44,7 @@ func BuildExternalMonitoringClientSetNoStatus(ctx context.Context, cluster *plat
 	if err != nil {
 		return nil, err
 	}
-	restConfig, err := util.GetExternalRestConfig(cluster, credential)
-	if err != nil {
-		log.Error("Build cluster config error", log.String("clusterName", cluster.ObjectMeta.Name), log.Err(err))
-		return nil, err
-	}
+	restConfig := credential.RESTConfig(cluster)
 	return monitoringclient.NewForConfig(restConfig)
 }
 
@@ -95,11 +89,7 @@ func BuildExternalExtensionClientSetNoStatus(ctx context.Context, cluster *platf
 	if err != nil {
 		return nil, err
 	}
-	restConfig, err := util.GetExternalRestConfig(cluster, credential)
-	if err != nil {
-		log.Error("Build cluster config error", log.String("clusterName", cluster.ObjectMeta.Name), log.Err(err))
-		return nil, err
-	}
+	restConfig := credential.RESTConfig(cluster)
 	return apiextensionsclient.NewForConfig(restConfig)
 }
 
@@ -120,11 +110,7 @@ func BuildKubeAggregatorClientSetNoStatus(ctx context.Context, cluster *platform
 	if err != nil {
 		return nil, err
 	}
-	restConfig, err := util.GetExternalRestConfig(cluster, credential)
-	if err != nil {
-		log.Error("Build cluster config error", log.String("clusterName", cluster.ObjectMeta.Name), log.Err(err))
-		return nil, err
-	}
+	restConfig := credential.RESTConfig(cluster)
 	return kubeaggregatorclientset.NewForConfig(restConfig)
 }
 
@@ -169,16 +155,7 @@ func GetClusterCredentialV1(ctx context.Context, client platformversionedclient.
 			return nil, err
 		}
 	} else {
-		clusterName := cluster.Name
-		fieldSelector := fields.OneTermEqualSelector("clusterName", clusterName).String()
-		clusterCredentials, err := client.ClusterCredentials().List(ctx, metav1.ListOptions{FieldSelector: fieldSelector})
-		if err != nil {
-			return nil, err
-		}
-		if len(clusterCredentials.Items) == 0 {
-			return nil, errors.NewNotFound(platform.Resource("ClusterCredential"), clusterName)
-		}
-		credential = &clusterCredentials.Items[0]
+		return nil, errors.NewNotFound(platform.Resource("ClusterCredential"), cluster.Name)
 	}
 
 	return credential, nil

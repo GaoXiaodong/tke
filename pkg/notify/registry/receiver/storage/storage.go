@@ -21,7 +21,6 @@ package storage
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	metainternal "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,7 +28,6 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"tkestack.io/tke/api/notify"
-	"tkestack.io/tke/pkg/apiserver/authentication"
 	apiserverutil "tkestack.io/tke/pkg/apiserver/util"
 	receiverstrategy "tkestack.io/tke/pkg/notify/registry/receiver"
 	"tkestack.io/tke/pkg/notify/util"
@@ -54,7 +52,6 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, privilegedUsername
 		CreateStrategy: strategy,
 		UpdateStrategy: strategy,
 		DeleteStrategy: strategy,
-		ExportStrategy: strategy,
 	}
 	store.TableConvertor = rest.NewDefaultTableConvertor(store.DefaultQualifiedResource)
 	options := &genericregistry.StoreOptions{
@@ -85,20 +82,6 @@ func ValidateGetObjectAndTenantID(ctx context.Context, store *registry.Store, na
 	return receiver, nil
 }
 
-// ValidateExportObjectAndTenantID validate name and tenantID, if success return Receiver
-func ValidateExportObjectAndTenantID(ctx context.Context, store *registry.Store, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	obj, err := store.Export(ctx, name, options)
-	if err != nil {
-		return nil, err
-	}
-
-	receiver := obj.(*notify.Receiver)
-	if err := util.FilterReceiver(ctx, receiver); err != nil {
-		return nil, err
-	}
-	return receiver, nil
-}
-
 // REST implements a RESTStorage for receivers against etcd.
 type REST struct {
 	*registry.Store
@@ -115,9 +98,6 @@ func (r *REST) ShortNames() []string {
 // DeleteCollection selects all resources in the storage matching given 'listOptions'
 // and deletes them.
 func (r *REST) DeleteCollection(ctx context.Context, deleteValidation rest.ValidateObjectFunc, options *metav1.DeleteOptions, listOptions *metainternal.ListOptions) (runtime.Object, error) {
-	if !authentication.IsAdministrator(ctx, r.privilegedUsername) {
-		return nil, errors.NewMethodNotSupported(notify.Resource("receivers"), "delete collection")
-	}
 	return r.Store.DeleteCollection(ctx, deleteValidation, options, listOptions)
 }
 
@@ -130,12 +110,6 @@ func (r *REST) List(ctx context.Context, options *metainternal.ListOptions) (run
 // Get finds a resource in the storage by name and returns it.
 func (r *REST) Get(ctx context.Context, receiverName string, options *metav1.GetOptions) (runtime.Object, error) {
 	return ValidateGetObjectAndTenantID(ctx, r.Store, receiverName, options)
-}
-
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *REST) Export(ctx context.Context, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.Store, name, options)
 }
 
 // Update finds a resource in the storage and updates it.

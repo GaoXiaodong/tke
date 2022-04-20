@@ -114,7 +114,7 @@ func (ClusterAddonList) SwaggerDoc() map[string]string {
 
 var map_ClusterAddonSpec = map[string]string{
 	"":        "ClusterAddonSpec indicates the specifications of the ClusterAddon.",
-	"type":    "Addon type, one of Helm, PersistentEvent or LogCollector etc.",
+	"type":    "Addon type, one of PersistentEvent or LogCollector etc.",
 	"level":   "AddonLevel is level of cluster addon.",
 	"version": "Version",
 }
@@ -210,6 +210,10 @@ var map_ClusterCredential = map[string]string{
 	"token":          "For kube-apiserver token auth",
 	"bootstrapToken": "For kubeadm init or join",
 	"certificateKey": "For kubeadm init or join",
+	"username":       "Username is the username for basic authentication to the kubernetes cluster.",
+	"as":             "Impersonate is the username to act-as.",
+	"as-groups":      "ImpersonateGroups is the groups to imperonate.",
+	"as-user-extra":  "ImpersonateUserExtra contains additional information for impersonated user.",
 }
 
 func (ClusterCredential) SwaggerDoc() map[string]string {
@@ -263,8 +267,9 @@ func (ClusterGroupAPIResourceItems) SwaggerDoc() map[string]string {
 }
 
 var map_ClusterGroupAPIResourceItemsList = map[string]string{
-	"":      "ClusterGroupAPIResourceItemsList is the whole list of all ClusterAPIResource.",
-	"Items": "List of ClusterGroupAPIResourceItems",
+	"":                 "ClusterGroupAPIResourceItemsList is the whole list of all ClusterAPIResource.",
+	"Items":            "List of ClusterGroupAPIResourceItems",
+	"failedGroupError": "Failed Group Error",
 }
 
 func (ClusterGroupAPIResourceItemsList) SwaggerDoc() map[string]string {
@@ -428,146 +433,6 @@ func (ExternalEtcd) SwaggerDoc() map[string]string {
 	return map_ExternalEtcd
 }
 
-var map_Helm = map[string]string{
-	"":     "Helm is a kubernetes package manager.",
-	"spec": "Spec defines the desired identities of clusters in this set.",
-}
-
-func (Helm) SwaggerDoc() map[string]string {
-	return map_Helm
-}
-
-var map_HelmList = map[string]string{
-	"":      "HelmList is the whole list of all helms which owned by a tenant.",
-	"items": "List of Helms",
-}
-
-func (HelmList) SwaggerDoc() map[string]string {
-	return map_HelmList
-}
-
-var map_HelmProxyOptions = map[string]string{
-	"":     "HelmProxyOptions is the query options to a Helm-api proxy call.",
-	"path": "Path is the URL path to use for the current proxy request to helm-api.",
-}
-
-func (HelmProxyOptions) SwaggerDoc() map[string]string {
-	return map_HelmProxyOptions
-}
-
-var map_HelmSpec = map[string]string{
-	"": "HelmSpec describes the attributes on a Helm.",
-}
-
-func (HelmSpec) SwaggerDoc() map[string]string {
-	return map_HelmSpec
-}
-
-var map_HelmStatus = map[string]string{
-	"":                            "HelmStatus is information about the current status of a Helm.",
-	"phase":                       "Phase is the current lifecycle phase of the helm of cluster.",
-	"reason":                      "Reason is a brief CamelCase string that describes any failure.",
-	"retryCount":                  "RetryCount is a int between 0 and 5 that describes the time of retrying initializing.",
-	"lastReInitializingTimestamp": "LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.",
-}
-
-func (HelmStatus) SwaggerDoc() map[string]string {
-	return map_HelmStatus
-}
-
-var map_IPAM = map[string]string{
-	"":     "IPAM is a scheduler plugin for assigning IP.",
-	"spec": "Spec defines the desired identities of clusters in this set.",
-}
-
-func (IPAM) SwaggerDoc() map[string]string {
-	return map_IPAM
-}
-
-var map_IPAMList = map[string]string{
-	"":      "IPAMList is the whole list of all IPAMs which owned by a tenant.",
-	"items": "List of IPAMs",
-}
-
-func (IPAMList) SwaggerDoc() map[string]string {
-	return map_IPAMList
-}
-
-var map_IPAMProxyOptions = map[string]string{
-	"":     "IPAMProxyOptions is the query options to a ipam-api proxy call.",
-	"path": "Path is the URL path to use for the current proxy request to ipam-api.",
-}
-
-func (IPAMProxyOptions) SwaggerDoc() map[string]string {
-	return map_IPAMProxyOptions
-}
-
-var map_IPAMSpec = map[string]string{
-	"": "IPAMSpec describes the attributes on a IPAM.",
-}
-
-func (IPAMSpec) SwaggerDoc() map[string]string {
-	return map_IPAMSpec
-}
-
-var map_IPAMStatus = map[string]string{
-	"":                            "IPAMStatus is information about the current status of a IPAM.",
-	"phase":                       "Phase is the current lifecycle phase of the addon of cluster.",
-	"reason":                      "Reason is a brief CamelCase string that describes any failure.",
-	"retryCount":                  "RetryCount is a int between 0 and 5 that describes the time of retrying initializing.",
-	"lastReInitializingTimestamp": "LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.",
-}
-
-func (IPAMStatus) SwaggerDoc() map[string]string {
-	return map_IPAMStatus
-}
-
-var map_LBCF = map[string]string{
-	"":     "LBCF is a kubernetes load balancer manager.",
-	"spec": "Spec defines the desired identities of clusters in this set.",
-}
-
-func (LBCF) SwaggerDoc() map[string]string {
-	return map_LBCF
-}
-
-var map_LBCFList = map[string]string{
-	"":      "LBCFList is the whole list of all helms which owned by a tenant.",
-	"items": "List of LBCFs",
-}
-
-func (LBCFList) SwaggerDoc() map[string]string {
-	return map_LBCFList
-}
-
-var map_LBCFProxyOptions = map[string]string{
-	"": "LBCFProxyOptions is the query options to a kube-apiserver proxy call.",
-}
-
-func (LBCFProxyOptions) SwaggerDoc() map[string]string {
-	return map_LBCFProxyOptions
-}
-
-var map_LBCFSpec = map[string]string{
-	"": "LBCFSpec describes the attributes on a Helm.",
-}
-
-func (LBCFSpec) SwaggerDoc() map[string]string {
-	return map_LBCFSpec
-}
-
-var map_LBCFStatus = map[string]string{
-	"":                            "LBCFStatus is information about the current status of a Helm.",
-	"phase":                       "Phase is the current lifecycle phase of the helm of cluster.",
-	"reason":                      "Reason is a brief CamelCase string that describes any failure.",
-	"retryCount":                  "RetryCount is a int between 0 and 5 that describes the time of retrying initializing.",
-	"lastReInitializingTimestamp": "LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.",
-}
-
-func (LBCFStatus) SwaggerDoc() map[string]string {
-	return map_LBCFStatus
-}
-
 var map_LocalEtcd = map[string]string{
 	"":               "LocalEtcd describes that kubeadm should run an etcd cluster locally",
 	"dataDir":        "DataDir is the directory etcd will place its data. Defaults to \"/var/lib/etcd\".",
@@ -578,52 +443,6 @@ var map_LocalEtcd = map[string]string{
 
 func (LocalEtcd) SwaggerDoc() map[string]string {
 	return map_LocalEtcd
-}
-
-var map_LogCollector = map[string]string{
-	"":     "LogCollector is a manager to collect logs of workload.",
-	"spec": "Spec defines the desired identities of LogCollector.",
-}
-
-func (LogCollector) SwaggerDoc() map[string]string {
-	return map_LogCollector
-}
-
-var map_LogCollectorList = map[string]string{
-	"":      "LogCollectorList is the whole list of all LogCollector which owned by a tenant.",
-	"items": "List of volume decorators.",
-}
-
-func (LogCollectorList) SwaggerDoc() map[string]string {
-	return map_LogCollectorList
-}
-
-var map_LogCollectorProxyOptions = map[string]string{
-	"": "LogCollectorProxyOptions is the query options to a kube-apiserver proxy call for LogCollector crd object.",
-}
-
-func (LogCollectorProxyOptions) SwaggerDoc() map[string]string {
-	return map_LogCollectorProxyOptions
-}
-
-var map_LogCollectorSpec = map[string]string{
-	"": "LogCollectorSpec describes the attributes of a LogCollector.",
-}
-
-func (LogCollectorSpec) SwaggerDoc() map[string]string {
-	return map_LogCollectorSpec
-}
-
-var map_LogCollectorStatus = map[string]string{
-	"":                            "LogCollectorStatus is information about the current status of a LogCollector.",
-	"phase":                       "Phase is the current lifecycle phase of the LogCollector of cluster.",
-	"reason":                      "Reason is a brief CamelCase string that describes any failure.",
-	"retryCount":                  "RetryCount is a int between 0 and 5 that describes the time of retrying initializing.",
-	"lastReInitializingTimestamp": "LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.",
-}
-
-func (LogCollectorStatus) SwaggerDoc() map[string]string {
-	return map_LogCollectorStatus
 }
 
 var map_Machine = map[string]string{
@@ -708,14 +527,6 @@ func (MachineSystemInfo) SwaggerDoc() map[string]string {
 	return map_MachineSystemInfo
 }
 
-var map_PVCRProxyOptions = map[string]string{
-	"": "PVCRProxyOptions is the query options to a kube-apiserver proxy call for PVCR crd object.",
-}
-
-func (PVCRProxyOptions) SwaggerDoc() map[string]string {
-	return map_PVCRProxyOptions
-}
-
 var map_PersistentBackEnd = map[string]string{
 	"": "PersistentBackEnd indicates the backend type and attributes of the persistent log store.",
 }
@@ -762,58 +573,13 @@ func (PersistentEventStatus) SwaggerDoc() map[string]string {
 	return map_PersistentEventStatus
 }
 
-var map_Prometheus = map[string]string{
-	"":     "Prometheus is a kubernetes package manager.",
-	"spec": "Spec defines the desired identities of clusters in this set.",
+var map_ProxyOptions = map[string]string{
+	"":     "ProxyOptions is the query options to a proxy call.",
+	"path": "Path is the URL path to use for the current proxy request.",
 }
 
-func (Prometheus) SwaggerDoc() map[string]string {
-	return map_Prometheus
-}
-
-var map_PrometheusList = map[string]string{
-	"":      "PrometheusList is the whole list of all prometheus which owned by a tenant.",
-	"items": "List of Prometheuss",
-}
-
-func (PrometheusList) SwaggerDoc() map[string]string {
-	return map_PrometheusList
-}
-
-var map_PrometheusRemoteAddr = map[string]string{
-	"": "PrometheusRemoteAddr is the remote write/read address for prometheus",
-}
-
-func (PrometheusRemoteAddr) SwaggerDoc() map[string]string {
-	return map_PrometheusRemoteAddr
-}
-
-var map_PrometheusSpec = map[string]string{
-	"":                    "PrometheusSpec describes the attributes on a Prometheus.",
-	"subVersion":          "SubVersion is the components version such as node-exporter.",
-	"remoteAddress":       "RemoteAddress is the remote address for prometheus when writing/reading outside of cluster.",
-	"notifyWebhook":       "NotifyWebhook is the address that alert messages send to, optional. If not set, a default webhook address \"https://[notify-api-address]/webhook\" will be used.",
-	"resources":           "Resources is the resource request and limit for prometheus",
-	"runOnMaster":         "RunOnMaster indicates whether to add master Affinity for all monitor components or not",
-	"alertRepeatInterval": "AlertRepeatInterval indicates repeat interval of alerts",
-	"withNPD":             "WithNPD indicates whether to deploy node-problem-detector or not",
-}
-
-func (PrometheusSpec) SwaggerDoc() map[string]string {
-	return map_PrometheusSpec
-}
-
-var map_PrometheusStatus = map[string]string{
-	"":                            "PrometheusStatus is information about the current status of a Prometheus.",
-	"phase":                       "Phase is the current lifecycle phase of the helm of cluster.",
-	"reason":                      "Reason is a brief CamelCase string that describes any failure.",
-	"retryCount":                  "RetryCount is a int between 0 and 5 that describes the time of retrying initializing.",
-	"lastReInitializingTimestamp": "LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.",
-	"subVersion":                  "SubVersion is the components version such as node-exporter.",
-}
-
-func (PrometheusStatus) SwaggerDoc() map[string]string {
-	return map_PrometheusStatus
+func (ProxyOptions) SwaggerDoc() map[string]string {
+	return map_ProxyOptions
 }
 
 var map_Registry = map[string]string{
@@ -927,47 +693,6 @@ var map_UpgradeStrategy = map[string]string{
 
 func (UpgradeStrategy) SwaggerDoc() map[string]string {
 	return map_UpgradeStrategy
-}
-
-var map_VolumeDecorator = map[string]string{
-	"":     "VolumeDecorator is a controller to manage PVC information.",
-	"spec": "Spec defines the desired identities of volume decorator.",
-}
-
-func (VolumeDecorator) SwaggerDoc() map[string]string {
-	return map_VolumeDecorator
-}
-
-var map_VolumeDecoratorList = map[string]string{
-	"":      "VolumeDecoratorList is the whole list of all VolumeDecorator which owned by a tenant.",
-	"items": "List of volume decorators.",
-}
-
-func (VolumeDecoratorList) SwaggerDoc() map[string]string {
-	return map_VolumeDecoratorList
-}
-
-var map_VolumeDecoratorSpec = map[string]string{
-	"": "VolumeDecoratorSpec describes the attributes of a VolumeDecorator.",
-}
-
-func (VolumeDecoratorSpec) SwaggerDoc() map[string]string {
-	return map_VolumeDecoratorSpec
-}
-
-var map_VolumeDecoratorStatus = map[string]string{
-	"":                            "VolumeDecoratorStatus is information about the current status of a VolumeDecorator.",
-	"volumeTypes":                 "VolumeTypes is the supported volume types in this cluster.",
-	"workloadAdmission":           "WorkloadAdmission will be true to enable the workload admission webhook.",
-	"storageVendorVersion":        "StorageVendorVersion will be set to the config version of the storage vendor.",
-	"phase":                       "Phase is the current lifecycle phase of the volume decorator of cluster.",
-	"reason":                      "Reason is a brief CamelCase string that describes any failure.",
-	"retryCount":                  "RetryCount is a int between 0 and 5 that describes the time of retrying initializing.",
-	"lastReInitializingTimestamp": "LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.",
-}
-
-func (VolumeDecoratorStatus) SwaggerDoc() map[string]string {
-	return map_VolumeDecoratorStatus
 }
 
 // AUTO-GENERATED FUNCTIONS END HERE

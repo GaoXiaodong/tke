@@ -38,7 +38,7 @@ import { ChartInstancesPanel } from '@tencent/tchart';
 import { t, Trans } from '@tencent/tea-app/lib/i18n';
 import { Justify } from '@tencent/tea-component/lib/justify';
 
-import { resourceConfig } from '../../../../../../config';
+import { resourceConfig, PlatformTypeEnum } from '../../../../../../config';
 import { dateFormatter, downloadCsv, reduceNs } from '../../../../../../helpers';
 import { DisplayFiledProps, ResourceInfo } from '../../../../common/models';
 import { includes, isEmpty } from '../../../../common/utils';
@@ -48,7 +48,7 @@ import { MonitorPanelProps, resourceMonitorFields } from '../../../models/Monito
 import { router } from '../../../router';
 import { RootProps } from '../../ClusterApp';
 import { TellIsNeedFetchNS } from '../ResourceSidebarPanel';
-import { PlatformContext, IPlatformContext, PlatformTypeEnum } from '@/Wrapper';
+import { PlatformContext, IPlatformContext } from '@/Wrapper';
 
 interface ResouceActionPanelState {
   /** 是否开启自动刷新 */
@@ -184,10 +184,15 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
 
   /** render新建按钮 */
   private _renderCreateButton() {
-    const { subRoot } = this.props,
+    const { subRoot, namespaceList } = this.props,
       { resourceInfo } = subRoot;
 
-    const isShow = !isEmpty(resourceInfo) && resourceInfo.actionField && resourceInfo.actionField.create.isAvailable;
+    const isShow =
+      !isEmpty(resourceInfo) &&
+      resourceInfo.actionField &&
+      resourceInfo?.actionField?.create?.isAvailable &&
+      namespaceList?.data?.recordCount > 0;
+
     return isShow ? (
       <Button
         type="primary"
@@ -344,17 +349,16 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
   private _handleClickForTagSearch(tags) {
     const finalTags = tags.filter(({ attr }) => attr);
 
-    if (finalTags.length <= 0) return;
-
-    const { actions, subRoot } = this.props,
-      { resourceOption } = subRoot,
-      { ffResourceList } = resourceOption;
-
-    // 这里是控制tagSearch的展示
     this.setState({
       searchBoxValues: finalTags,
       searchBoxLength: finalTags.length
     });
+
+    if (finalTags.length <= 0) return;
+
+    const { actions } = this.props;
+
+    // 这里是控制tagSearch的展示
 
     const resourceName = finalTags.find(({ attr: { key } }) => key === 'resourceName')?.values?.[0]?.name ?? '';
     const labelSelector = finalTags.find(({ attr: { key } }) => key === 'labelSelector')?.values?.[0]?.name;

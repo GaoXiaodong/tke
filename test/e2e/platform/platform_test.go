@@ -30,10 +30,10 @@ import (
 	tkeclientset "tkestack.io/tke/api/client/clientset/versioned"
 	platformv1 "tkestack.io/tke/api/platform/v1"
 	"tkestack.io/tke/pkg/platform/apiserver/cluster"
-	_ "tkestack.io/tke/pkg/platform/provider/baremetal/cluster"
-	_ "tkestack.io/tke/pkg/platform/provider/baremetal/machine"
-	_ "tkestack.io/tke/pkg/platform/provider/imported/cluster"
-	_ "tkestack.io/tke/pkg/platform/provider/registered/cluster"
+	baremetalcluster "tkestack.io/tke/pkg/platform/provider/baremetal/cluster"
+	baremetalmachine "tkestack.io/tke/pkg/platform/provider/baremetal/machine"
+	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
+	importedcluster "tkestack.io/tke/pkg/platform/provider/imported/cluster"
 	"tkestack.io/tke/test/e2e/tke"
 	tke2 "tkestack.io/tke/test/tke"
 	"tkestack.io/tke/test/util"
@@ -53,12 +53,18 @@ var (
 )
 
 var _ = BeforeSuite(func() {
+	// baremetalcluster.RegisterProvider()
+	bp, _ := baremetalcluster.NewProvider()
+	baremetalmachine.RegisterProvider()
+	importedcluster.RegisterProvider()
 	t.Create()
 
 	tkeKubeConfigFile = t.GetKubeConfigFile()
 	restConf, err := t.GetKubeConfig()
 	Expect(err).To(BeNil())
 	tkeClient := tkeclientset.NewForConfigOrDie(restConf)
+	bp.PlatformClient = tkeClient.PlatformV1()
+	clusterprovider.Register(bp.Name(), bp)
 	testTKE = tke2.Init(tkeClient, provider)
 })
 
@@ -171,27 +177,6 @@ var _ = Describe("Platform Test", func() {
 
 				Eventually(func() error {
 					addon, err := testTKE.TkeClient.PlatformV1().TappControllers().Get(context.Background(), tapp.Name, metav1.GetOptions{})
-					if err != nil {
-						return err
-					}
-					if addon.Status.Phase != "Running" {
-						return errors.New(addon.Name + " Phase: " + string(addon.Status.Phase) + ", Reason: " + addon.Status.Reason)
-					}
-					return nil
-				}, 10*time.Minute, 10*time.Second).Should(BeNil())
-			})
-
-			It("IPAM", func() {
-				ipam := &platformv1.IPAM{
-					Spec: platformv1.IPAMSpec{
-						ClusterName: cls.Name,
-					},
-				}
-				ipam, err := testTKE.TkeClient.PlatformV1().IPAMs().Create(context.Background(), ipam, metav1.CreateOptions{})
-				Expect(err).Should(BeNil())
-
-				Eventually(func() error {
-					addon, err := testTKE.TkeClient.PlatformV1().IPAMs().Get(context.Background(), ipam.Name, metav1.GetOptions{})
 					if err != nil {
 						return err
 					}

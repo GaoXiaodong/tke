@@ -85,16 +85,10 @@ type addonFinderFunc func(ctx context.Context, a *addonFinder)
 
 var (
 	allAddonFinders = []addonFinderFunc{
-		helm,
 		persistentEvent,
 		tappcontroller,
 		csiOperator,
-		volumeDecorator,
-		logCollector,
 		cronHPA,
-		prometheus,
-		lbcf,
-		ipam,
 	}
 )
 
@@ -110,40 +104,6 @@ func (a *addonFinder) findAll(ctx context.Context) (*platform.ClusterAddonList, 
 	return &platform.ClusterAddonList{
 		Items: a.addons,
 	}, nil
-}
-
-func helm(ctx context.Context, a *addonFinder) {
-	defer a.wg.Done()
-	l, err := a.platformClient.Helms().List(ctx, metav1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("spec.clusterName", a.clusterName).String(),
-	})
-	if err != nil {
-		a.mutex.Lock()
-		a.errors = append(a.errors, err)
-		a.mutex.Unlock()
-		return
-	}
-	if len(l.Items) == 0 {
-		return
-	}
-	a.mutex.Lock()
-	a.addons = append(a.addons, platform.ClusterAddon{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              l.Items[0].ObjectMeta.Name,
-			CreationTimestamp: l.Items[0].ObjectMeta.CreationTimestamp,
-		},
-		Spec: platform.ClusterAddonSpec{
-			Type:    string(clusteraddontype.Helm),
-			Level:   clusteraddontype.Types[clusteraddontype.Helm].Level,
-			Version: l.Items[0].Spec.Version,
-		},
-		Status: platform.ClusterAddonStatus{
-			Version: l.Items[0].Status.Version,
-			Phase:   string(l.Items[0].Status.Phase),
-			Reason:  l.Items[0].Status.Reason,
-		},
-	})
-	a.mutex.Unlock()
 }
 
 func persistentEvent(ctx context.Context, a *addonFinder) {
@@ -248,74 +208,6 @@ func csiOperator(ctx context.Context, a *addonFinder) {
 	a.mutex.Unlock()
 }
 
-func volumeDecorator(ctx context.Context, a *addonFinder) {
-	defer a.wg.Done()
-	l, err := a.platformClient.VolumeDecorators().List(ctx, metav1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("spec.clusterName", a.clusterName).String(),
-	})
-	if err != nil {
-		a.mutex.Lock()
-		a.errors = append(a.errors, err)
-		a.mutex.Unlock()
-		return
-	}
-	if len(l.Items) == 0 {
-		return
-	}
-	a.mutex.Lock()
-	a.addons = append(a.addons, platform.ClusterAddon{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              l.Items[0].ObjectMeta.Name,
-			CreationTimestamp: l.Items[0].ObjectMeta.CreationTimestamp,
-		},
-		Spec: platform.ClusterAddonSpec{
-			Type:    string(clusteraddontype.VolumeDecorator),
-			Level:   clusteraddontype.Types[clusteraddontype.VolumeDecorator].Level,
-			Version: l.Items[0].Spec.Version,
-		},
-		Status: platform.ClusterAddonStatus{
-			Version: l.Items[0].Status.Version,
-			Phase:   string(l.Items[0].Status.Phase),
-			Reason:  l.Items[0].Status.Reason,
-		},
-	})
-	a.mutex.Unlock()
-}
-
-func logCollector(ctx context.Context, a *addonFinder) {
-	defer a.wg.Done()
-	l, err := a.platformClient.LogCollectors().List(ctx, metav1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("spec.clusterName", a.clusterName).String(),
-	})
-	if err != nil {
-		a.mutex.Lock()
-		a.errors = append(a.errors, err)
-		a.mutex.Unlock()
-		return
-	}
-	if len(l.Items) == 0 {
-		return
-	}
-	a.mutex.Lock()
-	a.addons = append(a.addons, platform.ClusterAddon{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              l.Items[0].ObjectMeta.Name,
-			CreationTimestamp: l.Items[0].ObjectMeta.CreationTimestamp,
-		},
-		Spec: platform.ClusterAddonSpec{
-			Type:    string(clusteraddontype.LogCollector),
-			Level:   clusteraddontype.Types[clusteraddontype.LogCollector].Level,
-			Version: l.Items[0].Spec.Version,
-		},
-		Status: platform.ClusterAddonStatus{
-			Version: l.Items[0].Status.Version,
-			Phase:   string(l.Items[0].Status.Phase),
-			Reason:  l.Items[0].Status.Reason,
-		},
-	})
-	a.mutex.Unlock()
-}
-
 func cronHPA(ctx context.Context, a *addonFinder) {
 	defer a.wg.Done()
 	l, err := a.platformClient.CronHPAs().List(ctx, metav1.ListOptions{
@@ -339,108 +231,6 @@ func cronHPA(ctx context.Context, a *addonFinder) {
 		Spec: platform.ClusterAddonSpec{
 			Type:    string(clusteraddontype.CronHPA),
 			Level:   clusteraddontype.Types[clusteraddontype.CronHPA].Level,
-			Version: l.Items[0].Spec.Version,
-		},
-		Status: platform.ClusterAddonStatus{
-			Version: l.Items[0].Status.Version,
-			Phase:   string(l.Items[0].Status.Phase),
-			Reason:  l.Items[0].Status.Reason,
-		},
-	})
-	a.mutex.Unlock()
-}
-
-func prometheus(ctx context.Context, a *addonFinder) {
-	defer a.wg.Done()
-	l, err := a.platformClient.Prometheuses().List(ctx, metav1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("spec.clusterName", a.clusterName).String(),
-	})
-	if err != nil {
-		a.mutex.Lock()
-		a.errors = append(a.errors, err)
-		a.mutex.Unlock()
-		return
-	}
-	if len(l.Items) == 0 {
-		return
-	}
-	a.mutex.Lock()
-	a.addons = append(a.addons, platform.ClusterAddon{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              l.Items[0].ObjectMeta.Name,
-			CreationTimestamp: l.Items[0].ObjectMeta.CreationTimestamp,
-		},
-		Spec: platform.ClusterAddonSpec{
-			Type:    string(clusteraddontype.Prometheus),
-			Level:   clusteraddontype.Types[clusteraddontype.Prometheus].Level,
-			Version: l.Items[0].Spec.Version,
-		},
-		Status: platform.ClusterAddonStatus{
-			Version: l.Items[0].Status.Version,
-			Phase:   string(l.Items[0].Status.Phase),
-			Reason:  l.Items[0].Status.Reason,
-		},
-	})
-	a.mutex.Unlock()
-}
-
-func ipam(ctx context.Context, a *addonFinder) {
-	defer a.wg.Done()
-	l, err := a.platformClient.IPAMs().List(ctx, metav1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("spec.clusterName", a.clusterName).String(),
-	})
-	if err != nil {
-		a.mutex.Lock()
-		a.errors = append(a.errors, err)
-		a.mutex.Unlock()
-		return
-	}
-	if len(l.Items) == 0 {
-		return
-	}
-	a.mutex.Lock()
-	a.addons = append(a.addons, platform.ClusterAddon{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              l.Items[0].ObjectMeta.Name,
-			CreationTimestamp: l.Items[0].ObjectMeta.CreationTimestamp,
-		},
-		Spec: platform.ClusterAddonSpec{
-			Type:    string(clusteraddontype.IPAM),
-			Level:   clusteraddontype.Types[clusteraddontype.IPAM].Level,
-			Version: l.Items[0].Spec.Version,
-		},
-		Status: platform.ClusterAddonStatus{
-			Version: l.Items[0].Status.Version,
-			Phase:   string(l.Items[0].Status.Phase),
-			Reason:  l.Items[0].Status.Reason,
-		},
-	})
-	a.mutex.Unlock()
-}
-
-func lbcf(ctx context.Context, a *addonFinder) {
-	defer a.wg.Done()
-	l, err := a.platformClient.LBCFs().List(ctx, metav1.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("spec.clusterName", a.clusterName).String(),
-	})
-	if err != nil {
-		a.mutex.Lock()
-		a.errors = append(a.errors, err)
-		a.mutex.Unlock()
-		return
-	}
-	if len(l.Items) == 0 {
-		return
-	}
-	a.mutex.Lock()
-	a.addons = append(a.addons, platform.ClusterAddon{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              l.Items[0].ObjectMeta.Name,
-			CreationTimestamp: l.Items[0].ObjectMeta.CreationTimestamp,
-		},
-		Spec: platform.ClusterAddonSpec{
-			Type:    string(clusteraddontype.LBCF),
-			Level:   clusteraddontype.Types[clusteraddontype.LBCF].Level,
 			Version: l.Items[0].Spec.Version,
 		},
 		Status: platform.ClusterAddonStatus{

@@ -48,22 +48,6 @@ type ConfigMapListerExpansion interface{}
 // CronHPALister.
 type CronHPAListerExpansion interface{}
 
-// HelmListerExpansion allows custom methods to be added to
-// HelmLister.
-type HelmListerExpansion interface{}
-
-// IPAMListerExpansion allows custom methods to be added to
-// IPAMLister.
-type IPAMListerExpansion interface{}
-
-// LBCFListerExpansion allows custom methods to be added to
-// LBCFLister.
-type LBCFListerExpansion interface{}
-
-// LogCollectorListerExpansion allows custom methods to be added to
-// LogCollectorLister.
-type LogCollectorListerExpansion interface{}
-
 // MachineListerExpansion allows custom methods to be added to
 // MachineLister.
 type MachineListerExpansion interface{}
@@ -72,10 +56,6 @@ type MachineListerExpansion interface{}
 // PersistentEventLister.
 type PersistentEventListerExpansion interface{}
 
-// PrometheusListerExpansion allows custom methods to be added to
-// PrometheusLister.
-type PrometheusListerExpansion interface{}
-
 // RegistryListerExpansion allows custom methods to be added to
 // RegistryLister.
 type RegistryListerExpansion interface{}
@@ -83,7 +63,3 @@ type RegistryListerExpansion interface{}
 // TappControllerListerExpansion allows custom methods to be added to
 // TappControllerLister.
 type TappControllerListerExpansion interface{}
-
-// VolumeDecoratorListerExpansion allows custom methods to be added to
-// VolumeDecoratorLister.
-type VolumeDecoratorListerExpansion interface{}

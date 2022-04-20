@@ -35,16 +35,10 @@ type PlatformInterface interface {
 	ClusterGroupAPIResourceItemsesGetter
 	ConfigMapsGetter
 	CronHPAsGetter
-	HelmsGetter
-	IPAMsGetter
-	LBCFsGetter
-	LogCollectorsGetter
 	MachinesGetter
 	PersistentEventsGetter
-	PrometheusesGetter
 	RegistriesGetter
 	TappControllersGetter
-	VolumeDecoratorsGetter
 }
 
 // PlatformClient is used to interact with features provided by the platform.tkestack.io group.
@@ -84,22 +78,6 @@ func (c *PlatformClient) CronHPAs() CronHPAInterface {
 	return newCronHPAs(c)
 }
 
-func (c *PlatformClient) Helms() HelmInterface {
-	return newHelms(c)
-}
-
-func (c *PlatformClient) IPAMs() IPAMInterface {
-	return newIPAMs(c)
-}
-
-func (c *PlatformClient) LBCFs() LBCFInterface {
-	return newLBCFs(c)
-}
-
-func (c *PlatformClient) LogCollectors() LogCollectorInterface {
-	return newLogCollectors(c)
-}
-
 func (c *PlatformClient) Machines() MachineInterface {
 	return newMachines(c)
 }
@@ -108,20 +86,12 @@ func (c *PlatformClient) PersistentEvents() PersistentEventInterface {
 	return newPersistentEvents(c)
 }
 
-func (c *PlatformClient) Prometheuses() PrometheusInterface {
-	return newPrometheuses(c)
-}
-
 func (c *PlatformClient) Registries() RegistryInterface {
 	return newRegistries(c)
 }
 
 func (c *PlatformClient) TappControllers() TappControllerInterface {
 	return newTappControllers(c)
-}
-
-func (c *PlatformClient) VolumeDecorators() VolumeDecoratorInterface {
-	return newVolumeDecorators(c)
 }
 
 // NewForConfig creates a new PlatformClient for the given config.

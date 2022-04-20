@@ -36,26 +36,14 @@ type Interface interface {
 	ConfigMaps() ConfigMapInformer
 	// CronHPAs returns a CronHPAInformer.
 	CronHPAs() CronHPAInformer
-	// Helms returns a HelmInformer.
-	Helms() HelmInformer
-	// IPAMs returns a IPAMInformer.
-	IPAMs() IPAMInformer
-	// LBCFs returns a LBCFInformer.
-	LBCFs() LBCFInformer
-	// LogCollectors returns a LogCollectorInformer.
-	LogCollectors() LogCollectorInformer
 	// Machines returns a MachineInformer.
 	Machines() MachineInformer
 	// PersistentEvents returns a PersistentEventInformer.
 	PersistentEvents() PersistentEventInformer
-	// Prometheuses returns a PrometheusInformer.
-	Prometheuses() PrometheusInformer
 	// Registries returns a RegistryInformer.
 	Registries() RegistryInformer
 	// TappControllers returns a TappControllerInformer.
 	TappControllers() TappControllerInformer
-	// VolumeDecorators returns a VolumeDecoratorInformer.
-	VolumeDecorators() VolumeDecoratorInformer
 }
 
 type version struct {
@@ -94,26 +82,6 @@ func (v *version) CronHPAs() CronHPAInformer {
 	return &cronHPAInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
-// Helms returns a HelmInformer.
-func (v *version) Helms() HelmInformer {
-	return &helmInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
-// IPAMs returns a IPAMInformer.
-func (v *version) IPAMs() IPAMInformer {
-	return &iPAMInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
-// LBCFs returns a LBCFInformer.
-func (v *version) LBCFs() LBCFInformer {
-	return &lBCFInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
-// LogCollectors returns a LogCollectorInformer.
-func (v *version) LogCollectors() LogCollectorInformer {
-	return &logCollectorInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
 // Machines returns a MachineInformer.
 func (v *version) Machines() MachineInformer {
 	return &machineInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
@@ -124,11 +92,6 @@ func (v *version) PersistentEvents() PersistentEventInformer {
 	return &persistentEventInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
-// Prometheuses returns a PrometheusInformer.
-func (v *version) Prometheuses() PrometheusInformer {
-	return &prometheusInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
 // Registries returns a RegistryInformer.
 func (v *version) Registries() RegistryInformer {
 	return &registryInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
@@ -137,9 +100,4 @@ func (v *version) Registries() RegistryInformer {
 // TappControllers returns a TappControllerInformer.
 func (v *version) TappControllers() TappControllerInformer {
 	return &tappControllerInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
-// VolumeDecorators returns a VolumeDecoratorInformer.
-func (v *version) VolumeDecorators() VolumeDecoratorInformer {
-	return &volumeDecoratorInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

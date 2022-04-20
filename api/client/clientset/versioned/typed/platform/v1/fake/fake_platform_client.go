@@ -62,22 +62,6 @@ func (c *FakePlatformV1) CronHPAs() v1.CronHPAInterface {
 	return &FakeCronHPAs{c}
 }
 
-func (c *FakePlatformV1) Helms() v1.HelmInterface {
-	return &FakeHelms{c}
-}
-
-func (c *FakePlatformV1) IPAMs() v1.IPAMInterface {
-	return &FakeIPAMs{c}
-}
-
-func (c *FakePlatformV1) LBCFs() v1.LBCFInterface {
-	return &FakeLBCFs{c}
-}
-
-func (c *FakePlatformV1) LogCollectors() v1.LogCollectorInterface {
-	return &FakeLogCollectors{c}
-}
-
 func (c *FakePlatformV1) Machines() v1.MachineInterface {
 	return &FakeMachines{c}
 }
@@ -86,20 +70,12 @@ func (c *FakePlatformV1) PersistentEvents() v1.PersistentEventInterface {
 	return &FakePersistentEvents{c}
 }
 
-func (c *FakePlatformV1) Prometheuses() v1.PrometheusInterface {
-	return &FakePrometheuses{c}
-}
-
 func (c *FakePlatformV1) Registries() v1.RegistryInterface {
 	return &FakeRegistries{c}
 }
 
 func (c *FakePlatformV1) TappControllers() v1.TappControllerInterface {
 	return &FakeTappControllers{c}
-}
-
-func (c *FakePlatformV1) VolumeDecorators() v1.VolumeDecoratorInterface {
-	return &FakeVolumeDecorators{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

@@ -19,10 +19,20 @@
 package platform
 
 import (
+	"fmt"
+	"math/rand"
+	"net"
+	"os"
+	"path"
+	"strings"
+
+	pkgerrors "github.com/pkg/errors"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	applicationv1 "tkestack.io/tke/api/application/v1"
 )
 
@@ -350,6 +360,94 @@ type ClusterCredential struct {
 	// For kubeadm init or join
 	// +optional
 	CertificateKey *string
+	// Username is the username for basic authentication to the kubernetes cluster.
+	// +optional
+	Username string
+	// Impersonate is the username to act-as.
+	// +optional
+	Impersonate string
+	// ImpersonateGroups is the groups to imperonate.
+	// +optional
+	ImpersonateGroups []string
+	// ImpersonateUserExtra contains additional information for impersonated user.
+	// +optional
+	ImpersonateUserExtra ImpersonateUserExtra
+}
+
+type ImpersonateUserExtra map[string]string
+
+func (i ImpersonateUserExtra) ExtraToHeaders() map[string][]string {
+	res := map[string][]string{}
+	for k, v := range i {
+		res[k] = strings.Split(v, ",")
+	}
+	return res
+}
+
+func (cc ClusterCredential) RESTConfig(cls *Cluster) *rest.Config {
+	config := &rest.Config{}
+	if cls != nil {
+		host := clusterHost(cls)
+		if len(host) != 0 {
+			config.Host = fmt.Sprintf("https://%s", host)
+		}
+	}
+	// If api-server does not sign the ip in address, set ca then request, it will report x509 certificate error, need to ignore the certificate
+	if os.Getenv("TKE_IGNORE_CA") != "true" && cc.CACert != nil {
+		config.TLSClientConfig.CAData = cc.CACert
+	} else {
+		config.TLSClientConfig.Insecure = true
+	}
+	if cc.ClientCert != nil && cc.ClientKey != nil {
+		config.TLSClientConfig.CertData = cc.ClientCert
+		config.TLSClientConfig.KeyData = cc.ClientKey
+	}
+	if cc.Token != nil {
+		config.BearerToken = *cc.Token
+	}
+
+	config.Impersonate.UserName = cc.Impersonate
+	config.Impersonate.Groups = cc.ImpersonateGroups
+	config.Impersonate.Extra = cc.ImpersonateUserExtra.ExtraToHeaders()
+
+	return config
+}
+
+func clusterHost(cluster *Cluster) string {
+	address, err := clusterAddress(cluster)
+	if err != nil {
+		return ""
+	}
+
+	result := net.JoinHostPort(address.Host, fmt.Sprintf("%d", address.Port))
+	if address.Path != "" {
+		result = path.Join(result, address.Path)
+	}
+
+	return result
+}
+
+func clusterAddress(cluster *Cluster) (*ClusterAddress, error) {
+	addrs := make(map[AddressType][]ClusterAddress)
+	for _, one := range cluster.Status.Addresses {
+		addrs[one.Type] = append(addrs[one.Type], one)
+	}
+
+	var address *ClusterAddress
+	if len(addrs[AddressInternal]) != 0 {
+		address = &addrs[AddressInternal][rand.Intn(len(addrs[AddressInternal]))]
+	} else if len(addrs[AddressAdvertise]) != 0 {
+		address = &addrs[AddressAdvertise][rand.Intn(len(addrs[AddressAdvertise]))]
+	} else {
+		if len(addrs[AddressReal]) != 0 {
+			address = &addrs[AddressReal][rand.Intn(len(addrs[AddressReal]))]
+		}
+	}
+	if address == nil {
+		return nil, pkgerrors.New("no valid address for the cluster")
+	}
+
+	return address, nil
 }
 
 // +genclient:nonNamespaced
@@ -463,7 +561,7 @@ const (
 	HookPreUpgrade  HookType = "PreUpgrade"
 	HookPostUpgrade HookType = "PostUpgrade"
 
-	// custer lifecycle hook
+	// cluster lifecycle hook
 	HookPreClusterInstall  HookType = "PreClusterInstall"
 	HookPostClusterInstall HookType = "PostClusterInstall"
 	HookPreClusterUpgrade  HookType = "PreClusterUpgrade"
@@ -635,7 +733,7 @@ type ClusterAddonList struct {
 
 // ClusterAddonSpec indicates the specifications of the ClusterAddon.
 type ClusterAddonSpec struct {
-	// Addon type, one of Helm, PersistentEvent or LogCollector etc.
+	// Addon type, one of PersistentEvent or LogCollector etc.
 	Type string
 	// AddonLevel is level of cluster addon.
 	Level AddonLevel
@@ -665,7 +763,7 @@ type ClusterAddonType struct {
 	metav1.TypeMeta
 	// +optional
 	metav1.ObjectMeta
-	// Addon type, one of Helm, PersistentEvent or LogCollector etc.
+	// Addon type, one of PersistentEvent or LogCollector etc.
 	Type string
 	// AddonLevel is level of cluster addon.
 	Level AddonLevel
@@ -828,145 +926,13 @@ type StorageBackEndES struct {
 // +k8s:conversion-gen:explicit-from=net/url.Values
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// HelmProxyOptions is the query options to a Helm-api proxy call.
-type HelmProxyOptions struct {
+// ProxyOptions is the query options to a proxy call.
+type ProxyOptions struct {
 	metav1.TypeMeta
 
 	// Path is the URL path to use for the current proxy request to helm-api.
 	// +optional
 	Path string
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// Helm is a kubernetes package manager.
-type Helm struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ObjectMeta
-
-	// Spec defines the desired identities of clusters in this set.
-	// +optional
-	Spec HelmSpec
-	// +optional
-	Status HelmStatus
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// HelmList is the whole list of all helms which owned by a tenant.
-type HelmList struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ListMeta
-
-	// List of Helms
-	Items []Helm
-}
-
-// HelmSpec describes the attributes on a Helm.
-type HelmSpec struct {
-	TenantID    string
-	ClusterName string
-	Version     string
-}
-
-// HelmStatus is information about the current status of a Helm.
-type HelmStatus struct {
-	// +optional
-	Version string
-	// Phase is the current lifecycle phase of the helm of cluster.
-	// +optional
-	Phase AddonPhase
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// Prometheus is a kubernetes package manager.
-type Prometheus struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ObjectMeta
-
-	// Spec defines the desired identities of clusters in this set.
-	// +optional
-	Spec PrometheusSpec
-	// +optional
-	Status PrometheusStatus
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// PrometheusList is the whole list of all prometheus which owned by a tenant.
-type PrometheusList struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ListMeta
-
-	// List of Prometheuss
-	Items []Prometheus
-}
-
-// PrometheusSpec describes the attributes on a Prometheus.
-type PrometheusSpec struct {
-	TenantID      string
-	ClusterName   string
-	Version       string
-	SubVersion    map[string]string
-	RemoteAddress PrometheusRemoteAddr
-	// +optional
-	NotifyWebhook string
-	// +optional
-	Resources ResourceRequirements
-	// +optional
-	RunOnMaster bool
-	// +optional
-	AlertRepeatInterval string
-	// +optional
-	WithNPD bool
-}
-
-// PrometheusStatus is information about the current status of a Prometheus.
-type PrometheusStatus struct {
-	// +optional
-	Version string
-	// Phase is the current lifecycle phase of the helm of cluster.
-	// +optional
-	Phase AddonPhase
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time
-	// SubVersion is the components version such as node-exporter.
-	SubVersion map[string]string
-}
-
-// PrometheusRemoteAddr is the remote write/read address for prometheus
-type PrometheusRemoteAddr struct {
-	WriteAddr []string
-	ReadAddr  []string
 }
 
 // AddonPhase defines the phase of addon
@@ -994,74 +960,6 @@ const (
 	// AddonPhaseUnknown means addon unknown
 	AddonPhaseUnknown AddonPhase = "Unknown"
 )
-
-// +k8s:conversion-gen:explicit-from=net/url.Values
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// IPAMProxyOptions is the query options to a Helm-api proxy call.
-type IPAMProxyOptions struct {
-	metav1.TypeMeta
-
-	// Path is the URL path to use for the current proxy request to helm-api.
-	// +optional
-	Path string
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// IPAM is a scheduler plugin for assigning IP.
-type IPAM struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ObjectMeta
-
-	// Spec defines the desired identities of clusters in this set.
-	// +optional
-	Spec IPAMSpec
-	// +optional
-	Status IPAMStatus
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// IPAMList is the whole list of all IPAMs which owned by a tenant.
-type IPAMList struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ListMeta
-
-	// List of IPAMs
-	Items []IPAM
-}
-
-// IPAMSpec describes the attributes on a IPAM.
-type IPAMSpec struct {
-	TenantID    string
-	ClusterName string
-	Version     string
-}
-
-// IPAMStatus is information about the current status of a IPAM.
-type IPAMStatus struct {
-	// +optional
-	Version string
-	// Phase is the current lifecycle phase of the addon of cluster.
-	// +optional
-	Phase AddonPhase
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time
-}
 
 // +genclient
 // +genclient:nonNamespaced
@@ -1251,151 +1149,6 @@ type CSIOperatorStatus struct {
 	// +optional
 	StorageVendorVersion string
 	// Phase is the current lifecycle phase of the csi operator of cluster.
-	// +optional
-	Phase AddonPhase
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time
-}
-
-// +k8s:conversion-gen:explicit-from=net/url.Values
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// PVCRProxyOptions is the query options to a kube-apiserver proxy call for PVCR crd object.
-type PVCRProxyOptions struct {
-	metav1.TypeMeta
-
-	Namespace string
-	Name      string
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// VolumeDecorator is a controller to manage PVC information.
-type VolumeDecorator struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ObjectMeta
-
-	// Spec defines the desired identities of volume decorator.
-	// +optional
-	Spec VolumeDecoratorSpec
-	// +optional
-	Status VolumeDecoratorStatus
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// VolumeDecoratorList is the whole list of all VolumeDecorator which owned by a tenant.
-type VolumeDecoratorList struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ListMeta
-
-	// List of volume decorators.
-	Items []VolumeDecorator
-}
-
-// VolumeDecoratorSpec describes the attributes of a VolumeDecorator.
-type VolumeDecoratorSpec struct {
-	TenantID          string
-	ClusterName       string
-	Version           string
-	VolumeTypes       []string
-	WorkloadAdmission bool
-}
-
-// VolumeDecoratorStatus is information about the current status of a VolumeDecorator.
-type VolumeDecoratorStatus struct {
-	// +optional
-	Version string
-	// VolumeTypes is the supported volume types in this cluster.
-	// +optional
-	VolumeTypes []string
-	// WorkloadAdmission will be true to enable the workload admission webhook.
-	// +optional
-	WorkloadAdmission bool
-	// StorageVendorVersion will be set to the config version of the storage vendor.
-	// +optional
-	StorageVendorVersion string
-	// Phase is the current lifecycle phase of the volume-decorator of cluster.
-	// +optional
-	Phase AddonPhase
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time
-}
-
-// +k8s:conversion-gen:explicit-from=net/url.Values
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LogCollectorProxyOptions is the query options to a kube-apiserver proxy call for LogCollector crd object.
-type LogCollectorProxyOptions struct {
-	metav1.TypeMeta
-
-	Namespace string
-	Name      string
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LogCollector is a manager to collect logs of workload.
-type LogCollector struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ObjectMeta
-
-	// Spec defines the desired identities of LogCollector.
-	// +optional
-	Spec LogCollectorSpec
-	// +optional
-	Status LogCollectorStatus
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LogCollectorList is the whole list of all LogCollector which owned by a tenant.
-type LogCollectorList struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ListMeta
-
-	// List of volume decorators.
-	Items []LogCollector
-}
-
-// LogCollectorSpec describes the attributes of a LogCollector.
-type LogCollectorSpec struct {
-	TenantID    string
-	ClusterName string
-	Version     string
-}
-
-// LogCollectorStatus is information about the current status of a LogCollector.
-type LogCollectorStatus struct {
-	// +optional
-	Version string
-	// Phase is the current lifecycle phase of the LogCollector of cluster.
 	// +optional
 	Phase AddonPhase
 	// Reason is a brief CamelCase string that describes any failure.
@@ -1636,74 +1389,6 @@ type CronHPAStatus struct {
 	LastReInitializingTimestamp metav1.Time
 }
 
-// +k8s:conversion-gen:explicit-from=net/url.Values
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LBCFProxyOptions is the query options to a kube-apiserver proxy call.
-type LBCFProxyOptions struct {
-	metav1.TypeMeta
-
-	Namespace string
-	Name      string
-	Action    string
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LBCF is a kubernetes load balancer manager
-type LBCF struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ObjectMeta
-
-	// Spec defines the desired identities of LBCF.
-	// +optional
-	Spec LBCFSpec
-	// +optional
-	Status LBCFStatus
-}
-
-// LBCFSpec defines the desired identities of LBCF.
-type LBCFSpec struct {
-	TenantID    string
-	ClusterName string
-	Version     string
-}
-
-// LBCFStatus is information about the current status of a LBCF.
-type LBCFStatus struct {
-	// +optional
-	Version string
-	// Phase is the current lifecycle phase of the CronHPA of cluster.
-	// +optional
-	Phase AddonPhase
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LBCFList is the whole list of all LBCF which owned by a tenant.
-type LBCFList struct {
-	metav1.TypeMeta
-	// +optional
-	metav1.ListMeta
-
-	// List of CronHPAs
-	Items []LBCF
-}
-
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -1714,6 +1399,8 @@ type ClusterGroupAPIResourceItemsList struct {
 	metav1.ListMeta
 	// List of ClusterAPIResource
 	Items []ClusterGroupAPIResourceItems
+	// Failed Group Error
+	FailedGroupError string
 }
 
 // +genclient

@@ -41,16 +41,11 @@ import (
 	"tkestack.io/tke/pkg/platform/controller/machine/deletion"
 	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
 	machineprovider "tkestack.io/tke/pkg/platform/provider/machine"
-	"tkestack.io/tke/pkg/platform/util"
-	"tkestack.io/tke/pkg/util/apiclient"
 	"tkestack.io/tke/pkg/util/log"
 	"tkestack.io/tke/pkg/util/metrics"
 )
 
 const (
-	conditionTypeHealthCheck = "HealthCheck"
-	failedHealthCheckReason  = "FailedHealthCheck"
-
 	resyncInternal = 1 * time.Minute
 )
 
@@ -124,16 +119,22 @@ func (c *Controller) updateMachine(old, obj interface{}) {
 }
 
 func (c *Controller) needsUpdate(old *platformv1.Machine, new *platformv1.Machine) bool {
-	switch {
-	case !reflect.DeepEqual(old.Spec, new.Spec):
+	healthCondition := new.GetCondition(machineprovider.ConditionTypeHealthCheck)
+	if !reflect.DeepEqual(old.Spec, new.Spec) {
 		return true
-	case !reflect.DeepEqual(old.ObjectMeta.Labels, new.ObjectMeta.Labels):
+
+	}
+	if !reflect.DeepEqual(old.ObjectMeta.Labels, new.ObjectMeta.Labels) {
 		return true
-	case !reflect.DeepEqual(old.ObjectMeta.Annotations, new.ObjectMeta.Annotations):
+	}
+	if !reflect.DeepEqual(old.ObjectMeta.Annotations, new.ObjectMeta.Annotations) {
 		return true
-	case old.Status.Phase != new.Status.Phase:
+	}
+	if old.Status.Phase != new.Status.Phase {
 		return true
-	case new.Status.Phase == platformv1.MachineInitializing:
+
+	}
+	if new.Status.Phase == platformv1.MachineInitializing {
 		// if ResourceVersion is equal, it's an resync envent, should return true.
 		if old.ResourceVersion == new.ResourceVersion {
 			return true
@@ -144,25 +145,17 @@ func (c *Controller) needsUpdate(old *platformv1.Machine, new *platformv1.Machin
 		if new.Status.Conditions[len(new.Status.Conditions)-1].Status == platformv1.ConditionUnknown {
 			return true
 		}
-		// if user set last condition false block procesee
+		// if user set last condition false block procesee until resync envent
 		if new.Status.Conditions[len(new.Status.Conditions)-1].Status == platformv1.ConditionFalse {
 			return false
 		}
-		fallthrough
-	case !reflect.DeepEqual(old.Status.Conditions, new.Status.Conditions):
-		return true
-	default:
-		healthCondition := new.GetCondition(conditionTypeHealthCheck)
-		if healthCondition == nil {
-			// when healthCondition is not set, if ResourceVersion is equal, it's an resync envent, should return true.
-			return old.ResourceVersion == new.ResourceVersion
-		}
-		if time.Since(healthCondition.LastProbeTime.Time) > resyncInternal {
-			return true
-		}
-
+	}
+	// if last health check is not long enough， return false
+	if healthCondition != nil &&
+		time.Since(healthCondition.LastProbeTime.Time) < resyncInternal {
 		return false
 	}
+	return true
 }
 
 func (c *Controller) enqueue(obj *platformv1.Machine) {
@@ -314,7 +307,7 @@ func (c *Controller) onUpdate(ctx context.Context, machine *platformv1.Machine) 
 	}
 
 	err = provider.OnUpdate(ctx, machine, cluster)
-	machine = c.checkHealth(ctx, machine)
+	machine = provider.OnHealthCheck(ctx, machine, cluster)
 	if err != nil {
 		// Update status, ignore failure
 		_, _ = c.platformClient.Machines().UpdateStatus(ctx, machine, metav1.UpdateOptions{})
@@ -326,42 +319,4 @@ func (c *Controller) onUpdate(ctx context.Context, machine *platformv1.Machine) 
 	}
 
 	return nil
-}
-
-func (c *Controller) checkHealth(ctx context.Context, machine *platformv1.Machine) *platformv1.Machine {
-	if !(machine.Status.Phase == platformv1.MachineRunning ||
-		machine.Status.Phase == platformv1.MachineFailed) {
-		return machine
-	}
-
-	healthCheckCondition := platformv1.MachineCondition{
-		Type:   conditionTypeHealthCheck,
-		Status: platformv1.ConditionFalse,
-	}
-
-	clientset, err := util.BuildExternalClientSetWithName(ctx, c.platformClient, machine.Spec.ClusterName)
-	if err != nil {
-		machine.Status.Phase = platformv1.MachineFailed
-
-		healthCheckCondition.Reason = failedHealthCheckReason
-		healthCheckCondition.Message = err.Error()
-	} else {
-		_, err = apiclient.GetNodeByMachineIP(ctx, clientset, machine.Spec.IP)
-		if err != nil {
-			machine.Status.Phase = platformv1.MachineFailed
-
-			healthCheckCondition.Reason = failedHealthCheckReason
-			healthCheckCondition.Message = err.Error()
-		} else {
-			machine.Status.Phase = platformv1.MachineRunning
-
-			healthCheckCondition.Status = platformv1.ConditionTrue
-		}
-	}
-
-	machine.SetCondition(healthCheckCondition)
-
-	log.FromContext(ctx).Info("Update machine health status", "phase", machine.Status.Phase)
-
-	return machine
 }

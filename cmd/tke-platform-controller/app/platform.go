@@ -27,14 +27,8 @@ import (
 	"tkestack.io/tke/api/client/informers/externalversions"
 	platformv1 "tkestack.io/tke/api/platform/v1"
 	"tkestack.io/tke/pkg/platform/controller/addon/cronhpa"
-	"tkestack.io/tke/pkg/platform/controller/addon/helm"
-	"tkestack.io/tke/pkg/platform/controller/addon/ipam"
-	"tkestack.io/tke/pkg/platform/controller/addon/lbcf"
-	"tkestack.io/tke/pkg/platform/controller/addon/logcollector"
 	"tkestack.io/tke/pkg/platform/controller/addon/persistentevent"
-	"tkestack.io/tke/pkg/platform/controller/addon/prometheus"
 	"tkestack.io/tke/pkg/platform/controller/addon/storage/csioperator"
-	"tkestack.io/tke/pkg/platform/controller/addon/storage/volumedecorator"
 	"tkestack.io/tke/pkg/platform/controller/addon/tappcontroller"
 	bootstrapps "tkestack.io/tke/pkg/platform/controller/bootstrapapps"
 	clustercontroller "tkestack.io/tke/pkg/platform/controller/cluster"
@@ -47,12 +41,6 @@ const (
 
 	eventSyncPeriod = 5 * time.Minute
 	concurrentSyncs = 10
-
-	promEventSyncPeriod = 5 * time.Minute
-	concurrentPromSyncs = 10
-
-	ipamEventSyncPeriod = 5 * time.Minute
-	concurrentIPAMSyncs = 5
 )
 
 func startClusterController(ctx ControllerContext) (http.Handler, bool, error) {
@@ -88,42 +76,6 @@ func startMachineController(ctx ControllerContext) (http.Handler, bool, error) {
 
 	go func() {
 		_ = ctrl.Run(ctx.Config.MachineController.ConcurrentMachineSyncs, ctx.Stop)
-	}()
-
-	return nil, true, nil
-}
-
-func startHelmController(ctx ControllerContext) (http.Handler, bool, error) {
-	if !ctx.AvailableResources[schema.GroupVersionResource{Group: platformv1.GroupName, Version: "v1", Resource: "helms"}] {
-		return nil, false, nil
-	}
-
-	ctrl := helm.NewController(
-		ctx.ClientBuilder.ClientOrDie("helm-controller"),
-		ctx.InformerFactory.Platform().V1().Helms(),
-		eventSyncPeriod,
-	)
-
-	go func() {
-		_ = ctrl.Run(concurrentSyncs, ctx.Stop)
-	}()
-
-	return nil, true, nil
-}
-
-func startIPAMController(ctx ControllerContext) (http.Handler, bool, error) {
-	if !ctx.AvailableResources[schema.GroupVersionResource{Group: platformv1.GroupName, Version: "v1", Resource: "ipams"}] {
-		return nil, false, nil
-	}
-
-	ctrl := ipam.NewController(
-		ctx.ClientBuilder.ClientOrDie("ipam-controller"),
-		ctx.InformerFactory.Platform().V1().IPAMs(),
-		ipamEventSyncPeriod,
-	)
-
-	go func() {
-		_ = ctrl.Run(concurrentIPAMSyncs, ctx.Stop)
 	}()
 
 	return nil, true, nil
@@ -191,85 +143,6 @@ func startCSIOperatorController(ctx ControllerContext) (http.Handler, bool, erro
 	ctrl := csioperator.NewController(
 		ctx.ClientBuilder.ClientOrDie("csi-operator-controller"),
 		ctx.InformerFactory.Platform().V1().CSIOperators(),
-		eventSyncPeriod,
-	)
-
-	go func() {
-		_ = ctrl.Run(concurrentSyncs, ctx.Stop)
-	}()
-
-	return nil, true, nil
-}
-
-func startVolumeDecoratorController(ctx ControllerContext) (http.Handler, bool, error) {
-	if !ctx.AvailableResources[schema.GroupVersionResource{Group: platformv1.GroupName, Version: "v1", Resource: "volumedecorators"}] {
-		return nil, false, nil
-	}
-
-	ctrl := volumedecorator.NewController(
-		ctx.ClientBuilder.ClientOrDie("volume-decorator-controller"),
-		ctx.InformerFactory.Platform().V1().VolumeDecorators(),
-		eventSyncPeriod,
-	)
-
-	go func() {
-		_ = ctrl.Run(concurrentSyncs, ctx.Stop)
-	}()
-
-	return nil, true, nil
-}
-
-func startLogCollectorController(ctx ControllerContext) (http.Handler, bool, error) {
-	if !ctx.AvailableResources[schema.GroupVersionResource{Group: platformv1.GroupName, Version: "v1", Resource: "logcollectors"}] {
-		return nil, false, nil
-	}
-
-	ctrl := logcollector.NewController(
-		ctx.ClientBuilder.ClientOrDie("log-collector-controller"),
-		ctx.InformerFactory.Platform().V1().LogCollectors(),
-		eventSyncPeriod,
-	)
-
-	go func() {
-		_ = ctrl.Run(concurrentSyncs, ctx.Stop)
-	}()
-
-	return nil, true, nil
-}
-
-func startPrometheusController(ctx ControllerContext) (http.Handler, bool, error) {
-	if ctx.RemoteType == "" || len(ctx.RemoteAddresses) == 0 {
-		return nil, false, nil
-	}
-
-	if !ctx.AvailableResources[schema.GroupVersionResource{Group: platformv1.GroupName, Version: "v1", Resource: "prometheuses"}] {
-		return nil, false, nil
-	}
-
-	ctrl := prometheus.NewController(
-		ctx.ClientBuilder.ClientOrDie("prometheus-controller"),
-		ctx.InformerFactory.Platform().V1().Prometheuses(),
-		promEventSyncPeriod,
-
-		ctx.RemoteAddresses,
-		ctx.RemoteType,
-	)
-
-	go func() {
-		_ = ctrl.Run(concurrentPromSyncs, ctx.Stop)
-	}()
-
-	return nil, true, nil
-}
-
-func startLBCFControllerController(ctx ControllerContext) (http.Handler, bool, error) {
-	if !ctx.AvailableResources[schema.GroupVersionResource{Group: platformv1.GroupName, Version: "v1", Resource: "lbcfs"}] {
-		return nil, false, nil
-	}
-
-	ctrl := lbcf.NewController(
-		ctx.ClientBuilder.ClientOrDie("tapp-controller-controller"),
-		ctx.InformerFactory.Platform().V1().LBCFs(),
 		eventSyncPeriod,
 	)
 

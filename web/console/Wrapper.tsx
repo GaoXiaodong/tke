@@ -24,13 +24,14 @@ import {
   setConsoleAPIAddress
 } from './helpers';
 import { ResourceInfo, RequestParams } from './src/modules/common/models';
-import { resourceConfig } from './config';
+import { resourceConfig, PlatformTypeEnum } from './config';
 import { isEmpty } from './src/modules/common/utils';
 import * as classnames from 'classnames';
 import { Icon, Text, Bubble, NavMenu, List, ExternalLink, StatusTip } from 'tea-component';
 import { TkeVersion } from '@/src/modules/common/components/tke-version';
 import { ConsoleModuleEnum } from '@config/platform';
 import 'tea-component/dist/tea.css';
+require('promise.prototype.finally').shim();
 
 const { LoadingTip } = StatusTip;
 
@@ -42,14 +43,6 @@ enum UserType {
   member = 'member',
   other = 'other',
   init = 'init'
-}
-
-export enum PlatformTypeEnum {
-  /** 平台 */
-  Manager = 'manager',
-
-  /** 业务 */
-  Business = 'business'
 }
 
 export interface IPlatformContext {
@@ -281,6 +274,8 @@ interface ConsoleWrapperProps {
 
   /** 是否需要侧边导航栏 */
   sideBar?: boolean;
+
+  children: React.ReactNode;
 }
 
 interface UserInfo {

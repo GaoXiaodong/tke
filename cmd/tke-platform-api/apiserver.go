@@ -25,10 +25,10 @@ import (
 	"time"
 
 	"tkestack.io/tke/cmd/tke-platform-api/app"
-	_ "tkestack.io/tke/pkg/platform/provider/baremetal/cluster"
-	_ "tkestack.io/tke/pkg/platform/provider/baremetal/machine"
-	_ "tkestack.io/tke/pkg/platform/provider/imported/cluster"
-	_ "tkestack.io/tke/pkg/platform/provider/registered/cluster"
+	baremetalcluster "tkestack.io/tke/pkg/platform/provider/baremetal/cluster"
+	baremetalmachine "tkestack.io/tke/pkg/platform/provider/baremetal/machine"
+	edgecluster "tkestack.io/tke/pkg/platform/provider/edge/cluster"
+	importedcluster "tkestack.io/tke/pkg/platform/provider/imported/cluster"
 )
 
 func main() {
@@ -36,6 +36,11 @@ func main() {
 	if len(os.Getenv("GOMAXPROCS")) == 0 {
 		runtime.GOMAXPROCS(runtime.NumCPU())
 	}
+
+	baremetalcluster.RegisterProvider()
+	baremetalmachine.RegisterProvider()
+	importedcluster.RegisterProvider()
+	edgecluster.RegisterProvider()
 
 	app.NewApp("tke-platform-api").Run()
 }

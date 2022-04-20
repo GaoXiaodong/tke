@@ -30,6 +30,7 @@ module.exports = ({ version }) =>
       historyApiFallback: true,
       compress: true,
       open: true,
+      openPage: version === 'tke' ? '/' : '/tkestack-project',
       port: 8181,
       proxy: {
         '/api': {
@@ -38,8 +39,11 @@ module.exports = ({ version }) =>
           changeOrigin: true,
           headers: { Cookie }
         },
-        '/apis': {
-          target: Host,
+
+        '/websocket': {
+          target: `ws://${Host.split('//')[1]}`,
+          ws: true,
+          logLevel: 'debug',
           secure: false,
           changeOrigin: true,
           headers: { Cookie }

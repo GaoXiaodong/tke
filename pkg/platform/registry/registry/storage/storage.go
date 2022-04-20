@@ -21,7 +21,6 @@ package storage
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/api/errors"
 	metainternal "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,7 +28,6 @@ import (
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"tkestack.io/tke/api/platform"
-	"tkestack.io/tke/pkg/apiserver/authentication"
 	apiserverutil "tkestack.io/tke/pkg/apiserver/util"
 	"tkestack.io/tke/pkg/platform/registry/registry"
 	"tkestack.io/tke/pkg/platform/util"
@@ -54,7 +52,6 @@ func NewStorage(optsGetter generic.RESTOptionsGetter, privilegedUsername string)
 		CreateStrategy: strategy,
 		UpdateStrategy: strategy,
 		DeleteStrategy: strategy,
-		ExportStrategy: strategy,
 	}
 	store.TableConvertor = rest.NewDefaultTableConvertor(store.DefaultQualifiedResource)
 	options := &generic.StoreOptions{
@@ -68,7 +65,6 @@ func NewStorage(optsGetter generic.RESTOptionsGetter, privilegedUsername string)
 
 	statusStore := *store
 	statusStore.UpdateStrategy = registry.NewStatusStrategy(strategy)
-	statusStore.ExportStrategy = registry.NewStatusStrategy(strategy)
 
 	return &Storage{
 		Registry: &REST{store, privilegedUsername},
@@ -79,20 +75,6 @@ func NewStorage(optsGetter generic.RESTOptionsGetter, privilegedUsername string)
 // ValidateGetObjectAndTenantID validate name and tenantID, if success return Registry
 func ValidateGetObjectAndTenantID(ctx context.Context, store *genericregistry.Store, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	obj, err := store.Get(ctx, name, options)
-	if err != nil {
-		return nil, err
-	}
-
-	rg := obj.(*platform.Registry)
-	if err := util.FilterRegistry(ctx, rg); err != nil {
-		return nil, err
-	}
-	return rg, nil
-}
-
-// ValidateExportObjectAndTenantID validate name and tenantID, if success return Registry
-func ValidateExportObjectAndTenantID(ctx context.Context, store *genericregistry.Store, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	obj, err := store.Export(ctx, name, options)
 	if err != nil {
 		return nil, err
 	}
@@ -128,12 +110,6 @@ func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions)
 	return ValidateGetObjectAndTenantID(ctx, r.Store, name, options)
 }
 
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *REST) Export(ctx context.Context, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.Store, name, options)
-}
-
 // Update finds a resource in the storage and updates it.
 func (r *REST) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, options *metav1.UpdateOptions) (runtime.Object, bool, error) {
 	// We are explicitly setting forceAllowCreate to false in the call to the underlying storage because
@@ -157,9 +133,6 @@ func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.Va
 // DeleteCollection selects all resources in the storage matching given 'listOptions'
 // and deletes them.
 func (r *REST) DeleteCollection(ctx context.Context, deleteValidation rest.ValidateObjectFunc, options *metav1.DeleteOptions, listOptions *metainternal.ListOptions) (runtime.Object, error) {
-	if !authentication.IsAdministrator(ctx, r.privilegedUsername) {
-		return nil, errors.NewMethodNotSupported(platform.Resource("registries"), "delete collection")
-	}
 	return r.Store.DeleteCollection(ctx, deleteValidation, options, listOptions)
 }
 
@@ -180,12 +153,6 @@ func (r *StatusREST) New() runtime.Object {
 // Get retrieves the object from the storage. It is required to support Patch.
 func (r *StatusREST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return ValidateGetObjectAndTenantID(ctx, r.store, name, options)
-}
-
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *StatusREST) Export(ctx context.Context, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.store, name, options)
 }
 
 // Update alters the status subset of an object.

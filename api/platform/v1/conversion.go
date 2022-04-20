@@ -31,15 +31,9 @@ func addConversionFuncs(scheme *runtime.Scheme) error {
 		AddFieldLabelConversionsForMachine,
 		AddFieldLabelConversionsForRegistry,
 		AddFieldLabelConversionsForPersistentEvent,
-		AddFieldLabelConversionsForHelm,
 		AddFieldLabelConversionsForTappController,
 		AddFieldLabelConversionsForCSIOperator,
-		AddFieldLabelConversionsForVolumeDecorator,
-		AddFieldLabelConversionsForLogCollector,
 		AddFieldLabelConversionsForCronHPA,
-		AddFieldLabelConversionsForPrometheus,
-		AddFieldLabelConversionsForIPAM,
-		AddFieldLabelConversionsForLBCF,
 	}
 	for _, f := range funcs {
 		if err := f(scheme); err != nil {
@@ -145,26 +139,6 @@ func AddFieldLabelConversionsForRegistry(scheme *runtime.Scheme) error {
 		})
 }
 
-// AddFieldLabelConversionsForHelm adds a conversion function to convert
-// field selectors of Helm from the given version to internal version
-// representation.
-func AddFieldLabelConversionsForHelm(scheme *runtime.Scheme) error {
-	return scheme.AddFieldLabelConversionFunc(SchemeGroupVersion.WithKind("Helm"),
-		func(label, value string) (string, string, error) {
-			switch label {
-			case "spec.tenantID",
-				"spec.clusterName",
-				"spec.version",
-				"status.phase",
-				"status.version",
-				"metadata.name":
-				return label, value, nil
-			default:
-				return "", "", fmt.Errorf("field label not supported: %s", label)
-			}
-		})
-}
-
 // AddFieldLabelConversionsForTappController adds a conversion function to convert
 // field selectors of TappController from the given version to internal version
 // representation.
@@ -205,111 +179,11 @@ func AddFieldLabelConversionsForCSIOperator(scheme *runtime.Scheme) error {
 		})
 }
 
-// AddFieldLabelConversionsForVolumeDecorator adds a conversion function to convert
-// field selectors of VolumeDecorator from the given version to internal version
-// representation.
-func AddFieldLabelConversionsForVolumeDecorator(scheme *runtime.Scheme) error {
-	return scheme.AddFieldLabelConversionFunc(SchemeGroupVersion.WithKind("VolumeDecorator"),
-		func(label, value string) (string, string, error) {
-			switch label {
-			case "spec.tenantID",
-				"spec.clusterName",
-				"spec.version",
-				"status.phase",
-				"status.version",
-				"metadata.name":
-				return label, value, nil
-			default:
-				return "", "", fmt.Errorf("field label not supported: %s", label)
-			}
-		})
-}
-
-// AddFieldLabelConversionsForLogCollector adds a conversion function to convert
-// field selectors of VolumeDecorator from the given version to internal version
-// representation.
-func AddFieldLabelConversionsForLogCollector(scheme *runtime.Scheme) error {
-	return scheme.AddFieldLabelConversionFunc(SchemeGroupVersion.WithKind("LogCollector"),
-		func(label, value string) (string, string, error) {
-			switch label {
-			case "spec.tenantID",
-				"spec.clusterName",
-				"spec.version",
-				"status.phase",
-				"status.version",
-				"metadata.name":
-				return label, value, nil
-			default:
-				return "", "", fmt.Errorf("field label not supported: %s", label)
-			}
-		})
-}
-
 // AddFieldLabelConversionsForCronHPA adds a conversion function to convert
 // field selectors of CronHPA from the given version to internal version
 // representation.
 func AddFieldLabelConversionsForCronHPA(scheme *runtime.Scheme) error {
 	return scheme.AddFieldLabelConversionFunc(SchemeGroupVersion.WithKind("CronHPA"),
-		func(label, value string) (string, string, error) {
-			switch label {
-			case "spec.tenantID",
-				"spec.clusterName",
-				"spec.version",
-				"status.phase",
-				"status.version",
-				"metadata.name":
-				return label, value, nil
-			default:
-				return "", "", fmt.Errorf("field label not supported: %s", label)
-			}
-		})
-}
-
-// AddFieldLabelConversionsForPrometheus adds a conversion function to convert
-// field selectors of Prometheus from the given version to internal version
-// representation.
-func AddFieldLabelConversionsForPrometheus(scheme *runtime.Scheme) error {
-	return scheme.AddFieldLabelConversionFunc(SchemeGroupVersion.WithKind("Prometheus"),
-		func(label, value string) (string, string, error) {
-			switch label {
-			case "spec.tenantID",
-				"spec.clusterName",
-				"spec.version",
-				"status.phase",
-				"status.version",
-				"metadata.name":
-				return label, value, nil
-			default:
-				return "", "", fmt.Errorf("field label not supported: %s", label)
-			}
-		})
-}
-
-// AddFieldLabelConversionsForIPAM adds a conversion function to convert
-// field selectors of Project from the given version to internal version
-// representation.
-func AddFieldLabelConversionsForIPAM(scheme *runtime.Scheme) error {
-	return scheme.AddFieldLabelConversionFunc(SchemeGroupVersion.WithKind("IPAM"),
-		func(label, value string) (string, string, error) {
-			switch label {
-			case "spec.tenantID",
-				"spec.clusterName",
-				"spec.version",
-				"status.phase",
-				"status.version",
-				"metadata.name":
-				return label, value, nil
-			default:
-				return "", "", fmt.Errorf("field label not supported: %s", label)
-			}
-		})
-}
-
-// AddFieldLabelConversionsForLBCF adds a conversion function to convert
-// field selectors of LBCF from the given version to internal version
-// representation.
-func AddFieldLabelConversionsForLBCF(scheme *runtime.Scheme) error {
-	return scheme.AddFieldLabelConversionFunc(SchemeGroupVersion.WithKind("LBCF"),
 		func(label, value string) (string, string, error) {
 			switch label {
 			case "spec.tenantID",

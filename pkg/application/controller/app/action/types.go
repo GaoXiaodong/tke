@@ -19,9 +19,7 @@
 package action
 
 import (
-	"context"
-
-	applicationv1 "tkestack.io/tke/api/application/v1"
+	"time"
 )
 
-type updateStatusFunc func(ctx context.Context, app *applicationv1.App, previousStatus, newStatus *applicationv1.AppStatus) (*applicationv1.App, error)
+const clientTimeOut = 30 * time.Second

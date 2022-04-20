@@ -31,19 +31,21 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/endpoints/request"
+	restclient "k8s.io/client-go/rest"
 	platforminternalclient "tkestack.io/tke/api/client/clientset/internalversion/typed/platform/internalversion"
 	"tkestack.io/tke/api/platform"
+	platformv1 "tkestack.io/tke/api/platform/v1"
 	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
 )
 
 // APIServerLocationByCluster returns a URL and transport which one can use to
 // send traffic for the specified cluster api server.
-func APIServerLocationByCluster(ctx context.Context, cluster *platform.Cluster, platformClient platforminternalclient.PlatformInterface) (*url.URL, http.RoundTripper, string, error) {
+func APIServerLocationByCluster(ctx context.Context, cluster *platformv1.Cluster) (*url.URL, http.RoundTripper, string, error) {
 	username, tenantID := authentication.UsernameAndTenantID(ctx)
 	if len(tenantID) > 0 && cluster.Spec.TenantID != tenantID {
 		return nil, nil, "", errors.NewNotFound(platform.Resource("clusters"), cluster.ObjectMeta.Name)
 	}
-	if cluster.Status.Phase != platform.ClusterRunning {
+	if cluster.Status.Phase != platformv1.ClusterRunning {
 		return nil, nil, "", errors.NewServiceUnavailable(fmt.Sprintf("cluster %s status is abnormal", cluster.ObjectMeta.Name))
 	}
 
@@ -56,24 +58,21 @@ func APIServerLocationByCluster(ctx context.Context, cluster *platform.Cluster, 
 		return nil, nil, "", errors.NewInternalError(err)
 	}
 
-	clusterCredential, err := provider.GetClusterCredential(ctx, platformClient, cluster, username)
+	restconfig, err := provider.GetRestConfig(ctx, cluster, username)
 	if err != nil {
 		return nil, nil, "", errors.NewInternalError(err)
 	}
 
-	transport, err := BuildTransport(clusterCredential)
+	transport, err := restclient.TransportFor(restconfig)
 	if err != nil {
 		return nil, nil, "", errors.NewInternalError(err)
 	}
-	address, err := ClusterAddress(cluster)
+	address, err := clusterAddress(cluster)
 	if err != nil {
 		return nil, nil, "", errors.NewInternalError(err)
 	}
 
-	token := ""
-	if clusterCredential.Token != nil {
-		token = *clusterCredential.Token
-	}
+	token := restconfig.BearerToken
 
 	// Otherwise, return the requested scheme and port, and the proxy transport
 	return &url.URL{
@@ -101,7 +100,13 @@ func APIServerLocation(ctx context.Context, platformClient platforminternalclien
 		return nil, nil, "", err
 	}
 
-	location, transport, token, err := APIServerLocationByCluster(ctx, cluster, platformClient)
+	clusterv1 := &platformv1.Cluster{}
+	err = platformv1.Convert_platform_Cluster_To_v1_Cluster(cluster, clusterv1, nil)
+	if err != nil {
+		return nil, nil, "", errors.NewInternalError(err)
+	}
+
+	location, transport, token, err := APIServerLocationByCluster(ctx, clusterv1)
 	if err != nil {
 		return nil, nil, "", err
 	}

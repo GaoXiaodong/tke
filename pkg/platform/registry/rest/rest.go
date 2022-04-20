@@ -34,16 +34,10 @@ import (
 	configmapstorage "tkestack.io/tke/pkg/platform/registry/configmap/storage"
 	cronhpastorage "tkestack.io/tke/pkg/platform/registry/cronhpa/storage"
 	csioperatorstorage "tkestack.io/tke/pkg/platform/registry/csioperator/storage"
-	helmstorage "tkestack.io/tke/pkg/platform/registry/helm/storage"
-	ipamstorage "tkestack.io/tke/pkg/platform/registry/ipam/storage"
-	lbcfstorage "tkestack.io/tke/pkg/platform/registry/lbcf/storage"
-	logcollectorstorage "tkestack.io/tke/pkg/platform/registry/logcollector/storage"
 	machinestorage "tkestack.io/tke/pkg/platform/registry/machine/storage"
 	persistenteventstorage "tkestack.io/tke/pkg/platform/registry/persistentevent/storage"
-	promstorage "tkestack.io/tke/pkg/platform/registry/prometheus/storage"
 	registrystorage "tkestack.io/tke/pkg/platform/registry/registry/storage"
 	tappcontrollertorage "tkestack.io/tke/pkg/platform/registry/tappcontroller/storage"
-	volumedecoratorstorage "tkestack.io/tke/pkg/platform/registry/volumedecorator/storage"
 )
 
 // StorageProvider is a REST type for core resources storage that implement
@@ -85,18 +79,11 @@ func (s *StorageProvider) v1Storage(apiResourceConfigSource serverstorage.APIRes
 		storageMap["clusters/proxy"] = clusterREST.Proxy
 		storageMap["clusters/apply"] = clusterREST.Apply
 		storageMap["clusters/apiresources"] = clusterREST.APIResources
-		storageMap["clusters/helm"] = clusterREST.Helm
 		storageMap["clusters/tapps"] = clusterREST.TappController
 		storageMap["clusters/csis"] = clusterREST.CSI
-		storageMap["clusters/pvcrs"] = clusterREST.PVCR
-		storageMap["clusters/logcollector"] = clusterREST.LogCollector
 		storageMap["clusters/cronhpas"] = clusterREST.CronHPA
 		storageMap["clusters/addons"] = clusterREST.Addon
 		storageMap["clusters/addontypes"] = clusterREST.AddonType
-		storageMap["clusters/lbcflbdrivers"] = clusterREST.LBCFDriver
-		storageMap["clusters/lbcflbs"] = clusterREST.LBCFLoadBalancer
-		storageMap["clusters/lbcfbackendgroups"] = clusterREST.LBCFBackendGroup
-		storageMap["clusters/lbcfbackendrecords"] = clusterREST.LBCFBackendRecord
 
 		machineREST := machinestorage.NewStorage(restOptionsGetter, platformClient, s.PrivilegedUsername)
 		storageMap["machines"] = machineREST.Machine
@@ -113,14 +100,6 @@ func (s *StorageProvider) v1Storage(apiResourceConfigSource serverstorage.APIRes
 		storageMap["persistentevents"] = persistentEventREST.PersistentEvent
 		storageMap["persistentevents/status"] = persistentEventREST.Status
 
-		helmREST := helmstorage.NewStorage(restOptionsGetter, platformClient, s.PrivilegedUsername)
-		storageMap["helms"] = helmREST.Helm
-		storageMap["helms/status"] = helmREST.Status
-
-		ipamREST := ipamstorage.NewStorage(restOptionsGetter, s.PrivilegedUsername)
-		storageMap["ipams"] = ipamREST.IPAM
-		storageMap["ipams/status"] = ipamREST.Status
-
 		configmapREST := configmapstorage.NewStorage(restOptionsGetter)
 		storageMap["configmaps"] = configmapREST.ConfigMap
 
@@ -135,25 +114,9 @@ func (s *StorageProvider) v1Storage(apiResourceConfigSource serverstorage.APIRes
 		storageMap["csioperators"] = csiOperatorREST.CSIOperator
 		storageMap["csioperators/status"] = csiOperatorREST.Status
 
-		volumeDecoratorREST := volumedecoratorstorage.NewStorage(restOptionsGetter, s.PrivilegedUsername)
-		storageMap["volumedecorators"] = volumeDecoratorREST.VolumeDecorator
-		storageMap["volumedecorators/status"] = volumeDecoratorREST.Status
-
-		logCollectorREST := logcollectorstorage.NewStorage(restOptionsGetter, s.PrivilegedUsername)
-		storageMap["logcollectors"] = logCollectorREST.LogCollector
-		storageMap["logcollectors/status"] = logCollectorREST.Status
-
 		cronHPAREST := cronhpastorage.NewStorage(restOptionsGetter, s.PrivilegedUsername)
 		storageMap["cronhpas"] = cronHPAREST.CronHPA
 		storageMap["cronhpas/status"] = cronHPAREST.Status
-
-		promREST := promstorage.NewStorage(restOptionsGetter, s.PrivilegedUsername)
-		storageMap["prometheuses"] = promREST.Prometheus
-		storageMap["prometheuses/status"] = promREST.Status
-
-		lbcfREST := lbcfstorage.NewStorage(restOptionsGetter, platformClient, s.PrivilegedUsername)
-		storageMap["lbcfs"] = lbcfREST.LBCF
-		storageMap["lbcfs/status"] = lbcfREST.Status
 	}
 
 	return storageMap

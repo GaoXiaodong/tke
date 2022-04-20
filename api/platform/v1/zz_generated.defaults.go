@@ -39,24 +39,12 @@ func RegisterDefaults(scheme *runtime.Scheme) error {
 	scheme.AddTypeDefaultingFunc(&ConfigMapList{}, func(obj interface{}) { SetObjectDefaults_ConfigMapList(obj.(*ConfigMapList)) })
 	scheme.AddTypeDefaultingFunc(&CronHPA{}, func(obj interface{}) { SetObjectDefaults_CronHPA(obj.(*CronHPA)) })
 	scheme.AddTypeDefaultingFunc(&CronHPAList{}, func(obj interface{}) { SetObjectDefaults_CronHPAList(obj.(*CronHPAList)) })
-	scheme.AddTypeDefaultingFunc(&Helm{}, func(obj interface{}) { SetObjectDefaults_Helm(obj.(*Helm)) })
-	scheme.AddTypeDefaultingFunc(&HelmList{}, func(obj interface{}) { SetObjectDefaults_HelmList(obj.(*HelmList)) })
-	scheme.AddTypeDefaultingFunc(&IPAM{}, func(obj interface{}) { SetObjectDefaults_IPAM(obj.(*IPAM)) })
-	scheme.AddTypeDefaultingFunc(&IPAMList{}, func(obj interface{}) { SetObjectDefaults_IPAMList(obj.(*IPAMList)) })
-	scheme.AddTypeDefaultingFunc(&LBCF{}, func(obj interface{}) { SetObjectDefaults_LBCF(obj.(*LBCF)) })
-	scheme.AddTypeDefaultingFunc(&LBCFList{}, func(obj interface{}) { SetObjectDefaults_LBCFList(obj.(*LBCFList)) })
-	scheme.AddTypeDefaultingFunc(&LogCollector{}, func(obj interface{}) { SetObjectDefaults_LogCollector(obj.(*LogCollector)) })
-	scheme.AddTypeDefaultingFunc(&LogCollectorList{}, func(obj interface{}) { SetObjectDefaults_LogCollectorList(obj.(*LogCollectorList)) })
 	scheme.AddTypeDefaultingFunc(&Machine{}, func(obj interface{}) { SetObjectDefaults_Machine(obj.(*Machine)) })
 	scheme.AddTypeDefaultingFunc(&MachineList{}, func(obj interface{}) { SetObjectDefaults_MachineList(obj.(*MachineList)) })
 	scheme.AddTypeDefaultingFunc(&PersistentEvent{}, func(obj interface{}) { SetObjectDefaults_PersistentEvent(obj.(*PersistentEvent)) })
 	scheme.AddTypeDefaultingFunc(&PersistentEventList{}, func(obj interface{}) { SetObjectDefaults_PersistentEventList(obj.(*PersistentEventList)) })
-	scheme.AddTypeDefaultingFunc(&Prometheus{}, func(obj interface{}) { SetObjectDefaults_Prometheus(obj.(*Prometheus)) })
-	scheme.AddTypeDefaultingFunc(&PrometheusList{}, func(obj interface{}) { SetObjectDefaults_PrometheusList(obj.(*PrometheusList)) })
 	scheme.AddTypeDefaultingFunc(&TappController{}, func(obj interface{}) { SetObjectDefaults_TappController(obj.(*TappController)) })
 	scheme.AddTypeDefaultingFunc(&TappControllerList{}, func(obj interface{}) { SetObjectDefaults_TappControllerList(obj.(*TappControllerList)) })
-	scheme.AddTypeDefaultingFunc(&VolumeDecorator{}, func(obj interface{}) { SetObjectDefaults_VolumeDecorator(obj.(*VolumeDecorator)) })
-	scheme.AddTypeDefaultingFunc(&VolumeDecoratorList{}, func(obj interface{}) { SetObjectDefaults_VolumeDecoratorList(obj.(*VolumeDecoratorList)) })
 	return nil
 }
 
@@ -110,50 +98,6 @@ func SetObjectDefaults_CronHPAList(in *CronHPAList) {
 	}
 }
 
-func SetObjectDefaults_Helm(in *Helm) {
-	SetDefaults_HelmStatus(&in.Status)
-}
-
-func SetObjectDefaults_HelmList(in *HelmList) {
-	for i := range in.Items {
-		a := &in.Items[i]
-		SetObjectDefaults_Helm(a)
-	}
-}
-
-func SetObjectDefaults_IPAM(in *IPAM) {
-	SetDefaults_IPAMStatus(&in.Status)
-}
-
-func SetObjectDefaults_IPAMList(in *IPAMList) {
-	for i := range in.Items {
-		a := &in.Items[i]
-		SetObjectDefaults_IPAM(a)
-	}
-}
-
-func SetObjectDefaults_LBCF(in *LBCF) {
-	SetDefaults_LBCFStatus(&in.Status)
-}
-
-func SetObjectDefaults_LBCFList(in *LBCFList) {
-	for i := range in.Items {
-		a := &in.Items[i]
-		SetObjectDefaults_LBCF(a)
-	}
-}
-
-func SetObjectDefaults_LogCollector(in *LogCollector) {
-	SetDefaults_LogCollectorStatus(&in.Status)
-}
-
-func SetObjectDefaults_LogCollectorList(in *LogCollectorList) {
-	for i := range in.Items {
-		a := &in.Items[i]
-		SetObjectDefaults_LogCollector(a)
-	}
-}
-
 func SetObjectDefaults_Machine(in *Machine) {
 	SetDefaults_MachineStatus(&in.Status)
 }
@@ -176,17 +120,6 @@ func SetObjectDefaults_PersistentEventList(in *PersistentEventList) {
 	}
 }
 
-func SetObjectDefaults_Prometheus(in *Prometheus) {
-	SetDefaults_PrometheusStatus(&in.Status)
-}
-
-func SetObjectDefaults_PrometheusList(in *PrometheusList) {
-	for i := range in.Items {
-		a := &in.Items[i]
-		SetObjectDefaults_Prometheus(a)
-	}
-}
-
 func SetObjectDefaults_TappController(in *TappController) {
 	SetDefaults_TappControllerStatus(&in.Status)
 }
@@ -195,16 +128,5 @@ func SetObjectDefaults_TappControllerList(in *TappControllerList) {
 	for i := range in.Items {
 		a := &in.Items[i]
 		SetObjectDefaults_TappController(a)
-	}
-}
-
-func SetObjectDefaults_VolumeDecorator(in *VolumeDecorator) {
-	SetDefaults_VolumeDecoratorStatus(&in.Status)
-}
-
-func SetObjectDefaults_VolumeDecoratorList(in *VolumeDecoratorList) {
-	for i := range in.Items {
-		a := &in.Items[i]
-		SetObjectDefaults_VolumeDecorator(a)
 	}
 }

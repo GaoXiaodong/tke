@@ -20,27 +20,30 @@ package storage
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
-	"strconv"
+	"path"
 	"strings"
 	"time"
-	"tkestack.io/tke/pkg/apiserver/authentication"
-	"tkestack.io/tke/pkg/platform/proxy"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilnet "k8s.io/apimachinery/pkg/util/net"
+	k8sproxy "k8s.io/apimachinery/pkg/util/proxy"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
+	clientrest "k8s.io/client-go/rest"
+	"k8s.io/client-go/transport"
+	"k8s.io/klog"
 	platforminternalclient "tkestack.io/tke/api/client/clientset/internalversion/typed/platform/internalversion"
 	"tkestack.io/tke/api/platform"
 	"tkestack.io/tke/pkg/platform/apiserver/filter"
+	"tkestack.io/tke/pkg/platform/proxy"
 	"tkestack.io/tke/pkg/platform/util"
+	"tkestack.io/tke/pkg/util/log"
 )
 
 // ProxyREST implements proxy native api request to cluster of user.
@@ -59,7 +62,7 @@ func (r *ProxyREST) ConnectMethods() []string {
 
 // NewConnectOptions returns versioned resource that represents proxy parameters
 func (r *ProxyREST) NewConnectOptions() (runtime.Object, bool, string) {
-	return &platform.HelmProxyOptions{}, false, "path"
+	return &platform.ProxyOptions{}, false, "path"
 }
 
 // Connect returns a handler for the native api proxy
@@ -72,7 +75,7 @@ func (r *ProxyREST) Connect(ctx context.Context, clusterName string, opts runtim
 	if err := util.FilterCluster(ctx, cluster); err != nil {
 		return nil, err
 	}
-	proxyOpts := opts.(*platform.HelmProxyOptions)
+	proxyOpts := opts.(*platform.ProxyOptions)
 
 	if proxyOpts.Path == "" {
 		return nil, errors.NewBadRequest("invalid path")
@@ -87,70 +90,100 @@ func (r *ProxyREST) Connect(ctx context.Context, clusterName string, opts runtim
 		return nil, errors.NewInternalError(err)
 	}
 
-	userName, tenantID := authentication.UsernameAndTenantID(ctx)
 	uri, err := makeURL(config.Host, proxyOpts.Path)
 	if err != nil {
 		return nil, errors.NewBadRequest(err.Error())
 	}
-	TLSClientConfig := &tls.Config{}
-	TLSClientConfig.InsecureSkipVerify = true
 
-	if config.TLSClientConfig.CertData != nil && config.TLSClientConfig.KeyData != nil {
-		cert, err := tls.X509KeyPair(config.TLSClientConfig.CertData, config.TLSClientConfig.KeyData)
-		if err != nil {
-			return nil, err
-		}
-		TLSClientConfig.Certificates = []tls.Certificate{cert}
-	} else if config.BearerToken == "" {
-		return nil, errors.NewInternalError(fmt.Errorf("%s has NO BearerToken", clusterName))
+	transport, err := clientrest.TransportFor(config)
+	if err != nil {
+		return nil, err
 	}
+	upgradeTransport, err := makeUpgradeTransport(config, 30*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	responders := &responders{}
+	proxy := k8sproxy.NewUpgradeAwareHandler(uri, transport, false, false, responders)
+	proxy.UpgradeTransport = upgradeTransport
+	proxy.Location = uri
 
-	return &httputil.ReverseProxy{
-		Director: makeDirector(cluster.ObjectMeta.Name, userName, tenantID, uri, config.BearerToken),
-		Transport: &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
-			MaxIdleConns:          100,
-			IdleConnTimeout:       90 * time.Second,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-			TLSClientConfig:       TLSClientConfig,
-		},
-	}, nil
+	return redirect(uri, cluster.ObjectMeta.Name, config.BearerToken, proxy), nil
 }
 
 // New creates a new helm proxy options object
 func (r *ProxyREST) New() runtime.Object {
-	return &platform.HelmProxyOptions{}
+	return &platform.ProxyOptions{}
 }
 
-func makeDirector(clusterName, userName, tenantID string, uri *url.URL, token string) func(req *http.Request) {
-	return func(req *http.Request) {
+//proxyPath have been decoded somewhere before passing to makeURL
+func makeURL(host, proxyPath string) (*url.URL, error) {
+	u, err := url.Parse(host) //will returen error if a host not contains a schema
+	if err != nil {
+		log.Errorf("parse host error %s\n", err)
+		return nil, err
+	}
+
+	/* a host without a path will have a emplty u.Path, and a proxyPath may not start with "/"
+	In order to make the newPath begin with only one "/", add a "/" to empty u.Path
+	*/
+	if u.Path == "" {
+		u.Path = "/"
+	}
+
+	newPath := path.Join(u.Path, proxyPath) // ensure newPath begin with "/"
+
+	newURL := fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, newPath)
+	u, err = url.Parse(newURL)
+	if err != nil {
+		log.Errorf("parse new url error %s\n", err)
+		return nil, err
+	}
+	return u, nil
+}
+
+type responders struct{}
+
+func (r *responders) Error(w http.ResponseWriter, req *http.Request, err error) {
+	klog.Errorf("Error while proxying request: %v", err)
+	http.Error(w, err.Error(), http.StatusInternalServerError)
+}
+
+func makeUpgradeTransport(config *clientrest.Config, keepalive time.Duration) (k8sproxy.UpgradeRequestRoundTripper, error) {
+	transportConfig, err := config.TransportConfig()
+	if err != nil {
+		return nil, err
+	}
+	tlsConfig, err := transport.TLSConfigFor(transportConfig)
+	if err != nil {
+		return nil, err
+	}
+	rt := utilnet.SetOldTransportDefaults(&http.Transport{
+		TLSClientConfig: tlsConfig,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: keepalive,
+		}).DialContext,
+	})
+
+	upgrader, err := transport.HTTPWrappersForConfig(transportConfig, k8sproxy.MirrorRequest)
+	if err != nil {
+		return nil, err
+	}
+	return k8sproxy.NewUpgradeRequestRoundTripper(rt, upgrader), nil
+}
+
+func redirect(uri *url.URL, clusterName, token string, h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		req.Header.Set(filter.ClusterNameHeaderKey, clusterName)
-		req.Header.Set("X-Remote-User", userName)
-		req.Header.Set("X-Remote-Extra-TenantID", tenantID)
 		if token != "" {
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		}
-		req.URL = uri
-	}
-}
-
-func makeURL(host, path string) (*url.URL, error) {
-	var port int64
-	hostSegment := strings.Split(host, ":")
-	if len(hostSegment) != 2 {
-		return nil, fmt.Errorf("invalid host %s", host)
-	}
-	var err error
-	port, err = strconv.ParseInt(hostSegment[1], 10, 32)
-	if err != nil {
-		return nil, fmt.Errorf("invalid host port %s", hostSegment[1])
-	}
-
-	p := strings.TrimPrefix(path, "/")
-
-	return url.Parse(fmt.Sprintf("https://%s:%d/%s", hostSegment[0], port, p))
+		reqClone := utilnet.CloneRequest(req)
+		reqClone.URL.Host = uri.Host
+		reqClone.URL.Path = uri.Path
+		reqClone.URL.RawPath = uri.RawPath
+		reqClone.URL.RawQuery = uri.RawQuery
+		h.ServeHTTP(w, reqClone)
+	})
 }

@@ -40,6 +40,7 @@ import (
 	"tkestack.io/tke/pkg/application/controller/app/action"
 	"tkestack.io/tke/pkg/application/controller/app/deletion"
 	helmutil "tkestack.io/tke/pkg/application/helm/util"
+	applicationprovider "tkestack.io/tke/pkg/application/provider/application"
 	controllerutil "tkestack.io/tke/pkg/controller"
 	"tkestack.io/tke/pkg/util/log"
 	"tkestack.io/tke/pkg/util/metrics"
@@ -101,16 +102,29 @@ func NewController(
 	}
 
 	applicationInformer.Informer().AddEventHandlerWithResyncPeriod(
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: controller.enqueue,
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				old, ok1 := oldObj.(*applicationv1.App)
-				cur, ok2 := newObj.(*applicationv1.App)
-				if ok1 && ok2 && controller.needsUpdate(old, cur) {
-					controller.enqueue(newObj)
-				}
+		cache.FilteringResourceEventHandler{
+			Handler: cache.ResourceEventHandlerFuncs{
+				AddFunc: controller.enqueue,
+				UpdateFunc: func(oldObj, newObj interface{}) {
+					old, ok1 := oldObj.(*applicationv1.App)
+					cur, ok2 := newObj.(*applicationv1.App)
+					if ok1 && ok2 && controller.needsUpdate(old, cur) {
+						controller.enqueue(newObj)
+					}
+				},
+				DeleteFunc: controller.enqueue,
 			},
-			DeleteFunc: controller.enqueue,
+			FilterFunc: func(obj interface{}) bool {
+				app, ok := obj.(*applicationv1.App)
+				if !ok {
+					return false
+				}
+				provider, err := applicationprovider.GetProvider(app)
+				if err != nil {
+					return true
+				}
+				return provider.OnFilter(context.TODO(), app)
+			},
 		},
 		resyncPeriod,
 	)
@@ -140,6 +154,14 @@ func (c *Controller) needsUpdate(old *applicationv1.App, new *applicationv1.App)
 	}
 
 	if !reflect.DeepEqual(old.Status, new.Status) {
+		return true
+	}
+
+	if new.Status.Phase == applicationv1.AppPhaseSyncFailed ||
+		new.Status.Phase == applicationv1.AppPhaseInstallFailed ||
+		new.Status.Phase == applicationv1.AppPhaseUpgradFailed ||
+		new.Status.Phase == applicationv1.AppPhaseSucceeded ||
+		new.Status.Phase == applicationv1.AppPhaseTerminating {
 		return true
 	}
 
@@ -312,11 +334,13 @@ func (c *Controller) handlePhase(ctx context.Context, key string, cachedApp *cac
 			return c.updateStatus(ctx, app, &app.Status, newStatus)
 		}
 		return action.Upgrade(ctx, c.client.ApplicationV1(), c.platformClient, app, c.repo, c.updateStatus)
+	case applicationv1.AppPhaseInstallFailed:
+		return action.Install(ctx, c.client.ApplicationV1(), c.platformClient, app, c.repo, c.updateStatus)
 	case applicationv1.AppPhaseSucceeded:
 		c.startAppHealthCheck(ctx, key)
 		// sync release status
 		return c.syncAppFromRelease(ctx, cachedApp, app)
-	case applicationv1.AppPhaseFailed:
+	case applicationv1.AppPhaseUpgradFailed:
 		return action.Upgrade(ctx, c.client.ApplicationV1(), c.platformClient, app, c.repo, c.updateStatus)
 	case applicationv1.AppPhaseRollingBack:
 		if app.Status.RollbackRevision > 0 {
@@ -327,12 +351,8 @@ func (c *Controller) handlePhase(ctx context.Context, key string, cachedApp *cac
 		return c.syncAppFromRelease(ctx, cachedApp, app)
 	case applicationv1.AppPhaseRollbackFailed:
 		break
-	case applicationv1.AppPhaseChartFetched:
-		break
-	case applicationv1.AppPhaseChartFetchFailed:
-		break
 	case applicationv1.AppPhaseSyncFailed:
-		break
+		return c.syncAppFromRelease(ctx, cachedApp, app)
 	default:
 		break
 	}
@@ -340,13 +360,22 @@ func (c *Controller) handlePhase(ctx context.Context, key string, cachedApp *cac
 }
 
 func (c *Controller) syncAppFromRelease(ctx context.Context, cachedApp *cachedApp, app *applicationv1.App) (*applicationv1.App, error) {
-	if app.Status.Phase == applicationv1.AppPhaseSucceeded && hasSynced(app) {
+	if hasSynced(app) {
 		return app, nil
 	}
-
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("syncAppFromRelease panic")
+		}
+	}()
 	newStatus := app.Status.DeepCopy()
 	rels, err := action.List(ctx, c.client.ApplicationV1(), c.platformClient, app)
 	if err != nil {
+		if app.Status.Phase == applicationv1.AppPhaseSyncFailed {
+			log.Error(fmt.Sprintf("sync app failed, helm list failed, err: %s", err.Error()))
+			// delayed retry, queue.AddRateLimited does not meet the demand
+			return app, nil
+		}
 		newStatus.Phase = applicationv1.AppPhaseSyncFailed
 		newStatus.Message = "sync app failed"
 		newStatus.Reason = err.Error()
@@ -355,6 +384,11 @@ func (c *Controller) syncAppFromRelease(ctx context.Context, cachedApp *cachedAp
 	}
 	rel, found := helmutil.Filter(rels, app.Spec.TargetNamespace, app.Spec.Name)
 	if !found {
+		if app.Status.Phase == applicationv1.AppPhaseSyncFailed {
+			log.Error(fmt.Sprintf("sync app failed, release not found: %s/%s", app.Spec.TargetNamespace, app.Spec.Name))
+			// delayed retry, queue.AddRateLimited does not meet the demand
+			return app, nil
+		}
 		newStatus.Phase = applicationv1.AppPhaseSyncFailed
 		newStatus.Message = "sync app failed"
 		newStatus.Reason = fmt.Sprintf("release not found: %s/%s", app.Spec.TargetNamespace, app.Spec.Name)

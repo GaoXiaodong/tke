@@ -39,7 +39,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/rest"
 	bootstraputil "k8s.io/cluster-bootstrap/token/util"
 	kubeaggregatorclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	utilsnet "k8s.io/utils/net"
@@ -271,22 +270,6 @@ func (p *Provider) EnsureDisableSwap(ctx context.Context, c *v1.Cluster) error {
 	return nil
 }
 
-func (p *Provider) EnsureDisableOffloading(ctx context.Context, c *v1.Cluster) error {
-	for _, machine := range c.Spec.Machines {
-		machineSSH, err := machine.SSH()
-		if err != nil {
-			return err
-		}
-
-		_, err = machineSSH.CombinedOutput(`ethtool --offload flannel.1 rx off tx off || true`)
-		if err != nil {
-			return errors.Wrap(err, machine.IP)
-		}
-	}
-
-	return nil
-}
-
 // 因为validate那里没法更新对象（不能存储）
 // PreCrete，在api中错误只能panic，响应不会有报错提示，所以只能挪到这里处理
 func (p *Provider) EnsureClusterComplete(ctx context.Context, cluster *v1.Cluster) error {
@@ -388,7 +371,6 @@ func completeServiceIP(cluster *v1.Cluster) error {
 	}
 	for index, name := range map[int]string{
 		constants.GPUQuotaAdmissionIPIndex: constants.GPUQuotaAdmissionIPAnnotaion,
-		constants.GalaxyIPAMIPIndex:        constants.GalaxyIPAMIPIndexAnnotaion,
 	} {
 		ip, err := GetIndexedIP(cluster.Status.ServiceCIDR, index)
 		if err != nil {
@@ -763,13 +745,8 @@ func (p *Provider) EnsurePrepareForControlplane(ctx context.Context, c *v1.Clust
 	if GPUQuotaAdmissionHost == "" {
 		GPUQuotaAdmissionHost = "gpu-quota-admission"
 	}
-	GalaxyIPAMHost := c.Annotations[constants.GalaxyIPAMIPIndexAnnotaion]
-	if GalaxyIPAMHost == "" {
-		GalaxyIPAMHost = "galaxy-ipam"
-	}
 	schedulerPolicyConfig, err := template.ParseString(schedulerPolicyConfig, map[string]interface{}{
 		"GPUQuotaAdmissionHost": GPUQuotaAdmissionHost,
-		"GalaxyIPAMHost":        GalaxyIPAMHost,
 	})
 	if err != nil {
 		return errors.Wrap(err, "parse schedulerPolicyConfig error")
@@ -1122,6 +1099,10 @@ func (p *Provider) EnsureStoreCredential(ctx context.Context, c *v1.Cluster) err
 		c.IsCredentialChanged = true
 	}
 
+	if c.IsCredentialChanged {
+		c.RegisterRestConfig(c.ClusterCredential.RESTConfig(c.Cluster))
+	}
+
 	return nil
 }
 
@@ -1338,7 +1319,7 @@ func (p *Provider) EnsureMetricsServer(ctx context.Context, c *v1.Cluster) error
 	if err != nil {
 		return err
 	}
-	config, err := c.RESTConfig(&rest.Config{})
+	config, err := c.RESTConfig()
 	if err != nil {
 		return err
 	}

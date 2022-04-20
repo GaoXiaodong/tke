@@ -19,10 +19,20 @@
 package v1
 
 import (
+	"fmt"
+	"math/rand"
+	"net"
+	"os"
+	"path"
+	strings "strings"
+
+	pkgerrors "github.com/pkg/errors"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	applicationv1 "tkestack.io/tke/api/application/v1"
 )
 
@@ -254,6 +264,10 @@ const (
 	ClusterRunning ClusterPhase = "Running"
 	// ClusterFailed is the failed phase.
 	ClusterFailed ClusterPhase = "Failed"
+	// ClusterConfined is the Confined phase.
+	ClusterConfined ClusterPhase = "Confined"
+	// ClusterIdling is the Idling phase.
+	ClusterIdling ClusterPhase = "Idling"
 	// ClusterUpgrading means that the cluster is in upgrading process.
 	ClusterUpgrading ClusterPhase = "Upgrading"
 	// ClusterTerminating means the cluster is undergoing graceful termination.
@@ -356,6 +370,94 @@ type ClusterCredential struct {
 	// For kubeadm init or join
 	// +optional
 	CertificateKey *string `json:"certificateKey,omitempty" protobuf:"bytes,14,opt,name=certificateKey"`
+	// Username is the username for basic authentication to the kubernetes cluster.
+	// +optional
+	Username string `json:"username,omitempty" protobuf:"bytes,15,opt,name=username"`
+	// Impersonate is the username to act-as.
+	// +optional
+	Impersonate string `json:"as,omitempty" protobuf:"bytes,16,opt,name=as"`
+	// ImpersonateGroups is the groups to imperonate.
+	// +optional
+	ImpersonateGroups []string `json:"as-groups,omitempty" protobuf:"bytes,17,opt,name=asGroups"`
+	// ImpersonateUserExtra contains additional information for impersonated user.
+	// +optional
+	ImpersonateUserExtra ImpersonateUserExtra `json:"as-user-extra,omitempty" protobuf:"bytes,18,opt,name=asUserExtra"`
+}
+
+type ImpersonateUserExtra map[string]string
+
+func (i ImpersonateUserExtra) ExtraToHeaders() map[string][]string {
+	res := map[string][]string{}
+	for k, v := range i {
+		res[k] = strings.Split(v, ",")
+	}
+	return res
+}
+
+func (cc ClusterCredential) RESTConfig(cls *Cluster) *rest.Config {
+	config := &rest.Config{}
+	if cls != nil {
+		host := clusterHost(cls)
+		if len(host) != 0 {
+			config.Host = fmt.Sprintf("https://%s", host)
+		}
+	}
+	// If api-server does not sign the ip in address, set ca then request, it will report x509 certificate error, need to ignore the certificate
+	if os.Getenv("TKE_IGNORE_CA") != "true" && cc.CACert != nil {
+		config.TLSClientConfig.CAData = cc.CACert
+	} else {
+		config.TLSClientConfig.Insecure = true
+	}
+	if cc.ClientCert != nil && cc.ClientKey != nil {
+		config.TLSClientConfig.CertData = cc.ClientCert
+		config.TLSClientConfig.KeyData = cc.ClientKey
+	}
+	if cc.Token != nil {
+		config.BearerToken = *cc.Token
+	}
+
+	config.Impersonate.UserName = cc.Impersonate
+	config.Impersonate.Groups = cc.ImpersonateGroups
+	config.Impersonate.Extra = cc.ImpersonateUserExtra.ExtraToHeaders()
+
+	return config
+}
+
+func clusterHost(cluster *Cluster) string {
+	address, err := clusterAddress(cluster)
+	if err != nil {
+		return ""
+	}
+
+	result := net.JoinHostPort(address.Host, fmt.Sprintf("%d", address.Port))
+	if address.Path != "" {
+		result = path.Join(result, address.Path)
+	}
+
+	return result
+}
+
+func clusterAddress(cluster *Cluster) (*ClusterAddress, error) {
+	addrs := make(map[AddressType][]ClusterAddress)
+	for _, one := range cluster.Status.Addresses {
+		addrs[one.Type] = append(addrs[one.Type], one)
+	}
+
+	var address *ClusterAddress
+	if len(addrs[AddressInternal]) != 0 {
+		address = &addrs[AddressInternal][rand.Intn(len(addrs[AddressInternal]))]
+	} else if len(addrs[AddressAdvertise]) != 0 {
+		address = &addrs[AddressAdvertise][rand.Intn(len(addrs[AddressAdvertise]))]
+	} else {
+		if len(addrs[AddressReal]) != 0 {
+			address = &addrs[AddressReal][rand.Intn(len(addrs[AddressReal]))]
+		}
+	}
+	if address == nil {
+		return nil, pkgerrors.New("no valid address for the cluster")
+	}
+
+	return address, nil
 }
 
 // +genclient:nonNamespaced
@@ -469,7 +571,7 @@ const (
 	HookPreUpgrade  HookType = "PreUpgrade"
 	HookPostUpgrade HookType = "PostUpgrade"
 
-	// custer lifecycle hook
+	// cluster lifecycle hook
 	HookPreClusterInstall  HookType = "PreClusterInstall"
 	HookPostClusterInstall HookType = "PostClusterInstall"
 	HookPreClusterUpgrade  HookType = "PreClusterUpgrade"
@@ -650,7 +752,7 @@ type ClusterAddonList struct {
 
 // ClusterAddonSpec indicates the specifications of the ClusterAddon.
 type ClusterAddonSpec struct {
-	// Addon type, one of Helm, PersistentEvent or LogCollector etc.
+	// Addon type, one of PersistentEvent or LogCollector etc.
 	Type string `json:"type" protobuf:"bytes,1,opt,name=type"`
 	// AddonLevel is level of cluster addon.
 	Level AddonLevel `json:"level" protobuf:"bytes,2,opt,name=level,casttype=AddonLevel"`
@@ -843,152 +945,13 @@ type StorageBackEndES struct {
 // +k8s:conversion-gen:explicit-from=net/url.Values
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// HelmProxyOptions is the query options to a Helm-api proxy call.
-type HelmProxyOptions struct {
+// ProxyOptions is the query options to a proxy call.
+type ProxyOptions struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// Path is the URL path to use for the current proxy request to helm-api.
+	// Path is the URL path to use for the current proxy request.
 	// +optional
 	Path string `json:"path,omitempty" protobuf:"bytes,1,opt,name=path"`
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// Helm is a kubernetes package manager.
-type Helm struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// Spec defines the desired identities of clusters in this set.
-	// +optional
-	Spec HelmSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
-	// +optional
-	Status HelmStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// HelmList is the whole list of all helms which owned by a tenant.
-type HelmList struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// List of Helms
-	Items []Helm `json:"items" protobuf:"bytes,2,rep,name=items"`
-}
-
-// HelmSpec describes the attributes on a Helm.
-type HelmSpec struct {
-	TenantID    string `json:"tenantID" protobuf:"bytes,1,opt,name=tenantID"`
-	ClusterName string `json:"clusterName" protobuf:"bytes,2,opt,name=clusterName"`
-	Version     string `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
-}
-
-// HelmStatus is information about the current status of a Helm.
-type HelmStatus struct {
-	// +optional
-	Version string `json:"version,omitempty" protobuf:"bytes,1,opt,name=version"`
-	// Phase is the current lifecycle phase of the helm of cluster.
-	// +optional
-	Phase AddonPhase `json:"phase,omitempty" protobuf:"bytes,2,opt,name=phase"`
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string `json:"reason,omitempty" protobuf:"bytes,3,opt,name=reason"`
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32 `json:"retryCount" protobuf:"varint,4,name=retryCount"`
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time `json:"lastReInitializingTimestamp" protobuf:"bytes,5,name=lastReInitializingTimestamp"`
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// Prometheus is a kubernetes package manager.
-type Prometheus struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// Spec defines the desired identities of clusters in this set.
-	// +optional
-	Spec PrometheusSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
-	// +optional
-	Status PrometheusStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// PrometheusList is the whole list of all prometheus which owned by a tenant.
-type PrometheusList struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// List of Prometheuss
-	Items []Prometheus `json:"items" protobuf:"bytes,2,rep,name=items"`
-}
-
-// PrometheusSpec describes the attributes on a Prometheus.
-type PrometheusSpec struct {
-	TenantID    string `json:"tenantID" protobuf:"bytes,1,opt,name=tenantID"`
-	ClusterName string `json:"clusterName" protobuf:"bytes,2,opt,name=clusterName"`
-	Version     string `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
-	// SubVersion is the components version such as node-exporter.
-	SubVersion map[string]string `json:"subVersion,omitempty" protobuf:"bytes,4,opt,name=subVersion"`
-	// RemoteAddress is the remote address for prometheus when writing/reading outside of cluster.
-	RemoteAddress PrometheusRemoteAddr `json:"remoteAddress,omitempty" protobuf:"bytes,5,opt,name=remoteAddress"`
-	// +optional
-	// NotifyWebhook is the address that alert messages send to, optional. If not set, a default webhook address "https://[notify-api-address]/webhook" will be used.
-	NotifyWebhook string `json:"notifyWebhook,omitempty" protobuf:"bytes,6,opt,name=notifyWebhook"`
-	// +optional
-	// Resources is the resource request and limit for prometheus
-	Resources ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,7,opt,name=resources"`
-	// +optional
-	// RunOnMaster indicates whether to add master Affinity for all monitor components or not
-	RunOnMaster bool `json:"runOnMaster,omitempty" protobuf:"bytes,8,opt,name=runOnMaster"`
-	// +optional
-	// AlertRepeatInterval indicates repeat interval of alerts
-	AlertRepeatInterval string `json:"alertRepeatInterval,omitempty" protobuf:"bytes,9,opt,name=alertRepeatInterval"`
-	// +optional
-	// WithNPD indicates whether to deploy node-problem-detector or not
-	WithNPD bool `json:"withNPD,omitempty" protobuf:"bytes,10,opt,name=withNPD"`
-}
-
-// PrometheusStatus is information about the current status of a Prometheus.
-type PrometheusStatus struct {
-	// +optional
-	Version string `json:"version,omitempty" protobuf:"bytes,1,opt,name=version"`
-	// Phase is the current lifecycle phase of the helm of cluster.
-	// +optional
-	Phase AddonPhase `json:"phase,omitempty" protobuf:"bytes,2,opt,name=phase"`
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string `json:"reason,omitempty" protobuf:"bytes,3,opt,name=reason"`
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32 `json:"retryCount" protobuf:"varint,4,name=retryCount"`
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time `json:"lastReInitializingTimestamp" protobuf:"bytes,5,name=lastReInitializingTimestamp"`
-	// SubVersion is the components version such as node-exporter.
-	SubVersion map[string]string `json:"subVersion,omitempty" protobuf:"bytes,6,opt,name=subVersion"`
-}
-
-// PrometheusRemoteAddr is the remote write/read address for prometheus
-type PrometheusRemoteAddr struct {
-	WriteAddr []string `json:"writeAddr,omitempty" protobuf:"bytes,1,opt,name=writeAddr"`
-	ReadAddr  []string `json:"readAddr,omitempty" protobuf:"bytes,2,opt,name=readAddr"`
 }
 
 // AddonPhase defines the phase of helm constructor.
@@ -1016,74 +979,6 @@ const (
 	// AddonPhaseUnknown means addon unknown
 	AddonPhaseUnknown AddonPhase = "Unknown"
 )
-
-// +k8s:conversion-gen:explicit-from=net/url.Values
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// IPAMProxyOptions is the query options to a ipam-api proxy call.
-type IPAMProxyOptions struct {
-	metav1.TypeMeta `json:",inline"`
-
-	// Path is the URL path to use for the current proxy request to ipam-api.
-	// +optional
-	Path string `json:"path,omitempty" protobuf:"bytes,1,opt,name=path"`
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// IPAM is a scheduler plugin for assigning IP.
-type IPAM struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// Spec defines the desired identities of clusters in this set.
-	// +optional
-	Spec IPAMSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
-	// +optional
-	Status IPAMStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// IPAMList is the whole list of all IPAMs which owned by a tenant.
-type IPAMList struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// List of IPAMs
-	Items []IPAM `json:"items" protobuf:"bytes,2,rep,name=items"`
-}
-
-// IPAMSpec describes the attributes on a IPAM.
-type IPAMSpec struct {
-	TenantID    string `json:"tenantID" protobuf:"bytes,1,opt,name=tenantID"`
-	ClusterName string `json:"clusterName" protobuf:"bytes,2,opt,name=clusterName"`
-	Version     string `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
-}
-
-// IPAMStatus is information about the current status of a IPAM.
-type IPAMStatus struct {
-	// +optional
-	Version string `json:"version,omitempty" protobuf:"bytes,1,opt,name=version"`
-	// Phase is the current lifecycle phase of the addon of cluster.
-	// +optional
-	Phase AddonPhase `json:"phase,omitempty" protobuf:"bytes,2,opt,name=phase"`
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string `json:"reason,omitempty" protobuf:"bytes,3,opt,name=reason"`
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32 `json:"retryCount" protobuf:"varint,4,name=retryCount"`
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time `json:"lastReInitializingTimestamp" protobuf:"bytes,5,name=lastReInitializingTimestamp"`
-}
 
 // +genclient
 // +genclient:nonNamespaced
@@ -1285,151 +1180,6 @@ type CSIOperatorStatus struct {
 	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
 	// +optional
 	LastReInitializingTimestamp metav1.Time `json:"lastReInitializingTimestamp" protobuf:"bytes,6,name=lastReInitializingTimestamp"`
-}
-
-// +k8s:conversion-gen:explicit-from=net/url.Values
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// PVCRProxyOptions is the query options to a kube-apiserver proxy call for PVCR crd object.
-type PVCRProxyOptions struct {
-	metav1.TypeMeta `json:",inline"`
-
-	Namespace string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
-	Name      string `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// VolumeDecorator is a controller to manage PVC information.
-type VolumeDecorator struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// Spec defines the desired identities of volume decorator.
-	// +optional
-	Spec VolumeDecoratorSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
-	// +optional
-	Status VolumeDecoratorStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// VolumeDecoratorList is the whole list of all VolumeDecorator which owned by a tenant.
-type VolumeDecoratorList struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// List of volume decorators.
-	Items []VolumeDecorator `json:"items" protobuf:"bytes,2,rep,name=items"`
-}
-
-// VolumeDecoratorSpec describes the attributes of a VolumeDecorator.
-type VolumeDecoratorSpec struct {
-	TenantID          string   `json:"tenantID" protobuf:"bytes,1,opt,name=tenantID"`
-	ClusterName       string   `json:"clusterName" protobuf:"bytes,2,opt,name=clusterName"`
-	Version           string   `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
-	VolumeTypes       []string `json:"volumeTypes,omitempty" protobuf:"bytes,4,opt,name=volumeTypes"`
-	WorkloadAdmission bool     `json:"workloadAdmission,omitempty" protobuf:"bytes,5,opt,name=workloadAdmission"`
-}
-
-// VolumeDecoratorStatus is information about the current status of a VolumeDecorator.
-type VolumeDecoratorStatus struct {
-	// +optional
-	Version string `json:"version,omitempty" protobuf:"bytes,1,opt,name=version"`
-	// VolumeTypes is the supported volume types in this cluster.
-	// +optional
-	VolumeTypes []string `json:"volumeTypes,omitempty" protobuf:"bytes,2,opt,name=volumeTypes"`
-	// WorkloadAdmission will be true to enable the workload admission webhook.
-	// +optional
-	WorkloadAdmission bool `json:"workloadAdmission,omitempty" protobuf:"bytes,3,opt,name=workloadAdmission"`
-	// StorageVendorVersion will be set to the config version of the storage vendor.
-	// +optional
-	StorageVendorVersion string `json:"storageVendorVersion,omitempty" protobuf:"bytes,4,opt,name=storageVendorVersion"`
-	// Phase is the current lifecycle phase of the volume decorator of cluster.
-	// +optional
-	Phase AddonPhase `json:"phase,omitempty" protobuf:"bytes,5,opt,name=phase"`
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string `json:"reason,omitempty" protobuf:"bytes,6,opt,name=reason"`
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32 `json:"retryCount" protobuf:"varint,7,name=retryCount"`
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time `json:"lastReInitializingTimestamp" protobuf:"bytes,8,name=lastReInitializingTimestamp"`
-}
-
-// +k8s:conversion-gen:explicit-from=net/url.Values
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LogCollectorProxyOptions is the query options to a kube-apiserver proxy call for LogCollector crd object.
-type LogCollectorProxyOptions struct {
-	metav1.TypeMeta `json:",inline"`
-
-	Namespace string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
-	Name      string `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LogCollector is a manager to collect logs of workload.
-type LogCollector struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// Spec defines the desired identities of LogCollector.
-	// +optional
-	Spec LogCollectorSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
-	// +optional
-	Status LogCollectorStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LogCollectorList is the whole list of all LogCollector which owned by a tenant.
-type LogCollectorList struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// List of volume decorators.
-	Items []LogCollector `json:"items" protobuf:"bytes,2,rep,name=items"`
-}
-
-// LogCollectorSpec describes the attributes of a LogCollector.
-type LogCollectorSpec struct {
-	TenantID    string `json:"tenantID" protobuf:"bytes,1,opt,name=tenantID"`
-	ClusterName string `json:"clusterName" protobuf:"bytes,2,opt,name=clusterName"`
-	Version     string `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
-}
-
-// LogCollectorStatus is information about the current status of a LogCollector.
-type LogCollectorStatus struct {
-	// +optional
-	Version string `json:"version,omitempty" protobuf:"bytes,1,opt,name=version"`
-	// Phase is the current lifecycle phase of the LogCollector of cluster.
-	// +optional
-	Phase AddonPhase `json:"phase,omitempty" protobuf:"bytes,2,opt,name=phase"`
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string `json:"reason,omitempty" protobuf:"bytes,3,opt,name=reason"`
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32 `json:"retryCount" protobuf:"varint,4,name=retryCount"`
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time `json:"lastReInitializingTimestamp" protobuf:"bytes,5,name=lastReInitializingTimestamp"`
 }
 
 // +genclient
@@ -1664,74 +1414,6 @@ type CronHPAStatus struct {
 	LastReInitializingTimestamp metav1.Time `json:"lastReInitializingTimestamp" protobuf:"bytes,5,name=lastReInitializingTimestamp"`
 }
 
-// +k8s:conversion-gen:explicit-from=net/url.Values
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LBCFProxyOptions is the query options to a kube-apiserver proxy call.
-type LBCFProxyOptions struct {
-	metav1.TypeMeta `json:",inline"`
-
-	Namespace string `json:"namespace,omitempty" protobuf:"bytes,1,opt,name=namespace"`
-	Name      string `json:"name,omitempty" protobuf:"bytes,2,opt,name=name"`
-	Action    string `json:"action,omitempty" protobuf:"bytes,3,opt,name=action"`
-}
-
-// +genclient
-// +genclient:nonNamespaced
-// +genclient:skipVerbs=deleteCollection
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LBCF is a kubernetes load balancer manager.
-type LBCF struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// Spec defines the desired identities of clusters in this set.
-	// +optional
-	Spec LBCFSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
-	// +optional
-	Status LBCFStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
-}
-
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// LBCFList is the whole list of all helms which owned by a tenant.
-type LBCFList struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-
-	// List of LBCFs
-	Items []LBCF `json:"items" protobuf:"bytes,2,rep,name=items"`
-}
-
-// LBCFSpec describes the attributes on a Helm.
-type LBCFSpec struct {
-	TenantID    string `json:"tenantID" protobuf:"bytes,1,opt,name=tenantID"`
-	ClusterName string `json:"clusterName" protobuf:"bytes,2,opt,name=clusterName"`
-	Version     string `json:"version,omitempty" protobuf:"bytes,3,opt,name=version"`
-}
-
-// LBCFStatus is information about the current status of a Helm.
-type LBCFStatus struct {
-	// +optional
-	Version string `json:"version,omitempty" protobuf:"bytes,1,opt,name=version"`
-	// Phase is the current lifecycle phase of the helm of cluster.
-	// +optional
-	Phase AddonPhase `json:"phase,omitempty" protobuf:"bytes,2,opt,name=phase"`
-	// Reason is a brief CamelCase string that describes any failure.
-	// +optional
-	Reason string `json:"reason,omitempty" protobuf:"bytes,3,opt,name=reason"`
-	// RetryCount is a int between 0 and 5 that describes the time of retrying initializing.
-	// +optional
-	RetryCount int32 `json:"retryCount" protobuf:"varint,4,name=retryCount"`
-	// LastReInitializingTimestamp is a timestamp that describes the last time of retrying initializing.
-	// +optional
-	LastReInitializingTimestamp metav1.Time `json:"lastReInitializingTimestamp" protobuf:"bytes,5,name=lastReInitializingTimestamp"`
-}
-
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -1742,6 +1424,8 @@ type ClusterGroupAPIResourceItemsList struct {
 	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,3,opt,name=metadata"`
 	// List of ClusterGroupAPIResourceItems
 	Items []ClusterGroupAPIResourceItems `protobuf:"bytes,2,rep,name=items"`
+	// Failed Group Error
+	FailedGroupError string `json:"failedGroupError" protobuf:"bytes,4,rep,name=failedGroupError"`
 }
 
 // +genclient

@@ -48,6 +48,8 @@ func init() {
 // Adds the list of known types to the given scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
+		&ProxyOptions{},
+
 		&Cluster{},
 		&ClusterList{},
 		&ClusterApplyOptions{},
@@ -66,14 +68,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&PersistentEvent{},
 		&PersistentEventList{},
 
-		&Helm{},
-		&HelmList{},
-		&HelmProxyOptions{},
-
-		&IPAM{},
-		&IPAMList{},
-		&IPAMProxyOptions{},
-
 		&ConfigMap{},
 		&ConfigMapList{},
 
@@ -88,24 +82,9 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&CronHPAList{},
 		&CronHPAProxyOptions{},
 
-		&Prometheus{},
-		&PrometheusList{},
-
 		&CSIOperator{},
 		&CSIOperatorList{},
 		&CSIProxyOptions{},
-
-		&VolumeDecorator{},
-		&VolumeDecoratorList{},
-		&PVCRProxyOptions{},
-
-		&LogCollector{},
-		&LogCollectorList{},
-		&LogCollectorProxyOptions{},
-
-		&LBCF{},
-		&LBCFList{},
-		&LBCFProxyOptions{},
 
 		&ClusterGroupAPIResourceItems{},
 		&ClusterGroupAPIResourceItemsList{},

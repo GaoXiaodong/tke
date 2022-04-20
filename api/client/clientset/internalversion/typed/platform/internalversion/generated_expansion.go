@@ -36,22 +36,10 @@ type ConfigMapExpansion interface{}
 
 type CronHPAExpansion interface{}
 
-type HelmExpansion interface{}
-
-type IPAMExpansion interface{}
-
-type LBCFExpansion interface{}
-
-type LogCollectorExpansion interface{}
-
 type MachineExpansion interface{}
 
 type PersistentEventExpansion interface{}
 
-type PrometheusExpansion interface{}
-
 type RegistryExpansion interface{}
 
 type TappControllerExpansion interface{}
-
-type VolumeDecoratorExpansion interface{}

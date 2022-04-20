@@ -510,156 +510,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*Helm)(nil), (*platform.Helm)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_Helm_To_platform_Helm(a.(*Helm), b.(*platform.Helm), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.Helm)(nil), (*Helm)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_Helm_To_v1_Helm(a.(*platform.Helm), b.(*Helm), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*HelmList)(nil), (*platform.HelmList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_HelmList_To_platform_HelmList(a.(*HelmList), b.(*platform.HelmList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.HelmList)(nil), (*HelmList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_HelmList_To_v1_HelmList(a.(*platform.HelmList), b.(*HelmList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*HelmProxyOptions)(nil), (*platform.HelmProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_HelmProxyOptions_To_platform_HelmProxyOptions(a.(*HelmProxyOptions), b.(*platform.HelmProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.HelmProxyOptions)(nil), (*HelmProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_HelmProxyOptions_To_v1_HelmProxyOptions(a.(*platform.HelmProxyOptions), b.(*HelmProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*HelmSpec)(nil), (*platform.HelmSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_HelmSpec_To_platform_HelmSpec(a.(*HelmSpec), b.(*platform.HelmSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.HelmSpec)(nil), (*HelmSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_HelmSpec_To_v1_HelmSpec(a.(*platform.HelmSpec), b.(*HelmSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*HelmStatus)(nil), (*platform.HelmStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_HelmStatus_To_platform_HelmStatus(a.(*HelmStatus), b.(*platform.HelmStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.HelmStatus)(nil), (*HelmStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_HelmStatus_To_v1_HelmStatus(a.(*platform.HelmStatus), b.(*HelmStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*IPAM)(nil), (*platform.IPAM)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_IPAM_To_platform_IPAM(a.(*IPAM), b.(*platform.IPAM), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.IPAM)(nil), (*IPAM)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_IPAM_To_v1_IPAM(a.(*platform.IPAM), b.(*IPAM), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*IPAMList)(nil), (*platform.IPAMList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_IPAMList_To_platform_IPAMList(a.(*IPAMList), b.(*platform.IPAMList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.IPAMList)(nil), (*IPAMList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_IPAMList_To_v1_IPAMList(a.(*platform.IPAMList), b.(*IPAMList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*IPAMProxyOptions)(nil), (*platform.IPAMProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_IPAMProxyOptions_To_platform_IPAMProxyOptions(a.(*IPAMProxyOptions), b.(*platform.IPAMProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.IPAMProxyOptions)(nil), (*IPAMProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_IPAMProxyOptions_To_v1_IPAMProxyOptions(a.(*platform.IPAMProxyOptions), b.(*IPAMProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*IPAMSpec)(nil), (*platform.IPAMSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_IPAMSpec_To_platform_IPAMSpec(a.(*IPAMSpec), b.(*platform.IPAMSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.IPAMSpec)(nil), (*IPAMSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_IPAMSpec_To_v1_IPAMSpec(a.(*platform.IPAMSpec), b.(*IPAMSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*IPAMStatus)(nil), (*platform.IPAMStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_IPAMStatus_To_platform_IPAMStatus(a.(*IPAMStatus), b.(*platform.IPAMStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.IPAMStatus)(nil), (*IPAMStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_IPAMStatus_To_v1_IPAMStatus(a.(*platform.IPAMStatus), b.(*IPAMStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LBCF)(nil), (*platform.LBCF)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_LBCF_To_platform_LBCF(a.(*LBCF), b.(*platform.LBCF), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.LBCF)(nil), (*LBCF)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_LBCF_To_v1_LBCF(a.(*platform.LBCF), b.(*LBCF), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LBCFList)(nil), (*platform.LBCFList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_LBCFList_To_platform_LBCFList(a.(*LBCFList), b.(*platform.LBCFList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.LBCFList)(nil), (*LBCFList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_LBCFList_To_v1_LBCFList(a.(*platform.LBCFList), b.(*LBCFList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LBCFProxyOptions)(nil), (*platform.LBCFProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_LBCFProxyOptions_To_platform_LBCFProxyOptions(a.(*LBCFProxyOptions), b.(*platform.LBCFProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.LBCFProxyOptions)(nil), (*LBCFProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_LBCFProxyOptions_To_v1_LBCFProxyOptions(a.(*platform.LBCFProxyOptions), b.(*LBCFProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LBCFSpec)(nil), (*platform.LBCFSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_LBCFSpec_To_platform_LBCFSpec(a.(*LBCFSpec), b.(*platform.LBCFSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.LBCFSpec)(nil), (*LBCFSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_LBCFSpec_To_v1_LBCFSpec(a.(*platform.LBCFSpec), b.(*LBCFSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LBCFStatus)(nil), (*platform.LBCFStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_LBCFStatus_To_platform_LBCFStatus(a.(*LBCFStatus), b.(*platform.LBCFStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.LBCFStatus)(nil), (*LBCFStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_LBCFStatus_To_v1_LBCFStatus(a.(*platform.LBCFStatus), b.(*LBCFStatus), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*LocalEtcd)(nil), (*platform.LocalEtcd)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1_LocalEtcd_To_platform_LocalEtcd(a.(*LocalEtcd), b.(*platform.LocalEtcd), scope)
 	}); err != nil {
@@ -667,56 +517,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*platform.LocalEtcd)(nil), (*LocalEtcd)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_platform_LocalEtcd_To_v1_LocalEtcd(a.(*platform.LocalEtcd), b.(*LocalEtcd), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LogCollector)(nil), (*platform.LogCollector)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_LogCollector_To_platform_LogCollector(a.(*LogCollector), b.(*platform.LogCollector), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.LogCollector)(nil), (*LogCollector)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_LogCollector_To_v1_LogCollector(a.(*platform.LogCollector), b.(*LogCollector), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LogCollectorList)(nil), (*platform.LogCollectorList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_LogCollectorList_To_platform_LogCollectorList(a.(*LogCollectorList), b.(*platform.LogCollectorList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.LogCollectorList)(nil), (*LogCollectorList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_LogCollectorList_To_v1_LogCollectorList(a.(*platform.LogCollectorList), b.(*LogCollectorList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LogCollectorProxyOptions)(nil), (*platform.LogCollectorProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_LogCollectorProxyOptions_To_platform_LogCollectorProxyOptions(a.(*LogCollectorProxyOptions), b.(*platform.LogCollectorProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.LogCollectorProxyOptions)(nil), (*LogCollectorProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_LogCollectorProxyOptions_To_v1_LogCollectorProxyOptions(a.(*platform.LogCollectorProxyOptions), b.(*LogCollectorProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LogCollectorSpec)(nil), (*platform.LogCollectorSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_LogCollectorSpec_To_platform_LogCollectorSpec(a.(*LogCollectorSpec), b.(*platform.LogCollectorSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.LogCollectorSpec)(nil), (*LogCollectorSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_LogCollectorSpec_To_v1_LogCollectorSpec(a.(*platform.LogCollectorSpec), b.(*LogCollectorSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*LogCollectorStatus)(nil), (*platform.LogCollectorStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_LogCollectorStatus_To_platform_LogCollectorStatus(a.(*LogCollectorStatus), b.(*platform.LogCollectorStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.LogCollectorStatus)(nil), (*LogCollectorStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_LogCollectorStatus_To_v1_LogCollectorStatus(a.(*platform.LogCollectorStatus), b.(*LogCollectorStatus), scope)
 	}); err != nil {
 		return err
 	}
@@ -790,16 +590,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*PVCRProxyOptions)(nil), (*platform.PVCRProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_PVCRProxyOptions_To_platform_PVCRProxyOptions(a.(*PVCRProxyOptions), b.(*platform.PVCRProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.PVCRProxyOptions)(nil), (*PVCRProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_PVCRProxyOptions_To_v1_PVCRProxyOptions(a.(*platform.PVCRProxyOptions), b.(*PVCRProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*PersistentBackEnd)(nil), (*platform.PersistentBackEnd)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1_PersistentBackEnd_To_platform_PersistentBackEnd(a.(*PersistentBackEnd), b.(*platform.PersistentBackEnd), scope)
 	}); err != nil {
@@ -850,53 +640,13 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*Prometheus)(nil), (*platform.Prometheus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_Prometheus_To_platform_Prometheus(a.(*Prometheus), b.(*platform.Prometheus), scope)
+	if err := s.AddGeneratedConversionFunc((*ProxyOptions)(nil), (*platform.ProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1_ProxyOptions_To_platform_ProxyOptions(a.(*ProxyOptions), b.(*platform.ProxyOptions), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*platform.Prometheus)(nil), (*Prometheus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_Prometheus_To_v1_Prometheus(a.(*platform.Prometheus), b.(*Prometheus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*PrometheusList)(nil), (*platform.PrometheusList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_PrometheusList_To_platform_PrometheusList(a.(*PrometheusList), b.(*platform.PrometheusList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.PrometheusList)(nil), (*PrometheusList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_PrometheusList_To_v1_PrometheusList(a.(*platform.PrometheusList), b.(*PrometheusList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*PrometheusRemoteAddr)(nil), (*platform.PrometheusRemoteAddr)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_PrometheusRemoteAddr_To_platform_PrometheusRemoteAddr(a.(*PrometheusRemoteAddr), b.(*platform.PrometheusRemoteAddr), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.PrometheusRemoteAddr)(nil), (*PrometheusRemoteAddr)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_PrometheusRemoteAddr_To_v1_PrometheusRemoteAddr(a.(*platform.PrometheusRemoteAddr), b.(*PrometheusRemoteAddr), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*PrometheusSpec)(nil), (*platform.PrometheusSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_PrometheusSpec_To_platform_PrometheusSpec(a.(*PrometheusSpec), b.(*platform.PrometheusSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.PrometheusSpec)(nil), (*PrometheusSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_PrometheusSpec_To_v1_PrometheusSpec(a.(*platform.PrometheusSpec), b.(*PrometheusSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*PrometheusStatus)(nil), (*platform.PrometheusStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_PrometheusStatus_To_platform_PrometheusStatus(a.(*PrometheusStatus), b.(*platform.PrometheusStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.PrometheusStatus)(nil), (*PrometheusStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_PrometheusStatus_To_v1_PrometheusStatus(a.(*platform.PrometheusStatus), b.(*PrometheusStatus), scope)
+	if err := s.AddGeneratedConversionFunc((*platform.ProxyOptions)(nil), (*ProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_platform_ProxyOptions_To_v1_ProxyOptions(a.(*platform.ProxyOptions), b.(*ProxyOptions), scope)
 	}); err != nil {
 		return err
 	}
@@ -1050,46 +800,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*VolumeDecorator)(nil), (*platform.VolumeDecorator)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_VolumeDecorator_To_platform_VolumeDecorator(a.(*VolumeDecorator), b.(*platform.VolumeDecorator), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.VolumeDecorator)(nil), (*VolumeDecorator)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_VolumeDecorator_To_v1_VolumeDecorator(a.(*platform.VolumeDecorator), b.(*VolumeDecorator), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*VolumeDecoratorList)(nil), (*platform.VolumeDecoratorList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_VolumeDecoratorList_To_platform_VolumeDecoratorList(a.(*VolumeDecoratorList), b.(*platform.VolumeDecoratorList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.VolumeDecoratorList)(nil), (*VolumeDecoratorList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_VolumeDecoratorList_To_v1_VolumeDecoratorList(a.(*platform.VolumeDecoratorList), b.(*VolumeDecoratorList), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*VolumeDecoratorSpec)(nil), (*platform.VolumeDecoratorSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_VolumeDecoratorSpec_To_platform_VolumeDecoratorSpec(a.(*VolumeDecoratorSpec), b.(*platform.VolumeDecoratorSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.VolumeDecoratorSpec)(nil), (*VolumeDecoratorSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_VolumeDecoratorSpec_To_v1_VolumeDecoratorSpec(a.(*platform.VolumeDecoratorSpec), b.(*VolumeDecoratorSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*VolumeDecoratorStatus)(nil), (*platform.VolumeDecoratorStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1_VolumeDecoratorStatus_To_platform_VolumeDecoratorStatus(a.(*VolumeDecoratorStatus), b.(*platform.VolumeDecoratorStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*platform.VolumeDecoratorStatus)(nil), (*VolumeDecoratorStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_platform_VolumeDecoratorStatus_To_v1_VolumeDecoratorStatus(a.(*platform.VolumeDecoratorStatus), b.(*VolumeDecoratorStatus), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*url.Values)(nil), (*CSIProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_url_Values_To_v1_CSIProxyOptions(a.(*url.Values), b.(*CSIProxyOptions), scope)
 	}); err != nil {
@@ -1110,28 +820,8 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*url.Values)(nil), (*HelmProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_url_Values_To_v1_HelmProxyOptions(a.(*url.Values), b.(*HelmProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*url.Values)(nil), (*IPAMProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_url_Values_To_v1_IPAMProxyOptions(a.(*url.Values), b.(*IPAMProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*url.Values)(nil), (*LBCFProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_url_Values_To_v1_LBCFProxyOptions(a.(*url.Values), b.(*LBCFProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*url.Values)(nil), (*LogCollectorProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_url_Values_To_v1_LogCollectorProxyOptions(a.(*url.Values), b.(*LogCollectorProxyOptions), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*url.Values)(nil), (*PVCRProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_url_Values_To_v1_PVCRProxyOptions(a.(*url.Values), b.(*PVCRProxyOptions), scope)
+	if err := s.AddGeneratedConversionFunc((*url.Values)(nil), (*ProxyOptions)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_url_Values_To_v1_ProxyOptions(a.(*url.Values), b.(*ProxyOptions), scope)
 	}); err != nil {
 		return err
 	}
@@ -1751,6 +1441,10 @@ func autoConvert_v1_ClusterCredential_To_platform_ClusterCredential(in *ClusterC
 	out.Token = (*string)(unsafe.Pointer(in.Token))
 	out.BootstrapToken = (*string)(unsafe.Pointer(in.BootstrapToken))
 	out.CertificateKey = (*string)(unsafe.Pointer(in.CertificateKey))
+	out.Username = in.Username
+	out.Impersonate = in.Impersonate
+	out.ImpersonateGroups = *(*[]string)(unsafe.Pointer(&in.ImpersonateGroups))
+	out.ImpersonateUserExtra = *(*platform.ImpersonateUserExtra)(unsafe.Pointer(&in.ImpersonateUserExtra))
 	return nil
 }
 
@@ -1774,6 +1468,10 @@ func autoConvert_platform_ClusterCredential_To_v1_ClusterCredential(in *platform
 	out.Token = (*string)(unsafe.Pointer(in.Token))
 	out.BootstrapToken = (*string)(unsafe.Pointer(in.BootstrapToken))
 	out.CertificateKey = (*string)(unsafe.Pointer(in.CertificateKey))
+	out.Username = in.Username
+	out.Impersonate = in.Impersonate
+	out.ImpersonateGroups = *(*[]string)(unsafe.Pointer(&in.ImpersonateGroups))
+	out.ImpersonateUserExtra = *(*ImpersonateUserExtra)(unsafe.Pointer(&in.ImpersonateUserExtra))
 	return nil
 }
 
@@ -1921,6 +1619,7 @@ func Convert_platform_ClusterGroupAPIResourceItems_To_v1_ClusterGroupAPIResource
 func autoConvert_v1_ClusterGroupAPIResourceItemsList_To_platform_ClusterGroupAPIResourceItemsList(in *ClusterGroupAPIResourceItemsList, out *platform.ClusterGroupAPIResourceItemsList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
 	out.Items = *(*[]platform.ClusterGroupAPIResourceItems)(unsafe.Pointer(&in.Items))
+	out.FailedGroupError = in.FailedGroupError
 	return nil
 }
 
@@ -1932,6 +1631,7 @@ func Convert_v1_ClusterGroupAPIResourceItemsList_To_platform_ClusterGroupAPIReso
 func autoConvert_platform_ClusterGroupAPIResourceItemsList_To_v1_ClusterGroupAPIResourceItemsList(in *platform.ClusterGroupAPIResourceItemsList, out *ClusterGroupAPIResourceItemsList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
 	out.Items = *(*[]ClusterGroupAPIResourceItems)(unsafe.Pointer(&in.Items))
+	out.FailedGroupError = in.FailedGroupError
 	return nil
 }
 
@@ -2542,456 +2242,6 @@ func Convert_platform_HA_To_v1_HA(in *platform.HA, out *HA, s conversion.Scope) 
 	return autoConvert_platform_HA_To_v1_HA(in, out, s)
 }
 
-func autoConvert_v1_Helm_To_platform_Helm(in *Helm, out *platform.Helm, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1_HelmSpec_To_platform_HelmSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_HelmStatus_To_platform_HelmStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1_Helm_To_platform_Helm is an autogenerated conversion function.
-func Convert_v1_Helm_To_platform_Helm(in *Helm, out *platform.Helm, s conversion.Scope) error {
-	return autoConvert_v1_Helm_To_platform_Helm(in, out, s)
-}
-
-func autoConvert_platform_Helm_To_v1_Helm(in *platform.Helm, out *Helm, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_platform_HelmSpec_To_v1_HelmSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_platform_HelmStatus_To_v1_HelmStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_platform_Helm_To_v1_Helm is an autogenerated conversion function.
-func Convert_platform_Helm_To_v1_Helm(in *platform.Helm, out *Helm, s conversion.Scope) error {
-	return autoConvert_platform_Helm_To_v1_Helm(in, out, s)
-}
-
-func autoConvert_v1_HelmList_To_platform_HelmList(in *HelmList, out *platform.HelmList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]platform.Helm)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1_HelmList_To_platform_HelmList is an autogenerated conversion function.
-func Convert_v1_HelmList_To_platform_HelmList(in *HelmList, out *platform.HelmList, s conversion.Scope) error {
-	return autoConvert_v1_HelmList_To_platform_HelmList(in, out, s)
-}
-
-func autoConvert_platform_HelmList_To_v1_HelmList(in *platform.HelmList, out *HelmList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Helm)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_platform_HelmList_To_v1_HelmList is an autogenerated conversion function.
-func Convert_platform_HelmList_To_v1_HelmList(in *platform.HelmList, out *HelmList, s conversion.Scope) error {
-	return autoConvert_platform_HelmList_To_v1_HelmList(in, out, s)
-}
-
-func autoConvert_v1_HelmProxyOptions_To_platform_HelmProxyOptions(in *HelmProxyOptions, out *platform.HelmProxyOptions, s conversion.Scope) error {
-	out.Path = in.Path
-	return nil
-}
-
-// Convert_v1_HelmProxyOptions_To_platform_HelmProxyOptions is an autogenerated conversion function.
-func Convert_v1_HelmProxyOptions_To_platform_HelmProxyOptions(in *HelmProxyOptions, out *platform.HelmProxyOptions, s conversion.Scope) error {
-	return autoConvert_v1_HelmProxyOptions_To_platform_HelmProxyOptions(in, out, s)
-}
-
-func autoConvert_platform_HelmProxyOptions_To_v1_HelmProxyOptions(in *platform.HelmProxyOptions, out *HelmProxyOptions, s conversion.Scope) error {
-	out.Path = in.Path
-	return nil
-}
-
-// Convert_platform_HelmProxyOptions_To_v1_HelmProxyOptions is an autogenerated conversion function.
-func Convert_platform_HelmProxyOptions_To_v1_HelmProxyOptions(in *platform.HelmProxyOptions, out *HelmProxyOptions, s conversion.Scope) error {
-	return autoConvert_platform_HelmProxyOptions_To_v1_HelmProxyOptions(in, out, s)
-}
-
-func autoConvert_url_Values_To_v1_HelmProxyOptions(in *url.Values, out *HelmProxyOptions, s conversion.Scope) error {
-	// WARNING: Field TypeMeta does not have json tag, skipping.
-
-	if values, ok := map[string][]string(*in)["path"]; ok && len(values) > 0 {
-		if err := runtime.Convert_Slice_string_To_string(&values, &out.Path, s); err != nil {
-			return err
-		}
-	} else {
-		out.Path = ""
-	}
-	return nil
-}
-
-// Convert_url_Values_To_v1_HelmProxyOptions is an autogenerated conversion function.
-func Convert_url_Values_To_v1_HelmProxyOptions(in *url.Values, out *HelmProxyOptions, s conversion.Scope) error {
-	return autoConvert_url_Values_To_v1_HelmProxyOptions(in, out, s)
-}
-
-func autoConvert_v1_HelmSpec_To_platform_HelmSpec(in *HelmSpec, out *platform.HelmSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	return nil
-}
-
-// Convert_v1_HelmSpec_To_platform_HelmSpec is an autogenerated conversion function.
-func Convert_v1_HelmSpec_To_platform_HelmSpec(in *HelmSpec, out *platform.HelmSpec, s conversion.Scope) error {
-	return autoConvert_v1_HelmSpec_To_platform_HelmSpec(in, out, s)
-}
-
-func autoConvert_platform_HelmSpec_To_v1_HelmSpec(in *platform.HelmSpec, out *HelmSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	return nil
-}
-
-// Convert_platform_HelmSpec_To_v1_HelmSpec is an autogenerated conversion function.
-func Convert_platform_HelmSpec_To_v1_HelmSpec(in *platform.HelmSpec, out *HelmSpec, s conversion.Scope) error {
-	return autoConvert_platform_HelmSpec_To_v1_HelmSpec(in, out, s)
-}
-
-func autoConvert_v1_HelmStatus_To_platform_HelmStatus(in *HelmStatus, out *platform.HelmStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.Phase = platform.AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	return nil
-}
-
-// Convert_v1_HelmStatus_To_platform_HelmStatus is an autogenerated conversion function.
-func Convert_v1_HelmStatus_To_platform_HelmStatus(in *HelmStatus, out *platform.HelmStatus, s conversion.Scope) error {
-	return autoConvert_v1_HelmStatus_To_platform_HelmStatus(in, out, s)
-}
-
-func autoConvert_platform_HelmStatus_To_v1_HelmStatus(in *platform.HelmStatus, out *HelmStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.Phase = AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	return nil
-}
-
-// Convert_platform_HelmStatus_To_v1_HelmStatus is an autogenerated conversion function.
-func Convert_platform_HelmStatus_To_v1_HelmStatus(in *platform.HelmStatus, out *HelmStatus, s conversion.Scope) error {
-	return autoConvert_platform_HelmStatus_To_v1_HelmStatus(in, out, s)
-}
-
-func autoConvert_v1_IPAM_To_platform_IPAM(in *IPAM, out *platform.IPAM, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1_IPAMSpec_To_platform_IPAMSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_IPAMStatus_To_platform_IPAMStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1_IPAM_To_platform_IPAM is an autogenerated conversion function.
-func Convert_v1_IPAM_To_platform_IPAM(in *IPAM, out *platform.IPAM, s conversion.Scope) error {
-	return autoConvert_v1_IPAM_To_platform_IPAM(in, out, s)
-}
-
-func autoConvert_platform_IPAM_To_v1_IPAM(in *platform.IPAM, out *IPAM, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_platform_IPAMSpec_To_v1_IPAMSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_platform_IPAMStatus_To_v1_IPAMStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_platform_IPAM_To_v1_IPAM is an autogenerated conversion function.
-func Convert_platform_IPAM_To_v1_IPAM(in *platform.IPAM, out *IPAM, s conversion.Scope) error {
-	return autoConvert_platform_IPAM_To_v1_IPAM(in, out, s)
-}
-
-func autoConvert_v1_IPAMList_To_platform_IPAMList(in *IPAMList, out *platform.IPAMList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]platform.IPAM)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1_IPAMList_To_platform_IPAMList is an autogenerated conversion function.
-func Convert_v1_IPAMList_To_platform_IPAMList(in *IPAMList, out *platform.IPAMList, s conversion.Scope) error {
-	return autoConvert_v1_IPAMList_To_platform_IPAMList(in, out, s)
-}
-
-func autoConvert_platform_IPAMList_To_v1_IPAMList(in *platform.IPAMList, out *IPAMList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]IPAM)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_platform_IPAMList_To_v1_IPAMList is an autogenerated conversion function.
-func Convert_platform_IPAMList_To_v1_IPAMList(in *platform.IPAMList, out *IPAMList, s conversion.Scope) error {
-	return autoConvert_platform_IPAMList_To_v1_IPAMList(in, out, s)
-}
-
-func autoConvert_v1_IPAMProxyOptions_To_platform_IPAMProxyOptions(in *IPAMProxyOptions, out *platform.IPAMProxyOptions, s conversion.Scope) error {
-	out.Path = in.Path
-	return nil
-}
-
-// Convert_v1_IPAMProxyOptions_To_platform_IPAMProxyOptions is an autogenerated conversion function.
-func Convert_v1_IPAMProxyOptions_To_platform_IPAMProxyOptions(in *IPAMProxyOptions, out *platform.IPAMProxyOptions, s conversion.Scope) error {
-	return autoConvert_v1_IPAMProxyOptions_To_platform_IPAMProxyOptions(in, out, s)
-}
-
-func autoConvert_platform_IPAMProxyOptions_To_v1_IPAMProxyOptions(in *platform.IPAMProxyOptions, out *IPAMProxyOptions, s conversion.Scope) error {
-	out.Path = in.Path
-	return nil
-}
-
-// Convert_platform_IPAMProxyOptions_To_v1_IPAMProxyOptions is an autogenerated conversion function.
-func Convert_platform_IPAMProxyOptions_To_v1_IPAMProxyOptions(in *platform.IPAMProxyOptions, out *IPAMProxyOptions, s conversion.Scope) error {
-	return autoConvert_platform_IPAMProxyOptions_To_v1_IPAMProxyOptions(in, out, s)
-}
-
-func autoConvert_url_Values_To_v1_IPAMProxyOptions(in *url.Values, out *IPAMProxyOptions, s conversion.Scope) error {
-	// WARNING: Field TypeMeta does not have json tag, skipping.
-
-	if values, ok := map[string][]string(*in)["path"]; ok && len(values) > 0 {
-		if err := runtime.Convert_Slice_string_To_string(&values, &out.Path, s); err != nil {
-			return err
-		}
-	} else {
-		out.Path = ""
-	}
-	return nil
-}
-
-// Convert_url_Values_To_v1_IPAMProxyOptions is an autogenerated conversion function.
-func Convert_url_Values_To_v1_IPAMProxyOptions(in *url.Values, out *IPAMProxyOptions, s conversion.Scope) error {
-	return autoConvert_url_Values_To_v1_IPAMProxyOptions(in, out, s)
-}
-
-func autoConvert_v1_IPAMSpec_To_platform_IPAMSpec(in *IPAMSpec, out *platform.IPAMSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	return nil
-}
-
-// Convert_v1_IPAMSpec_To_platform_IPAMSpec is an autogenerated conversion function.
-func Convert_v1_IPAMSpec_To_platform_IPAMSpec(in *IPAMSpec, out *platform.IPAMSpec, s conversion.Scope) error {
-	return autoConvert_v1_IPAMSpec_To_platform_IPAMSpec(in, out, s)
-}
-
-func autoConvert_platform_IPAMSpec_To_v1_IPAMSpec(in *platform.IPAMSpec, out *IPAMSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	return nil
-}
-
-// Convert_platform_IPAMSpec_To_v1_IPAMSpec is an autogenerated conversion function.
-func Convert_platform_IPAMSpec_To_v1_IPAMSpec(in *platform.IPAMSpec, out *IPAMSpec, s conversion.Scope) error {
-	return autoConvert_platform_IPAMSpec_To_v1_IPAMSpec(in, out, s)
-}
-
-func autoConvert_v1_IPAMStatus_To_platform_IPAMStatus(in *IPAMStatus, out *platform.IPAMStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.Phase = platform.AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	return nil
-}
-
-// Convert_v1_IPAMStatus_To_platform_IPAMStatus is an autogenerated conversion function.
-func Convert_v1_IPAMStatus_To_platform_IPAMStatus(in *IPAMStatus, out *platform.IPAMStatus, s conversion.Scope) error {
-	return autoConvert_v1_IPAMStatus_To_platform_IPAMStatus(in, out, s)
-}
-
-func autoConvert_platform_IPAMStatus_To_v1_IPAMStatus(in *platform.IPAMStatus, out *IPAMStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.Phase = AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	return nil
-}
-
-// Convert_platform_IPAMStatus_To_v1_IPAMStatus is an autogenerated conversion function.
-func Convert_platform_IPAMStatus_To_v1_IPAMStatus(in *platform.IPAMStatus, out *IPAMStatus, s conversion.Scope) error {
-	return autoConvert_platform_IPAMStatus_To_v1_IPAMStatus(in, out, s)
-}
-
-func autoConvert_v1_LBCF_To_platform_LBCF(in *LBCF, out *platform.LBCF, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1_LBCFSpec_To_platform_LBCFSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_LBCFStatus_To_platform_LBCFStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1_LBCF_To_platform_LBCF is an autogenerated conversion function.
-func Convert_v1_LBCF_To_platform_LBCF(in *LBCF, out *platform.LBCF, s conversion.Scope) error {
-	return autoConvert_v1_LBCF_To_platform_LBCF(in, out, s)
-}
-
-func autoConvert_platform_LBCF_To_v1_LBCF(in *platform.LBCF, out *LBCF, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_platform_LBCFSpec_To_v1_LBCFSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_platform_LBCFStatus_To_v1_LBCFStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_platform_LBCF_To_v1_LBCF is an autogenerated conversion function.
-func Convert_platform_LBCF_To_v1_LBCF(in *platform.LBCF, out *LBCF, s conversion.Scope) error {
-	return autoConvert_platform_LBCF_To_v1_LBCF(in, out, s)
-}
-
-func autoConvert_v1_LBCFList_To_platform_LBCFList(in *LBCFList, out *platform.LBCFList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]platform.LBCF)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1_LBCFList_To_platform_LBCFList is an autogenerated conversion function.
-func Convert_v1_LBCFList_To_platform_LBCFList(in *LBCFList, out *platform.LBCFList, s conversion.Scope) error {
-	return autoConvert_v1_LBCFList_To_platform_LBCFList(in, out, s)
-}
-
-func autoConvert_platform_LBCFList_To_v1_LBCFList(in *platform.LBCFList, out *LBCFList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]LBCF)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_platform_LBCFList_To_v1_LBCFList is an autogenerated conversion function.
-func Convert_platform_LBCFList_To_v1_LBCFList(in *platform.LBCFList, out *LBCFList, s conversion.Scope) error {
-	return autoConvert_platform_LBCFList_To_v1_LBCFList(in, out, s)
-}
-
-func autoConvert_v1_LBCFProxyOptions_To_platform_LBCFProxyOptions(in *LBCFProxyOptions, out *platform.LBCFProxyOptions, s conversion.Scope) error {
-	out.Namespace = in.Namespace
-	out.Name = in.Name
-	out.Action = in.Action
-	return nil
-}
-
-// Convert_v1_LBCFProxyOptions_To_platform_LBCFProxyOptions is an autogenerated conversion function.
-func Convert_v1_LBCFProxyOptions_To_platform_LBCFProxyOptions(in *LBCFProxyOptions, out *platform.LBCFProxyOptions, s conversion.Scope) error {
-	return autoConvert_v1_LBCFProxyOptions_To_platform_LBCFProxyOptions(in, out, s)
-}
-
-func autoConvert_platform_LBCFProxyOptions_To_v1_LBCFProxyOptions(in *platform.LBCFProxyOptions, out *LBCFProxyOptions, s conversion.Scope) error {
-	out.Namespace = in.Namespace
-	out.Name = in.Name
-	out.Action = in.Action
-	return nil
-}
-
-// Convert_platform_LBCFProxyOptions_To_v1_LBCFProxyOptions is an autogenerated conversion function.
-func Convert_platform_LBCFProxyOptions_To_v1_LBCFProxyOptions(in *platform.LBCFProxyOptions, out *LBCFProxyOptions, s conversion.Scope) error {
-	return autoConvert_platform_LBCFProxyOptions_To_v1_LBCFProxyOptions(in, out, s)
-}
-
-func autoConvert_url_Values_To_v1_LBCFProxyOptions(in *url.Values, out *LBCFProxyOptions, s conversion.Scope) error {
-	// WARNING: Field TypeMeta does not have json tag, skipping.
-
-	if values, ok := map[string][]string(*in)["namespace"]; ok && len(values) > 0 {
-		if err := runtime.Convert_Slice_string_To_string(&values, &out.Namespace, s); err != nil {
-			return err
-		}
-	} else {
-		out.Namespace = ""
-	}
-	if values, ok := map[string][]string(*in)["name"]; ok && len(values) > 0 {
-		if err := runtime.Convert_Slice_string_To_string(&values, &out.Name, s); err != nil {
-			return err
-		}
-	} else {
-		out.Name = ""
-	}
-	if values, ok := map[string][]string(*in)["action"]; ok && len(values) > 0 {
-		if err := runtime.Convert_Slice_string_To_string(&values, &out.Action, s); err != nil {
-			return err
-		}
-	} else {
-		out.Action = ""
-	}
-	return nil
-}
-
-// Convert_url_Values_To_v1_LBCFProxyOptions is an autogenerated conversion function.
-func Convert_url_Values_To_v1_LBCFProxyOptions(in *url.Values, out *LBCFProxyOptions, s conversion.Scope) error {
-	return autoConvert_url_Values_To_v1_LBCFProxyOptions(in, out, s)
-}
-
-func autoConvert_v1_LBCFSpec_To_platform_LBCFSpec(in *LBCFSpec, out *platform.LBCFSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	return nil
-}
-
-// Convert_v1_LBCFSpec_To_platform_LBCFSpec is an autogenerated conversion function.
-func Convert_v1_LBCFSpec_To_platform_LBCFSpec(in *LBCFSpec, out *platform.LBCFSpec, s conversion.Scope) error {
-	return autoConvert_v1_LBCFSpec_To_platform_LBCFSpec(in, out, s)
-}
-
-func autoConvert_platform_LBCFSpec_To_v1_LBCFSpec(in *platform.LBCFSpec, out *LBCFSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	return nil
-}
-
-// Convert_platform_LBCFSpec_To_v1_LBCFSpec is an autogenerated conversion function.
-func Convert_platform_LBCFSpec_To_v1_LBCFSpec(in *platform.LBCFSpec, out *LBCFSpec, s conversion.Scope) error {
-	return autoConvert_platform_LBCFSpec_To_v1_LBCFSpec(in, out, s)
-}
-
-func autoConvert_v1_LBCFStatus_To_platform_LBCFStatus(in *LBCFStatus, out *platform.LBCFStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.Phase = platform.AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	return nil
-}
-
-// Convert_v1_LBCFStatus_To_platform_LBCFStatus is an autogenerated conversion function.
-func Convert_v1_LBCFStatus_To_platform_LBCFStatus(in *LBCFStatus, out *platform.LBCFStatus, s conversion.Scope) error {
-	return autoConvert_v1_LBCFStatus_To_platform_LBCFStatus(in, out, s)
-}
-
-func autoConvert_platform_LBCFStatus_To_v1_LBCFStatus(in *platform.LBCFStatus, out *LBCFStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.Phase = AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	return nil
-}
-
-// Convert_platform_LBCFStatus_To_v1_LBCFStatus is an autogenerated conversion function.
-func Convert_platform_LBCFStatus_To_v1_LBCFStatus(in *platform.LBCFStatus, out *LBCFStatus, s conversion.Scope) error {
-	return autoConvert_platform_LBCFStatus_To_v1_LBCFStatus(in, out, s)
-}
-
 func autoConvert_v1_LocalEtcd_To_platform_LocalEtcd(in *LocalEtcd, out *platform.LocalEtcd, s conversion.Scope) error {
 	out.DataDir = in.DataDir
 	out.ExtraArgs = *(*map[string]string)(unsafe.Pointer(&in.ExtraArgs))
@@ -3016,159 +2266,6 @@ func autoConvert_platform_LocalEtcd_To_v1_LocalEtcd(in *platform.LocalEtcd, out 
 // Convert_platform_LocalEtcd_To_v1_LocalEtcd is an autogenerated conversion function.
 func Convert_platform_LocalEtcd_To_v1_LocalEtcd(in *platform.LocalEtcd, out *LocalEtcd, s conversion.Scope) error {
 	return autoConvert_platform_LocalEtcd_To_v1_LocalEtcd(in, out, s)
-}
-
-func autoConvert_v1_LogCollector_To_platform_LogCollector(in *LogCollector, out *platform.LogCollector, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1_LogCollectorSpec_To_platform_LogCollectorSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_LogCollectorStatus_To_platform_LogCollectorStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1_LogCollector_To_platform_LogCollector is an autogenerated conversion function.
-func Convert_v1_LogCollector_To_platform_LogCollector(in *LogCollector, out *platform.LogCollector, s conversion.Scope) error {
-	return autoConvert_v1_LogCollector_To_platform_LogCollector(in, out, s)
-}
-
-func autoConvert_platform_LogCollector_To_v1_LogCollector(in *platform.LogCollector, out *LogCollector, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_platform_LogCollectorSpec_To_v1_LogCollectorSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_platform_LogCollectorStatus_To_v1_LogCollectorStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_platform_LogCollector_To_v1_LogCollector is an autogenerated conversion function.
-func Convert_platform_LogCollector_To_v1_LogCollector(in *platform.LogCollector, out *LogCollector, s conversion.Scope) error {
-	return autoConvert_platform_LogCollector_To_v1_LogCollector(in, out, s)
-}
-
-func autoConvert_v1_LogCollectorList_To_platform_LogCollectorList(in *LogCollectorList, out *platform.LogCollectorList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]platform.LogCollector)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1_LogCollectorList_To_platform_LogCollectorList is an autogenerated conversion function.
-func Convert_v1_LogCollectorList_To_platform_LogCollectorList(in *LogCollectorList, out *platform.LogCollectorList, s conversion.Scope) error {
-	return autoConvert_v1_LogCollectorList_To_platform_LogCollectorList(in, out, s)
-}
-
-func autoConvert_platform_LogCollectorList_To_v1_LogCollectorList(in *platform.LogCollectorList, out *LogCollectorList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]LogCollector)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_platform_LogCollectorList_To_v1_LogCollectorList is an autogenerated conversion function.
-func Convert_platform_LogCollectorList_To_v1_LogCollectorList(in *platform.LogCollectorList, out *LogCollectorList, s conversion.Scope) error {
-	return autoConvert_platform_LogCollectorList_To_v1_LogCollectorList(in, out, s)
-}
-
-func autoConvert_v1_LogCollectorProxyOptions_To_platform_LogCollectorProxyOptions(in *LogCollectorProxyOptions, out *platform.LogCollectorProxyOptions, s conversion.Scope) error {
-	out.Namespace = in.Namespace
-	out.Name = in.Name
-	return nil
-}
-
-// Convert_v1_LogCollectorProxyOptions_To_platform_LogCollectorProxyOptions is an autogenerated conversion function.
-func Convert_v1_LogCollectorProxyOptions_To_platform_LogCollectorProxyOptions(in *LogCollectorProxyOptions, out *platform.LogCollectorProxyOptions, s conversion.Scope) error {
-	return autoConvert_v1_LogCollectorProxyOptions_To_platform_LogCollectorProxyOptions(in, out, s)
-}
-
-func autoConvert_platform_LogCollectorProxyOptions_To_v1_LogCollectorProxyOptions(in *platform.LogCollectorProxyOptions, out *LogCollectorProxyOptions, s conversion.Scope) error {
-	out.Namespace = in.Namespace
-	out.Name = in.Name
-	return nil
-}
-
-// Convert_platform_LogCollectorProxyOptions_To_v1_LogCollectorProxyOptions is an autogenerated conversion function.
-func Convert_platform_LogCollectorProxyOptions_To_v1_LogCollectorProxyOptions(in *platform.LogCollectorProxyOptions, out *LogCollectorProxyOptions, s conversion.Scope) error {
-	return autoConvert_platform_LogCollectorProxyOptions_To_v1_LogCollectorProxyOptions(in, out, s)
-}
-
-func autoConvert_url_Values_To_v1_LogCollectorProxyOptions(in *url.Values, out *LogCollectorProxyOptions, s conversion.Scope) error {
-	// WARNING: Field TypeMeta does not have json tag, skipping.
-
-	if values, ok := map[string][]string(*in)["namespace"]; ok && len(values) > 0 {
-		if err := runtime.Convert_Slice_string_To_string(&values, &out.Namespace, s); err != nil {
-			return err
-		}
-	} else {
-		out.Namespace = ""
-	}
-	if values, ok := map[string][]string(*in)["name"]; ok && len(values) > 0 {
-		if err := runtime.Convert_Slice_string_To_string(&values, &out.Name, s); err != nil {
-			return err
-		}
-	} else {
-		out.Name = ""
-	}
-	return nil
-}
-
-// Convert_url_Values_To_v1_LogCollectorProxyOptions is an autogenerated conversion function.
-func Convert_url_Values_To_v1_LogCollectorProxyOptions(in *url.Values, out *LogCollectorProxyOptions, s conversion.Scope) error {
-	return autoConvert_url_Values_To_v1_LogCollectorProxyOptions(in, out, s)
-}
-
-func autoConvert_v1_LogCollectorSpec_To_platform_LogCollectorSpec(in *LogCollectorSpec, out *platform.LogCollectorSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	return nil
-}
-
-// Convert_v1_LogCollectorSpec_To_platform_LogCollectorSpec is an autogenerated conversion function.
-func Convert_v1_LogCollectorSpec_To_platform_LogCollectorSpec(in *LogCollectorSpec, out *platform.LogCollectorSpec, s conversion.Scope) error {
-	return autoConvert_v1_LogCollectorSpec_To_platform_LogCollectorSpec(in, out, s)
-}
-
-func autoConvert_platform_LogCollectorSpec_To_v1_LogCollectorSpec(in *platform.LogCollectorSpec, out *LogCollectorSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	return nil
-}
-
-// Convert_platform_LogCollectorSpec_To_v1_LogCollectorSpec is an autogenerated conversion function.
-func Convert_platform_LogCollectorSpec_To_v1_LogCollectorSpec(in *platform.LogCollectorSpec, out *LogCollectorSpec, s conversion.Scope) error {
-	return autoConvert_platform_LogCollectorSpec_To_v1_LogCollectorSpec(in, out, s)
-}
-
-func autoConvert_v1_LogCollectorStatus_To_platform_LogCollectorStatus(in *LogCollectorStatus, out *platform.LogCollectorStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.Phase = platform.AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	return nil
-}
-
-// Convert_v1_LogCollectorStatus_To_platform_LogCollectorStatus is an autogenerated conversion function.
-func Convert_v1_LogCollectorStatus_To_platform_LogCollectorStatus(in *LogCollectorStatus, out *platform.LogCollectorStatus, s conversion.Scope) error {
-	return autoConvert_v1_LogCollectorStatus_To_platform_LogCollectorStatus(in, out, s)
-}
-
-func autoConvert_platform_LogCollectorStatus_To_v1_LogCollectorStatus(in *platform.LogCollectorStatus, out *LogCollectorStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.Phase = AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	return nil
-}
-
-// Convert_platform_LogCollectorStatus_To_v1_LogCollectorStatus is an autogenerated conversion function.
-func Convert_platform_LogCollectorStatus_To_v1_LogCollectorStatus(in *platform.LogCollectorStatus, out *LogCollectorStatus, s conversion.Scope) error {
-	return autoConvert_platform_LogCollectorStatus_To_v1_LogCollectorStatus(in, out, s)
 }
 
 func autoConvert_v1_Machine_To_platform_Machine(in *Machine, out *platform.Machine, s conversion.Scope) error {
@@ -3393,53 +2490,6 @@ func Convert_platform_MachineSystemInfo_To_v1_MachineSystemInfo(in *platform.Mac
 	return autoConvert_platform_MachineSystemInfo_To_v1_MachineSystemInfo(in, out, s)
 }
 
-func autoConvert_v1_PVCRProxyOptions_To_platform_PVCRProxyOptions(in *PVCRProxyOptions, out *platform.PVCRProxyOptions, s conversion.Scope) error {
-	out.Namespace = in.Namespace
-	out.Name = in.Name
-	return nil
-}
-
-// Convert_v1_PVCRProxyOptions_To_platform_PVCRProxyOptions is an autogenerated conversion function.
-func Convert_v1_PVCRProxyOptions_To_platform_PVCRProxyOptions(in *PVCRProxyOptions, out *platform.PVCRProxyOptions, s conversion.Scope) error {
-	return autoConvert_v1_PVCRProxyOptions_To_platform_PVCRProxyOptions(in, out, s)
-}
-
-func autoConvert_platform_PVCRProxyOptions_To_v1_PVCRProxyOptions(in *platform.PVCRProxyOptions, out *PVCRProxyOptions, s conversion.Scope) error {
-	out.Namespace = in.Namespace
-	out.Name = in.Name
-	return nil
-}
-
-// Convert_platform_PVCRProxyOptions_To_v1_PVCRProxyOptions is an autogenerated conversion function.
-func Convert_platform_PVCRProxyOptions_To_v1_PVCRProxyOptions(in *platform.PVCRProxyOptions, out *PVCRProxyOptions, s conversion.Scope) error {
-	return autoConvert_platform_PVCRProxyOptions_To_v1_PVCRProxyOptions(in, out, s)
-}
-
-func autoConvert_url_Values_To_v1_PVCRProxyOptions(in *url.Values, out *PVCRProxyOptions, s conversion.Scope) error {
-	// WARNING: Field TypeMeta does not have json tag, skipping.
-
-	if values, ok := map[string][]string(*in)["namespace"]; ok && len(values) > 0 {
-		if err := runtime.Convert_Slice_string_To_string(&values, &out.Namespace, s); err != nil {
-			return err
-		}
-	} else {
-		out.Namespace = ""
-	}
-	if values, ok := map[string][]string(*in)["name"]; ok && len(values) > 0 {
-		if err := runtime.Convert_Slice_string_To_string(&values, &out.Name, s); err != nil {
-			return err
-		}
-	} else {
-		out.Name = ""
-	}
-	return nil
-}
-
-// Convert_url_Values_To_v1_PVCRProxyOptions is an autogenerated conversion function.
-func Convert_url_Values_To_v1_PVCRProxyOptions(in *url.Values, out *PVCRProxyOptions, s conversion.Scope) error {
-	return autoConvert_url_Values_To_v1_PVCRProxyOptions(in, out, s)
-}
-
 func autoConvert_v1_PersistentBackEnd_To_platform_PersistentBackEnd(in *PersistentBackEnd, out *platform.PersistentBackEnd, s conversion.Scope) error {
 	out.CLS = (*platform.StorageBackEndCLS)(unsafe.Pointer(in.CLS))
 	out.ES = (*platform.StorageBackEndES)(unsafe.Pointer(in.ES))
@@ -3574,156 +2624,42 @@ func Convert_platform_PersistentEventStatus_To_v1_PersistentEventStatus(in *plat
 	return autoConvert_platform_PersistentEventStatus_To_v1_PersistentEventStatus(in, out, s)
 }
 
-func autoConvert_v1_Prometheus_To_platform_Prometheus(in *Prometheus, out *platform.Prometheus, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1_PrometheusSpec_To_platform_PrometheusSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
+func autoConvert_v1_ProxyOptions_To_platform_ProxyOptions(in *ProxyOptions, out *platform.ProxyOptions, s conversion.Scope) error {
+	out.Path = in.Path
+	return nil
+}
+
+// Convert_v1_ProxyOptions_To_platform_ProxyOptions is an autogenerated conversion function.
+func Convert_v1_ProxyOptions_To_platform_ProxyOptions(in *ProxyOptions, out *platform.ProxyOptions, s conversion.Scope) error {
+	return autoConvert_v1_ProxyOptions_To_platform_ProxyOptions(in, out, s)
+}
+
+func autoConvert_platform_ProxyOptions_To_v1_ProxyOptions(in *platform.ProxyOptions, out *ProxyOptions, s conversion.Scope) error {
+	out.Path = in.Path
+	return nil
+}
+
+// Convert_platform_ProxyOptions_To_v1_ProxyOptions is an autogenerated conversion function.
+func Convert_platform_ProxyOptions_To_v1_ProxyOptions(in *platform.ProxyOptions, out *ProxyOptions, s conversion.Scope) error {
+	return autoConvert_platform_ProxyOptions_To_v1_ProxyOptions(in, out, s)
+}
+
+func autoConvert_url_Values_To_v1_ProxyOptions(in *url.Values, out *ProxyOptions, s conversion.Scope) error {
+	// WARNING: Field TypeMeta does not have json tag, skipping.
+
+	if values, ok := map[string][]string(*in)["path"]; ok && len(values) > 0 {
+		if err := runtime.Convert_Slice_string_To_string(&values, &out.Path, s); err != nil {
+			return err
+		}
+	} else {
+		out.Path = ""
 	}
-	if err := Convert_v1_PrometheusStatus_To_platform_PrometheusStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
 	return nil
 }
 
-// Convert_v1_Prometheus_To_platform_Prometheus is an autogenerated conversion function.
-func Convert_v1_Prometheus_To_platform_Prometheus(in *Prometheus, out *platform.Prometheus, s conversion.Scope) error {
-	return autoConvert_v1_Prometheus_To_platform_Prometheus(in, out, s)
-}
-
-func autoConvert_platform_Prometheus_To_v1_Prometheus(in *platform.Prometheus, out *Prometheus, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_platform_PrometheusSpec_To_v1_PrometheusSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_platform_PrometheusStatus_To_v1_PrometheusStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_platform_Prometheus_To_v1_Prometheus is an autogenerated conversion function.
-func Convert_platform_Prometheus_To_v1_Prometheus(in *platform.Prometheus, out *Prometheus, s conversion.Scope) error {
-	return autoConvert_platform_Prometheus_To_v1_Prometheus(in, out, s)
-}
-
-func autoConvert_v1_PrometheusList_To_platform_PrometheusList(in *PrometheusList, out *platform.PrometheusList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]platform.Prometheus)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1_PrometheusList_To_platform_PrometheusList is an autogenerated conversion function.
-func Convert_v1_PrometheusList_To_platform_PrometheusList(in *PrometheusList, out *platform.PrometheusList, s conversion.Scope) error {
-	return autoConvert_v1_PrometheusList_To_platform_PrometheusList(in, out, s)
-}
-
-func autoConvert_platform_PrometheusList_To_v1_PrometheusList(in *platform.PrometheusList, out *PrometheusList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Prometheus)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_platform_PrometheusList_To_v1_PrometheusList is an autogenerated conversion function.
-func Convert_platform_PrometheusList_To_v1_PrometheusList(in *platform.PrometheusList, out *PrometheusList, s conversion.Scope) error {
-	return autoConvert_platform_PrometheusList_To_v1_PrometheusList(in, out, s)
-}
-
-func autoConvert_v1_PrometheusRemoteAddr_To_platform_PrometheusRemoteAddr(in *PrometheusRemoteAddr, out *platform.PrometheusRemoteAddr, s conversion.Scope) error {
-	out.WriteAddr = *(*[]string)(unsafe.Pointer(&in.WriteAddr))
-	out.ReadAddr = *(*[]string)(unsafe.Pointer(&in.ReadAddr))
-	return nil
-}
-
-// Convert_v1_PrometheusRemoteAddr_To_platform_PrometheusRemoteAddr is an autogenerated conversion function.
-func Convert_v1_PrometheusRemoteAddr_To_platform_PrometheusRemoteAddr(in *PrometheusRemoteAddr, out *platform.PrometheusRemoteAddr, s conversion.Scope) error {
-	return autoConvert_v1_PrometheusRemoteAddr_To_platform_PrometheusRemoteAddr(in, out, s)
-}
-
-func autoConvert_platform_PrometheusRemoteAddr_To_v1_PrometheusRemoteAddr(in *platform.PrometheusRemoteAddr, out *PrometheusRemoteAddr, s conversion.Scope) error {
-	out.WriteAddr = *(*[]string)(unsafe.Pointer(&in.WriteAddr))
-	out.ReadAddr = *(*[]string)(unsafe.Pointer(&in.ReadAddr))
-	return nil
-}
-
-// Convert_platform_PrometheusRemoteAddr_To_v1_PrometheusRemoteAddr is an autogenerated conversion function.
-func Convert_platform_PrometheusRemoteAddr_To_v1_PrometheusRemoteAddr(in *platform.PrometheusRemoteAddr, out *PrometheusRemoteAddr, s conversion.Scope) error {
-	return autoConvert_platform_PrometheusRemoteAddr_To_v1_PrometheusRemoteAddr(in, out, s)
-}
-
-func autoConvert_v1_PrometheusSpec_To_platform_PrometheusSpec(in *PrometheusSpec, out *platform.PrometheusSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	out.SubVersion = *(*map[string]string)(unsafe.Pointer(&in.SubVersion))
-	if err := Convert_v1_PrometheusRemoteAddr_To_platform_PrometheusRemoteAddr(&in.RemoteAddress, &out.RemoteAddress, s); err != nil {
-		return err
-	}
-	out.NotifyWebhook = in.NotifyWebhook
-	if err := Convert_v1_ResourceRequirements_To_platform_ResourceRequirements(&in.Resources, &out.Resources, s); err != nil {
-		return err
-	}
-	out.RunOnMaster = in.RunOnMaster
-	out.AlertRepeatInterval = in.AlertRepeatInterval
-	out.WithNPD = in.WithNPD
-	return nil
-}
-
-// Convert_v1_PrometheusSpec_To_platform_PrometheusSpec is an autogenerated conversion function.
-func Convert_v1_PrometheusSpec_To_platform_PrometheusSpec(in *PrometheusSpec, out *platform.PrometheusSpec, s conversion.Scope) error {
-	return autoConvert_v1_PrometheusSpec_To_platform_PrometheusSpec(in, out, s)
-}
-
-func autoConvert_platform_PrometheusSpec_To_v1_PrometheusSpec(in *platform.PrometheusSpec, out *PrometheusSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	out.SubVersion = *(*map[string]string)(unsafe.Pointer(&in.SubVersion))
-	if err := Convert_platform_PrometheusRemoteAddr_To_v1_PrometheusRemoteAddr(&in.RemoteAddress, &out.RemoteAddress, s); err != nil {
-		return err
-	}
-	out.NotifyWebhook = in.NotifyWebhook
-	if err := Convert_platform_ResourceRequirements_To_v1_ResourceRequirements(&in.Resources, &out.Resources, s); err != nil {
-		return err
-	}
-	out.RunOnMaster = in.RunOnMaster
-	out.AlertRepeatInterval = in.AlertRepeatInterval
-	out.WithNPD = in.WithNPD
-	return nil
-}
-
-// Convert_platform_PrometheusSpec_To_v1_PrometheusSpec is an autogenerated conversion function.
-func Convert_platform_PrometheusSpec_To_v1_PrometheusSpec(in *platform.PrometheusSpec, out *PrometheusSpec, s conversion.Scope) error {
-	return autoConvert_platform_PrometheusSpec_To_v1_PrometheusSpec(in, out, s)
-}
-
-func autoConvert_v1_PrometheusStatus_To_platform_PrometheusStatus(in *PrometheusStatus, out *platform.PrometheusStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.Phase = platform.AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	out.SubVersion = *(*map[string]string)(unsafe.Pointer(&in.SubVersion))
-	return nil
-}
-
-// Convert_v1_PrometheusStatus_To_platform_PrometheusStatus is an autogenerated conversion function.
-func Convert_v1_PrometheusStatus_To_platform_PrometheusStatus(in *PrometheusStatus, out *platform.PrometheusStatus, s conversion.Scope) error {
-	return autoConvert_v1_PrometheusStatus_To_platform_PrometheusStatus(in, out, s)
-}
-
-func autoConvert_platform_PrometheusStatus_To_v1_PrometheusStatus(in *platform.PrometheusStatus, out *PrometheusStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.Phase = AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	out.SubVersion = *(*map[string]string)(unsafe.Pointer(&in.SubVersion))
-	return nil
-}
-
-// Convert_platform_PrometheusStatus_To_v1_PrometheusStatus is an autogenerated conversion function.
-func Convert_platform_PrometheusStatus_To_v1_PrometheusStatus(in *platform.PrometheusStatus, out *PrometheusStatus, s conversion.Scope) error {
-	return autoConvert_platform_PrometheusStatus_To_v1_PrometheusStatus(in, out, s)
+// Convert_url_Values_To_v1_ProxyOptions is an autogenerated conversion function.
+func Convert_url_Values_To_v1_ProxyOptions(in *url.Values, out *ProxyOptions, s conversion.Scope) error {
+	return autoConvert_url_Values_To_v1_ProxyOptions(in, out, s)
 }
 
 func autoConvert_v1_Registry_To_platform_Registry(in *Registry, out *platform.Registry, s conversion.Scope) error {
@@ -4140,120 +3076,4 @@ func autoConvert_platform_UpgradeStrategy_To_v1_UpgradeStrategy(in *platform.Upg
 // Convert_platform_UpgradeStrategy_To_v1_UpgradeStrategy is an autogenerated conversion function.
 func Convert_platform_UpgradeStrategy_To_v1_UpgradeStrategy(in *platform.UpgradeStrategy, out *UpgradeStrategy, s conversion.Scope) error {
 	return autoConvert_platform_UpgradeStrategy_To_v1_UpgradeStrategy(in, out, s)
-}
-
-func autoConvert_v1_VolumeDecorator_To_platform_VolumeDecorator(in *VolumeDecorator, out *platform.VolumeDecorator, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1_VolumeDecoratorSpec_To_platform_VolumeDecoratorSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_VolumeDecoratorStatus_To_platform_VolumeDecoratorStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1_VolumeDecorator_To_platform_VolumeDecorator is an autogenerated conversion function.
-func Convert_v1_VolumeDecorator_To_platform_VolumeDecorator(in *VolumeDecorator, out *platform.VolumeDecorator, s conversion.Scope) error {
-	return autoConvert_v1_VolumeDecorator_To_platform_VolumeDecorator(in, out, s)
-}
-
-func autoConvert_platform_VolumeDecorator_To_v1_VolumeDecorator(in *platform.VolumeDecorator, out *VolumeDecorator, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_platform_VolumeDecoratorSpec_To_v1_VolumeDecoratorSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_platform_VolumeDecoratorStatus_To_v1_VolumeDecoratorStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_platform_VolumeDecorator_To_v1_VolumeDecorator is an autogenerated conversion function.
-func Convert_platform_VolumeDecorator_To_v1_VolumeDecorator(in *platform.VolumeDecorator, out *VolumeDecorator, s conversion.Scope) error {
-	return autoConvert_platform_VolumeDecorator_To_v1_VolumeDecorator(in, out, s)
-}
-
-func autoConvert_v1_VolumeDecoratorList_To_platform_VolumeDecoratorList(in *VolumeDecoratorList, out *platform.VolumeDecoratorList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]platform.VolumeDecorator)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_v1_VolumeDecoratorList_To_platform_VolumeDecoratorList is an autogenerated conversion function.
-func Convert_v1_VolumeDecoratorList_To_platform_VolumeDecoratorList(in *VolumeDecoratorList, out *platform.VolumeDecoratorList, s conversion.Scope) error {
-	return autoConvert_v1_VolumeDecoratorList_To_platform_VolumeDecoratorList(in, out, s)
-}
-
-func autoConvert_platform_VolumeDecoratorList_To_v1_VolumeDecoratorList(in *platform.VolumeDecoratorList, out *VolumeDecoratorList, s conversion.Scope) error {
-	out.ListMeta = in.ListMeta
-	out.Items = *(*[]VolumeDecorator)(unsafe.Pointer(&in.Items))
-	return nil
-}
-
-// Convert_platform_VolumeDecoratorList_To_v1_VolumeDecoratorList is an autogenerated conversion function.
-func Convert_platform_VolumeDecoratorList_To_v1_VolumeDecoratorList(in *platform.VolumeDecoratorList, out *VolumeDecoratorList, s conversion.Scope) error {
-	return autoConvert_platform_VolumeDecoratorList_To_v1_VolumeDecoratorList(in, out, s)
-}
-
-func autoConvert_v1_VolumeDecoratorSpec_To_platform_VolumeDecoratorSpec(in *VolumeDecoratorSpec, out *platform.VolumeDecoratorSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	out.VolumeTypes = *(*[]string)(unsafe.Pointer(&in.VolumeTypes))
-	out.WorkloadAdmission = in.WorkloadAdmission
-	return nil
-}
-
-// Convert_v1_VolumeDecoratorSpec_To_platform_VolumeDecoratorSpec is an autogenerated conversion function.
-func Convert_v1_VolumeDecoratorSpec_To_platform_VolumeDecoratorSpec(in *VolumeDecoratorSpec, out *platform.VolumeDecoratorSpec, s conversion.Scope) error {
-	return autoConvert_v1_VolumeDecoratorSpec_To_platform_VolumeDecoratorSpec(in, out, s)
-}
-
-func autoConvert_platform_VolumeDecoratorSpec_To_v1_VolumeDecoratorSpec(in *platform.VolumeDecoratorSpec, out *VolumeDecoratorSpec, s conversion.Scope) error {
-	out.TenantID = in.TenantID
-	out.ClusterName = in.ClusterName
-	out.Version = in.Version
-	out.VolumeTypes = *(*[]string)(unsafe.Pointer(&in.VolumeTypes))
-	out.WorkloadAdmission = in.WorkloadAdmission
-	return nil
-}
-
-// Convert_platform_VolumeDecoratorSpec_To_v1_VolumeDecoratorSpec is an autogenerated conversion function.
-func Convert_platform_VolumeDecoratorSpec_To_v1_VolumeDecoratorSpec(in *platform.VolumeDecoratorSpec, out *VolumeDecoratorSpec, s conversion.Scope) error {
-	return autoConvert_platform_VolumeDecoratorSpec_To_v1_VolumeDecoratorSpec(in, out, s)
-}
-
-func autoConvert_v1_VolumeDecoratorStatus_To_platform_VolumeDecoratorStatus(in *VolumeDecoratorStatus, out *platform.VolumeDecoratorStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.VolumeTypes = *(*[]string)(unsafe.Pointer(&in.VolumeTypes))
-	out.WorkloadAdmission = in.WorkloadAdmission
-	out.StorageVendorVersion = in.StorageVendorVersion
-	out.Phase = platform.AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	return nil
-}
-
-// Convert_v1_VolumeDecoratorStatus_To_platform_VolumeDecoratorStatus is an autogenerated conversion function.
-func Convert_v1_VolumeDecoratorStatus_To_platform_VolumeDecoratorStatus(in *VolumeDecoratorStatus, out *platform.VolumeDecoratorStatus, s conversion.Scope) error {
-	return autoConvert_v1_VolumeDecoratorStatus_To_platform_VolumeDecoratorStatus(in, out, s)
-}
-
-func autoConvert_platform_VolumeDecoratorStatus_To_v1_VolumeDecoratorStatus(in *platform.VolumeDecoratorStatus, out *VolumeDecoratorStatus, s conversion.Scope) error {
-	out.Version = in.Version
-	out.VolumeTypes = *(*[]string)(unsafe.Pointer(&in.VolumeTypes))
-	out.WorkloadAdmission = in.WorkloadAdmission
-	out.StorageVendorVersion = in.StorageVendorVersion
-	out.Phase = AddonPhase(in.Phase)
-	out.Reason = in.Reason
-	out.RetryCount = in.RetryCount
-	out.LastReInitializingTimestamp = in.LastReInitializingTimestamp
-	return nil
-}
-
-// Convert_platform_VolumeDecoratorStatus_To_v1_VolumeDecoratorStatus is an autogenerated conversion function.
-func Convert_platform_VolumeDecoratorStatus_To_v1_VolumeDecoratorStatus(in *platform.VolumeDecoratorStatus, out *VolumeDecoratorStatus, s conversion.Scope) error {
-	return autoConvert_platform_VolumeDecoratorStatus_To_v1_VolumeDecoratorStatus(in, out, s)
 }

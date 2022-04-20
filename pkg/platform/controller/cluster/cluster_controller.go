@@ -21,7 +21,6 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"reflect"
 	"strings"
 	"time"
@@ -31,6 +30,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
@@ -46,6 +46,7 @@ import (
 	clusterprovider "tkestack.io/tke/pkg/platform/provider/cluster"
 	typesv1 "tkestack.io/tke/pkg/platform/types/v1"
 	vendor "tkestack.io/tke/pkg/platform/util/kubevendor"
+	workqueue_extension "tkestack.io/tke/pkg/platform/util/workqueue"
 	"tkestack.io/tke/pkg/util/log"
 	"tkestack.io/tke/pkg/util/metrics"
 )
@@ -64,10 +65,12 @@ type Controller struct {
 	lister       platformv1lister.ClusterLister
 	listerSynced cache.InformerSynced
 
-	log               log.Logger
-	platformClient    platformversionedclient.PlatformV1Interface
-	deleter           deletion.ClusterDeleterInterface
-	healthCheckPeriod time.Duration
+	log                                        log.Logger
+	platformClient                             platformversionedclient.PlatformV1Interface
+	deleter                                    deletion.ClusterDeleterInterface
+	healthCheckPeriod                          time.Duration
+	randomeRangeLowerLimitForHealthCheckPeriod time.Duration
+	randomeRangeUpperLimitForHealthCheckPeriod time.Duration
 }
 
 // NewController creates a new Controller object.
@@ -77,13 +80,8 @@ func NewController(
 	configuration clusterconfig.ClusterControllerConfiguration,
 	finalizerToken platformv1.FinalizerName) *Controller {
 	rand.Seed(time.Now().Unix())
-	rateLimit := workqueue.NewMaxOfRateLimiter(
-		workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1000*time.Second),
-		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(configuration.BucketRateLimiterLimit), configuration.BucketRateLimiterBurst)},
-	)
-	c := &Controller{
-		queue: workqueue.NewNamedRateLimitingQueue(rateLimit, "cluster"),
 
+	c := &Controller{
 		log:            log.WithName("ClusterController"),
 		platformClient: platformClient,
 		deleter: deletion.NewClusterDeleter(platformClient.Clusters(),
@@ -91,6 +89,13 @@ func NewController(
 			finalizerToken,
 			true),
 	}
+	rateLimit := workqueue.NewMaxOfRateLimiter(
+		workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1000*time.Second),
+		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(configuration.BucketRateLimiterLimit), configuration.BucketRateLimiterBurst)},
+	)
+	c.queue = workqueue_extension.NewNamedRateLimitingWithCustomQueue(rateLimit,
+		workqueue_extension.NewNamed("platform", 12, c.getPriority),
+		"cluster")
 
 	if platformClient != nil && platformClient.RESTClient().GetRateLimiter() != nil {
 		_ = metrics.RegisterMetricAndTrackRateLimiterUsage("cluster_controller", platformClient.RESTClient().GetRateLimiter())
@@ -120,8 +125,58 @@ func NewController(
 	c.lister = clusterInformer.Lister()
 	c.listerSynced = clusterInformer.Informer().HasSynced
 	c.healthCheckPeriod = configuration.HealthCheckPeriod
+	c.randomeRangeLowerLimitForHealthCheckPeriod = configuration.RandomeRangeLowerLimitForHealthCheckPeriod
+	c.randomeRangeUpperLimitForHealthCheckPeriod = configuration.RandomeRangeUpperLimitForHealthCheckPeriod
 
 	return c
+}
+
+// The higher the priority value, the higher the priority, such as priorityInitializing(10) > priorityTerminating(8)
+const (
+	priorityIdling       int = 2
+	priorityFailed       int = 4
+	priorityRunning      int = 6
+	priorityTerminating  int = 8
+	priorityInitializing int = 10
+)
+
+func (c *Controller) getPriority(item interface{}) int {
+	var key string
+	var ok bool
+	if key, ok = item.(string); !ok {
+		return priorityRunning
+	}
+
+	_, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		return priorityRunning
+	}
+
+	cluster, err := c.lister.Get(name)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Infof("getPriority item is not found, item: %v", item)
+		}
+		return priorityRunning
+	}
+	if cluster == nil {
+		return priorityRunning
+	}
+
+	switch {
+	case cluster.Status.Phase == platformv1.ClusterPhase("Idling"):
+		return priorityIdling
+	case cluster.Status.Phase == platformv1.ClusterFailed:
+		return priorityFailed
+	case cluster.Status.Phase == platformv1.ClusterRunning:
+		return priorityRunning
+	case cluster.Status.Phase == platformv1.ClusterTerminating:
+		return priorityTerminating
+	case cluster.Status.Phase == platformv1.ClusterInitializing:
+		return priorityInitializing
+	}
+
+	return priorityRunning
 }
 
 func (c *Controller) addCluster(obj interface{}) {
@@ -157,16 +212,22 @@ func (c *Controller) enqueue(obj *platformv1.Cluster) {
 }
 
 func (c *Controller) needsUpdate(old *platformv1.Cluster, new *platformv1.Cluster) bool {
-	switch {
-	case !reflect.DeepEqual(old.Spec, new.Spec):
+	healthCondition := new.GetCondition(conditionTypeHealthCheck)
+	if !reflect.DeepEqual(old.Spec, new.Spec) {
 		return true
-	case !reflect.DeepEqual(old.ObjectMeta.Labels, new.ObjectMeta.Labels):
+
+	}
+	if !reflect.DeepEqual(old.ObjectMeta.Labels, new.ObjectMeta.Labels) {
 		return true
-	case !reflect.DeepEqual(old.ObjectMeta.Annotations, new.ObjectMeta.Annotations):
+	}
+	if !reflect.DeepEqual(old.ObjectMeta.Annotations, new.ObjectMeta.Annotations) {
 		return true
-	case old.Status.Phase != new.Status.Phase:
+	}
+	if old.Status.Phase != new.Status.Phase {
 		return true
-	case new.Status.Phase == platformv1.ClusterInitializing:
+
+	}
+	if new.Status.Phase == platformv1.ClusterInitializing {
 		// if ResourceVersion is equal, it's an resync envent, should return true.
 		if old.ResourceVersion == new.ResourceVersion {
 			return true
@@ -177,25 +238,17 @@ func (c *Controller) needsUpdate(old *platformv1.Cluster, new *platformv1.Cluste
 		if new.Status.Conditions[len(new.Status.Conditions)-1].Status == platformv1.ConditionUnknown {
 			return true
 		}
-		// if user set last condition false block procesee
+		// if user set last condition false block procesee until resync envent
 		if new.Status.Conditions[len(new.Status.Conditions)-1].Status == platformv1.ConditionFalse {
 			return false
 		}
-		fallthrough
-	case !reflect.DeepEqual(old.Status.Conditions, new.Status.Conditions):
-		return true
-	default:
-		healthCondition := new.GetCondition(conditionTypeHealthCheck)
-		if healthCondition == nil {
-			// when healthCondition is not set, if ResourceVersion is equal, it's an resync envent, should return true.
-			return old.ResourceVersion == new.ResourceVersion
-		}
-		if time.Since(healthCondition.LastProbeTime.Time) > c.healthCheckPeriod {
-			return true
-		}
-
+	}
+	// if last health check is not long enough， return false
+	if healthCondition != nil &&
+		time.Since(healthCondition.LastProbeTime.Time) < c.healthCheckPeriod {
 		return false
 	}
+	return true
 }
 
 // Run will set up the event handlers for types we are interested in, as well
@@ -300,6 +353,8 @@ func (c *Controller) reconcile(ctx context.Context, key string, cluster *platfor
 		err = c.onUpdate(ctx, cluster)
 	case platformv1.ClusterUpscaling, platformv1.ClusterDownscaling:
 		err = c.onUpdate(ctx, cluster)
+	case platformv1.ClusterIdling, platformv1.ClusterConfined:
+		err = c.onUpdate(ctx, cluster)
 	case platformv1.ClusterTerminating:
 		log.FromContext(ctx).Info("Cluster has been terminated. Attempting to cleanup resources")
 		err = c.deleter.Delete(ctx, key)
@@ -341,6 +396,7 @@ func (c *Controller) onCreate(ctx context.Context, cluster *platformv1.Cluster) 
 		if err != nil {
 			return err
 		}
+		clusterWrapper.RegisterRestConfig(clusterWrapper.ClusterCredential.RESTConfig(cluster))
 		clusterWrapper.Cluster, err = c.platformClient.Clusters().Update(ctx, clusterWrapper.Cluster, metav1.UpdateOptions{})
 		if err != nil {
 			return err
@@ -359,7 +415,10 @@ func (c *Controller) onUpdate(ctx context.Context, cluster *platformv1.Cluster) 
 	if err != nil {
 		return err
 	}
-	if clusterWrapper.Status.Phase == platformv1.ClusterRunning || clusterWrapper.Status.Phase == platformv1.ClusterFailed {
+	if clusterWrapper.Status.Phase == platformv1.ClusterRunning ||
+		clusterWrapper.Status.Phase == platformv1.ClusterFailed ||
+		clusterWrapper.Status.Phase == platformv1.ClusterIdling ||
+		clusterWrapper.Status.Phase == platformv1.ClusterConfined {
 		err = provider.OnUpdate(ctx, clusterWrapper)
 		clusterWrapper = c.checkHealth(ctx, clusterWrapper)
 		if err != nil {
@@ -376,6 +435,7 @@ func (c *Controller) onUpdate(ctx context.Context, cluster *platformv1.Cluster) 
 			if err != nil {
 				return err
 			}
+			clusterWrapper.RegisterRestConfig(clusterWrapper.ClusterCredential.RESTConfig(cluster))
 		}
 		clusterWrapper.Cluster, err = c.platformClient.Clusters().UpdateStatus(ctx, clusterWrapper.Cluster, metav1.UpdateOptions{})
 		if err != nil {
@@ -398,6 +458,7 @@ func (c *Controller) onUpdate(ctx context.Context, cluster *platformv1.Cluster) 
 				if err != nil {
 					return err
 				}
+				clusterWrapper.RegisterRestConfig(clusterWrapper.ClusterCredential.RESTConfig(cluster))
 			}
 			clusterWrapper.Cluster, err = c.platformClient.Clusters().UpdateStatus(ctx, clusterWrapper.Cluster, metav1.UpdateOptions{})
 			if err != nil {
@@ -467,7 +528,9 @@ func (c *Controller) checkHealth(ctx context.Context, cluster *typesv1.Cluster) 
 		return cluster
 	}
 
-	pseudo := time.Now().Add(time.Minute * time.Duration(rand.Intn(5)))
+	pseudo := time.Now().Add(time.Second * time.Duration(rand.Int63nRange(
+		int64(c.randomeRangeLowerLimitForHealthCheckPeriod.Seconds()),
+		int64(c.randomeRangeUpperLimitForHealthCheckPeriod.Seconds()))))
 
 	log.Infof("next heart beat time. now:%s pesudo:%s cls:%s", time.Now(), pseudo, cluster.Name)
 

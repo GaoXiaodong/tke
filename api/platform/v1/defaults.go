@@ -73,12 +73,6 @@ func SetDefaults_PersistentEventStatus(obj *PersistentEventStatus) {
 	}
 }
 
-func SetDefaults_HelmStatus(obj *HelmStatus) {
-	if obj.Phase == "" {
-		obj.Phase = AddonPhaseInitializing
-	}
-}
-
 func SetDefaults_TappControllerStatus(obj *TappControllerStatus) {
 	if obj.Phase == "" {
 		obj.Phase = AddonPhaseInitializing
@@ -91,37 +85,7 @@ func SetDefaults_CSIOperatorStatus(obj *CSIOperatorStatus) {
 	}
 }
 
-func SetDefaults_VolumeDecoratorStatus(obj *VolumeDecoratorStatus) {
-	if obj.Phase == "" {
-		obj.Phase = AddonPhaseInitializing
-	}
-}
-
-func SetDefaults_LogCollectorStatus(obj *LogCollectorStatus) {
-	if obj.Phase == "" {
-		obj.Phase = AddonPhaseInitializing
-	}
-}
-
 func SetDefaults_CronHPAStatus(obj *CronHPAStatus) {
-	if obj.Phase == "" {
-		obj.Phase = AddonPhaseInitializing
-	}
-}
-
-func SetDefaults_PrometheusStatus(obj *PrometheusStatus) {
-	if obj.Phase == "" {
-		obj.Phase = AddonPhaseInitializing
-	}
-}
-
-func SetDefaults_IPAMStatus(obj *IPAMStatus) {
-	if obj.Phase == "" {
-		obj.Phase = AddonPhaseInitializing
-	}
-}
-
-func SetDefaults_LBCFStatus(obj *LBCFStatus) {
 	if obj.Phase == "" {
 		obj.Phase = AddonPhaseInitializing
 	}

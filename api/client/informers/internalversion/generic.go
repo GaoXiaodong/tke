@@ -163,26 +163,14 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().ConfigMaps().Informer()}, nil
 	case platform.SchemeGroupVersion.WithResource("cronhpas"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().CronHPAs().Informer()}, nil
-	case platform.SchemeGroupVersion.WithResource("helms"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().Helms().Informer()}, nil
-	case platform.SchemeGroupVersion.WithResource("ipams"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().IPAMs().Informer()}, nil
-	case platform.SchemeGroupVersion.WithResource("lbcfs"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().LBCFs().Informer()}, nil
-	case platform.SchemeGroupVersion.WithResource("logcollectors"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().LogCollectors().Informer()}, nil
 	case platform.SchemeGroupVersion.WithResource("machines"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().Machines().Informer()}, nil
 	case platform.SchemeGroupVersion.WithResource("persistentevents"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().PersistentEvents().Informer()}, nil
-	case platform.SchemeGroupVersion.WithResource("prometheuses"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().Prometheuses().Informer()}, nil
 	case platform.SchemeGroupVersion.WithResource("registries"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().Registries().Informer()}, nil
 	case platform.SchemeGroupVersion.WithResource("tappcontrollers"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().TappControllers().Informer()}, nil
-	case platform.SchemeGroupVersion.WithResource("volumedecorators"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().InternalVersion().VolumeDecorators().Informer()}, nil
 
 		// Group=registry.tkestack.io, Version=internalVersion
 	case registry.SchemeGroupVersion.WithResource("charts"):

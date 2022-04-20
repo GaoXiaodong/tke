@@ -35,7 +35,6 @@ import (
 	"tkestack.io/tke/api/business"
 	businessinternalclient "tkestack.io/tke/api/client/clientset/internalversion/typed/business/internalversion"
 	registryversionedclient "tkestack.io/tke/api/client/clientset/versioned/typed/registry/v1"
-	"tkestack.io/tke/pkg/apiserver/authentication"
 	apiserverutil "tkestack.io/tke/pkg/apiserver/util"
 	"tkestack.io/tke/pkg/business/registry/imagenamespace"
 	"tkestack.io/tke/pkg/business/util"
@@ -62,7 +61,6 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, businessClient *bu
 		CreateStrategy: strategy,
 		UpdateStrategy: strategy,
 		DeleteStrategy: strategy,
-		ExportStrategy: strategy,
 
 		ShouldDeleteDuringUpdate: shouldDeleteDuringUpdate,
 	}
@@ -78,11 +76,9 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, businessClient *bu
 
 	statusStore := *store
 	statusStore.UpdateStrategy = imagenamespace.NewStatusStrategy(strategy)
-	statusStore.ExportStrategy = imagenamespace.NewStatusStrategy(strategy)
 
 	finalizeStore := *store
 	finalizeStore.UpdateStrategy = imagenamespace.NewFinalizerStrategy(strategy)
-	finalizeStore.ExportStrategy = imagenamespace.NewFinalizerStrategy(strategy)
 
 	return &Storage{
 		ImageNamespace: &REST{store, privilegedUsername},
@@ -94,20 +90,6 @@ func NewStorage(optsGetter genericregistry.RESTOptionsGetter, businessClient *bu
 // ValidateGetObjectAndTenantID validate name and tenantID, if success return ImageNamespace
 func ValidateGetObjectAndTenantID(ctx context.Context, store *registry.Store, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	obj, err := store.Get(ctx, name, options)
-	if err != nil {
-		return nil, err
-	}
-
-	o := obj.(*business.ImageNamespace)
-	if err := util.FilterImageNamespace(ctx, o); err != nil {
-		return nil, err
-	}
-	return o, nil
-}
-
-// ValidateExportObjectAndTenantID validate name and tenantID, if success return ImageNamespace
-func ValidateExportObjectAndTenantID(ctx context.Context, store *registry.Store, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	obj, err := store.Export(ctx, name, options)
 	if err != nil {
 		return nil, err
 	}
@@ -136,9 +118,6 @@ func (r *REST) ShortNames() []string {
 // and deletes them.
 func (r *REST) DeleteCollection(ctx context.Context, deleteValidation rest.ValidateObjectFunc,
 	options *metav1.DeleteOptions, listOptions *metainternal.ListOptions) (runtime.Object, error) {
-	if !authentication.IsAdministrator(ctx, r.privilegedUsername) {
-		return nil, errors.NewMethodNotSupported(business.Resource("imagenamespaces"), "delete collection")
-	}
 	return r.Store.DeleteCollection(ctx, deleteValidation, options, listOptions)
 }
 
@@ -151,12 +130,6 @@ func (r *REST) List(ctx context.Context, options *metainternal.ListOptions) (run
 // Get retrieves the object from the storage. It is required to support Patch.
 func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return ValidateGetObjectAndTenantID(ctx, r.Store, name, options)
-}
-
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *REST) Export(ctx context.Context, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.Store, name, options)
 }
 
 // Update alters the object subset of an object.
@@ -269,6 +242,7 @@ func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.Va
 				return existingNamespace, nil
 			}),
 			dryrun.IsDryRun(options.DryRun),
+			nil,
 		)
 
 		if err != nil {
@@ -311,12 +285,6 @@ func (r *StatusREST) Get(ctx context.Context, name string, options *metav1.GetOp
 	return ValidateGetObjectAndTenantID(ctx, r.store, name, options)
 }
 
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *StatusREST) Export(ctx context.Context, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.store, name, options)
-}
-
 // Update alters the status subset of an object.
 func (r *StatusREST) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo,
 	createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc,
@@ -344,12 +312,6 @@ func (r *FinalizeREST) New() runtime.Object {
 // Get retrieves the object from the storage. It is required to support Patch.
 func (r *FinalizeREST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return ValidateGetObjectAndTenantID(ctx, r.store, name, options)
-}
-
-// Export an object.  Fields that are not user specified are stripped out
-// Returns the stripped object.
-func (r *FinalizeREST) Export(ctx context.Context, name string, options metav1.ExportOptions) (runtime.Object, error) {
-	return ValidateExportObjectAndTenantID(ctx, r.store, name, options)
 }
 
 // Update alters the status finalizers subset of an object.
