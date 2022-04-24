@@ -19,17 +19,14 @@
 package action
 
 import (
-	"os"
 	"time"
 
-	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage/driver"
-	"tkestack.io/tke/pkg/util/file"
 	"tkestack.io/tke/pkg/util/log"
 )
 
@@ -98,6 +95,10 @@ func (c *Client) Upgrade(options *UpgradeOptions) (*release.Release, error) {
 	client.ResetValues = options.ResetValues
 	client.ReuseValues = options.ReuseValues
 	client.MaxHistory = options.MaxHistory
+	client.RepoURL = options.RepoURL
+	client.Username = options.Username
+	client.Password = options.Password
+	client.Version = options.Version
 
 	options.ChartPathOptions.ApplyTo(&client.ChartPathOptions)
 
@@ -105,28 +106,32 @@ func (c *Client) Upgrade(options *UpgradeOptions) (*release.Release, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// unpack first if need
-	root := settings.RepositoryCache
-	if options.ExistedFile != "" && file.IsFile(options.ExistedFile) {
-		temp, err := ExpandFile(options.ExistedFile, settings.RepositoryCache)
-		if err != nil {
-			return nil, err
-		}
-		root = temp
-		defer func() {
-			os.RemoveAll(temp)
-		}()
-	}
-	chartDir, err := securejoin.SecureJoin(root, options.Chart)
+	cp, err := client.ChartPathOptions.LocateChart(options.Chart, settings)
 	if err != nil {
 		return nil, err
 	}
 
-	cp, err := client.ChartPathOptions.LocateChart(chartDir, settings)
-	if err != nil {
-		return nil, err
-	}
+	// // unpack first if need
+	// root := settings.RepositoryCache
+	// if options.ExistedFile != "" && file.IsFile(options.ExistedFile) {
+	// 	temp, err := ExpandFile(options.ExistedFile, settings.RepositoryCache)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	root = temp
+	// 	defer func() {
+	// 		os.RemoveAll(temp)
+	// 	}()
+	// }
+	// chartDir, err := securejoin.SecureJoin(root, options.Chart)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	//
+	// cp, err := client.ChartPathOptions.LocateChart(chartDir, settings)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	p := getter.All(settings)
 

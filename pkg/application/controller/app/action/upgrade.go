@@ -52,23 +52,23 @@ func Upgrade(ctx context.Context,
 		return nil, err
 	}
 
-	destfile, err := Pull(ctx, applicationClient, platformClient, app, repo, updateStatusFunc)
-	if err != nil {
-		newStatus := app.Status.DeepCopy()
-		if updateStatusFunc != nil {
-			if app.Status.Phase == applicationv1.AppPhaseUpgradFailed {
-				log.Error(fmt.Sprintf("upgrade app failed, helm pull err: %s", err.Error()))
-				// delayed retry, queue.AddRateLimited does not meet the demand
-				return app, nil
-			}
-			newStatus.Phase = applicationv1.AppPhaseUpgradFailed
-			newStatus.Message = "fetch chart failed"
-			newStatus.Reason = err.Error()
-			newStatus.LastTransitionTime = metav1.Now()
-			updateStatusFunc(ctx, app, &app.Status, newStatus)
-		}
-		return nil, err
-	}
+	// destfile, err := Pull(ctx, applicationClient, platformClient, app, repo, updateStatusFunc)
+	// if err != nil {
+	// 	newStatus := app.Status.DeepCopy()
+	// 	if updateStatusFunc != nil {
+	// 		if app.Status.Phase == applicationv1.AppPhaseUpgradFailed {
+	// 			log.Error(fmt.Sprintf("upgrade app failed, helm pull err: %s", err.Error()))
+	// 			// delayed retry, queue.AddRateLimited does not meet the demand
+	// 			return app, nil
+	// 		}
+	// 		newStatus.Phase = applicationv1.AppPhaseUpgradFailed
+	// 		newStatus.Message = "fetch chart failed"
+	// 		newStatus.Reason = err.Error()
+	// 		newStatus.LastTransitionTime = metav1.Now()
+	// 		updateStatusFunc(ctx, app, &app.Status, newStatus)
+	// 	}
+	// 	return nil, err
+	// }
 
 	newApp, err := applicationClient.Apps(app.Namespace).Get(ctx, app.Name, metav1.GetOptions{})
 	if err != nil {
@@ -85,7 +85,7 @@ func Upgrade(ctx context.Context,
 		return nil, err
 	}
 
-	chartPathBasicOptions.ExistedFile = destfile
+	// chartPathBasicOptions.ExistedFile = destfile
 	_, err = client.Upgrade(&helmaction.UpgradeOptions{
 		Namespace:        app.Spec.TargetNamespace,
 		ReleaseName:      app.Spec.Name,
