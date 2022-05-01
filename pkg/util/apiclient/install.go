@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -38,16 +39,36 @@ import (
 	"k8s.io/client-go/kubernetes"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"tkestack.io/tke/pkg/util/template"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	aaclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 )
 
 type object struct {
 	Kind string `yaml:"kind"`
 }
 
-var handlers map[string]func(kubernetes.Interface, []byte) error
+var (
+	handlers   map[string]func(kubernetes.Interface, []byte) error
+	aaHandlers map[string]func(aaclientset.Interface, []byte) error
+)
+
 
 func init() {
 	handlers = make(map[string]func(kubernetes.Interface, []byte) error)
+	aaHandlers = make(map[string]func(aaclientset.Interface, []byte) error)
+
+	//add CustomResourceDefinition
+	aaHandlers["CustomResourceDefinition"] = func(client aaclientset.Interface, data []byte) error {
+		obj := new(apiextensionsv1.CustomResourceDefinition)
+		if err := kuberuntime.DecodeInto(clientsetscheme.Codecs.UniversalDecoder(), data, obj); err != nil {
+			return errors.Wrapf(err, "unable to decode %s", reflect.TypeOf(obj).String())
+		}
+		err := CreateOrUpdateCustomResourceDefinition(client, obj)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 
 	// core
 	handlers["ConfigMap"] = func(client kubernetes.Interface, data []byte) error {
@@ -312,6 +333,59 @@ func CreateResourceWithFile(client kubernetes.Interface, filename string, option
 		err = f(client, objBytes)
 		if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+
+
+
+// CreateAsResourceWithFile create k8s and apiextensions-apiserver resource with file
+func CreateAsResourceWithFile(client kubernetes.Interface, aaClient aaclientset.Interface, filename string, option interface{}) error {
+	var (
+		data []byte
+		err  error
+	)
+	if option != nil {
+		data, err = template.ParseFile(filename, option)
+	} else {
+		data, err = ioutil.ReadFile(filename)
+	}
+	if err != nil {
+		return err
+	}
+
+	items := strings.Split(string(data), "\n---")
+	for _, item := range items {
+		objBytes := []byte(item)
+		obj := new(object)
+		err := yaml.Unmarshal(objBytes, obj)
+		if err != nil {
+			return err
+		}
+		if obj.Kind == "" {
+			continue
+		}
+		if obj.Kind == "CustomResourceDefinition" {
+			f, ok := aaHandlers[obj.Kind]
+			if !ok {
+				return errors.Errorf("unsupport kind %q", obj.Kind)
+			}
+			err = f(aaClient, objBytes)
+			if err != nil {
+				return err
+			}
+		} else {
+			f, ok := handlers[obj.Kind]
+			if !ok {
+				return errors.Errorf("unsupport kind %q", obj.Kind)
+			}
+			err = f(client, objBytes)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

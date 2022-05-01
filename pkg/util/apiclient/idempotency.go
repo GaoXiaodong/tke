@@ -33,6 +33,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	aaclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -62,6 +64,18 @@ func CreateOrUpdateConfigMap(client clientset.Interface, cm *corev1.ConfigMap) e
 
 		if _, err := client.CoreV1().ConfigMaps(cm.ObjectMeta.Namespace).Update(cm); err != nil {
 			return errors.Wrap(err, "unable to update configmap")
+		}
+	}
+	return nil
+}
+
+
+// CreateOrUpdateCustomResourceDefinition creates a CustomResourceDefinition if the target resource doesn't exist. If the resource exists already, this function will update the resource instead.
+func CreateOrUpdateCustomResourceDefinition(client aaclientset.Interface, crd *apiextensionsv1.CustomResourceDefinition) error {
+	if _, err := client.ApiextensionsV1().CustomResourceDefinitions().Create(crd); err != nil {
+		// Note: We don't run .Update here afterwards as that's probably not required
+		if !apierrors.IsAlreadyExists(err) {
+			return errors.Wrap(err, "unable to create apiservice")
 		}
 	}
 	return nil
