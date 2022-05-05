@@ -254,6 +254,7 @@ func (c *Controller) handlePhase(key string, cachedHelm *cachedHelm, holder *v1.
 }
 
 func (c *Controller) doInitializing(key string, holder *v1.Helm) error {
+	log.Info("Helm doInitializing", log.String("clusterName", holder.ClusterName), log.String("version", holder.Spec.Version))
 	defer controllerutil.CatchPanic("doInitializing", "Helm")
 
 	if c.prober.Exist(key) {

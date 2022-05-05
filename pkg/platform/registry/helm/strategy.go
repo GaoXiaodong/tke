@@ -85,7 +85,7 @@ func (Strategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	}
 
 	if helm.Spec.Version == "" {
-		helm.Spec.Version = images.LatestVersion
+		helm.Spec.Version = images.V1Version
 	}
 }
 
