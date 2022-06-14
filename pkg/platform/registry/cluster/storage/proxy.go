@@ -39,6 +39,7 @@ import (
 	"tkestack.io/tke/pkg/apiserver/authentication/authenticator/localtrust"
 	"tkestack.io/tke/pkg/platform/apiserver/filter"
 	"tkestack.io/tke/pkg/platform/util"
+	"tkestack.io/tke/pkg/util/log"
 )
 
 // ProxyREST implements proxy native api request to cluster of user.
@@ -82,11 +83,12 @@ func (r *ProxyREST) Connect(ctx context.Context, clusterName string, opts runtim
 	if !ok {
 		return nil, errors.NewUnauthorized("unknown user")
 	}
+	log.Infof("ProxyREST/Connect,name %s %s %s %s", u.GetName(), u.GetUID(), u.GetGroups(), u.GetExtra())
 	token, err := localtrust.GenerateToken(u)
 	if err != nil {
 		return nil, errors.NewInternalError(err)
 	}
-
+	log.Infof("ProxyREST/Connect,token %s", token)
 	uri, err := makeURL(r.host, proxyOpts.Path)
 	if err != nil {
 		return nil, errors.NewBadRequest(err.Error())
