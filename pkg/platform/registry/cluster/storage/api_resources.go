@@ -30,6 +30,7 @@ import (
 	"tkestack.io/tke/api/platform"
 	"tkestack.io/tke/pkg/platform/types"
 	"tkestack.io/tke/pkg/platform/util"
+	"tkestack.io/tke/pkg/util/log"
 )
 
 // APIResourcesREST implement bucket call interface for cluster.
@@ -45,6 +46,7 @@ func (r *APIResourcesREST) New() runtime.Object {
 
 // Get finds a resource in the storage by name and returns it.
 func (r *APIResourcesREST) Get(ctx context.Context, clusterName string, options runtime.Object) (runtime.Object, error) {
+	log.Infof("---APIResources GET---")
 	clusterObject, err := r.store.Get(ctx, clusterName, &metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -78,6 +80,7 @@ func (r *APIResourcesREST) Get(ctx context.Context, clusterName string, options 
 	}
 	lists, err := discoveryclient.ServerPreferredResources()
 	if err != nil {
+		log.Infof("APIResources GET: get ServerPreferredResources failed,err: %s", err)
 		return nil, err
 	}
 	items := make([]platform.ClusterGroupAPIResourceItems, 0)
