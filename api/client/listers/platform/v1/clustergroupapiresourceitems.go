@@ -28,13 +28,10 @@ import (
 )
 
 // ClusterGroupAPIResourceItemsLister helps list ClusterGroupAPIResourceItemses.
-// All objects returned here must be treated as read-only.
 type ClusterGroupAPIResourceItemsLister interface {
 	// List lists all ClusterGroupAPIResourceItemses in the indexer.
-	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.ClusterGroupAPIResourceItems, err error)
 	// Get retrieves the ClusterGroupAPIResourceItems from the index for a given name.
-	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1.ClusterGroupAPIResourceItems, error)
 	ClusterGroupAPIResourceItemsListerExpansion
 }

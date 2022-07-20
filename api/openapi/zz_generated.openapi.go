@@ -47020,6 +47020,12 @@ func schema_tke_api_platform_v1_HpcProxyOptions(ref common.ReferenceCallback) co
 							Format: "",
 						},
 					},
+					"action": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},
