@@ -387,6 +387,7 @@ func (r *StatusREST) New() runtime.Object {
 
 // Get retrieves the object from the storage. It is required to support Patch.
 func (r *StatusREST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
+	log.Infof("---tao----status")
 	return ValidateGetObjectAndTenantID(ctx, r.store, name, options)
 }
 
