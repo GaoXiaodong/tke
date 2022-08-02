@@ -21,7 +21,6 @@ package machine
 import (
 	"context"
 	"fmt"
-
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,6 +33,7 @@ import (
 	"tkestack.io/tke/api/platform"
 	"tkestack.io/tke/api/platform/validation"
 	"tkestack.io/tke/pkg/apiserver/authentication"
+	machineprovider "tkestack.io/tke/pkg/platform/provider/machine"
 	"tkestack.io/tke/pkg/util"
 	"tkestack.io/tke/pkg/util/log"
 	namesutil "tkestack.io/tke/pkg/util/names"
@@ -97,6 +97,17 @@ func (s *Strategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	machine.Spec.Finalizers = []platform.FinalizerName{
 		platform.MachineFinalize,
 	}
+	log.Infof("machine PrepareForCreate check %s.", machine.Annotations["tkestack.io/instanceId"])
+	machineProvider, err := machineprovider.GetProvider(machine.Spec.Type)
+	if err != nil {
+		return // avoid panic validate will be report error
+	}
+	err = machineProvider.PreCreate(machine)
+	if err != nil {
+		log.Infof("machine PrepareForCreate error:", err.Error())
+		panic(err)
+	}
+
 }
 
 // Validate validates a new machine
