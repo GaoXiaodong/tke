@@ -73,8 +73,9 @@ func (c *Client) Upgrade(options *UpgradeOptions) (*release.Release, error) {
 		// If a release does not exist, install it.
 		histClient := action.NewHistory(actionConfig)
 		histClient.Max = 1
-		if _, err := histClient.Run(options.ReleaseName); err == driver.ErrReleaseNotFound {
-			log.Infof("Release %q does not exist. Installing it now.\n", options.ReleaseName)
+		_, err = histClient.Run(options.ReleaseName)
+		if err == driver.ErrReleaseNotFound {
+			log.Infof("Release %d does not exist. Installing it now.", options.ReleaseName)
 			return c.Install(&InstallOptions{
 				DryRun:           options.DryRun,
 				DependencyUpdate: options.DependencyUpdate,
@@ -98,6 +99,8 @@ func (c *Client) Upgrade(options *UpgradeOptions) (*release.Release, error) {
 	client.ResetValues = options.ResetValues
 	client.ReuseValues = options.ReuseValues
 	client.MaxHistory = options.MaxHistory
+	client.Wait = true
+	client.WaitForJobs = true
 
 	options.ChartPathOptions.ApplyTo(&client.ChartPathOptions)
 

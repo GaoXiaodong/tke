@@ -40,5 +40,7 @@ func (c *Client) Rollback(options *RollbackOptions) error {
 	client := action.NewRollback(actionConfig)
 	client.Version = int(options.Revision)
 	client.Timeout = options.Timeout
+	client.Wait = true
+	client.WaitForJobs = true
 	return client.Run(options.ReleaseName)
 }

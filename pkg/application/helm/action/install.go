@@ -21,6 +21,7 @@ package action
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
@@ -93,6 +94,45 @@ func (c *Client) InstallWithLocal(options *InstallOptions, chartLocalFile string
 	if err != nil {
 		return nil, err
 	}
+
+	histClient := action.NewHistory(actionConfig)
+	histClient.Max = 1
+	rels, err := histClient.Run(options.ReleaseName)
+	if err != nil {
+		if !strings.Contains(err.Error(), "release: not found") {
+			return nil, err
+		}
+	} else {
+		for _, rel := range rels {
+			if rel.Info.Status == release.StatusDeployed {
+				// release 记录已存在，状态为deployed，不再进行重复安装
+				log.Infof("Release %s is already exist. igonre it now.", options.ReleaseName)
+				return nil, nil
+			}
+			if rel.Info.Status == release.StatusFailed {
+				// release 记录已存在，状态为failed，upgrade一下
+				log.Infof("Release %s is already exist. upgrade it now.", options.ReleaseName)
+				return c.Upgrade(&UpgradeOptions{
+					DryRun:           options.DryRun,
+					DependencyUpdate: options.DependencyUpdate,
+					Timeout:          options.Timeout,
+					Namespace:        options.Namespace,
+					ReleaseName:      options.ReleaseName,
+					Description:      options.Description,
+					ChartPathOptions: options.ChartPathOptions,
+					Values:           options.Values,
+				})
+			}
+			// release 记录已存在，状态为其他，删除重试
+			log.Infof("Release %s is already exist, status is %s. delete it now.", options.ReleaseName, rel.Info.Status)
+			c.Uninstall(&UninstallOptions{
+				Namespace:   options.Namespace,
+				ReleaseName: options.ReleaseName,
+				Timeout:     options.Timeout,
+			})
+		}
+	}
+
 	client := action.NewInstall(actionConfig)
 	client.DryRun = options.DryRun
 	client.DependencyUpdate = options.DependencyUpdate
@@ -101,6 +141,8 @@ func (c *Client) InstallWithLocal(options *InstallOptions, chartLocalFile string
 	client.ReleaseName = options.ReleaseName
 	client.Description = options.Description
 	client.IsUpgrade = options.IsUpgrade
+	client.Wait = true
+	client.WaitForJobs = true
 
 	options.ChartPathOptions.ApplyTo(&client.ChartPathOptions)
 
