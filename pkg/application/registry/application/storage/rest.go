@@ -196,9 +196,17 @@ func (rs *REST) Update(ctx context.Context, name string, objInfo rest.UpdatedObj
 	}
 	app := obj.(*application.App)
 
-	if !rest.ValidNamespace(ctx, &app.ObjectMeta) {
+	// ensure namespace on the object is correct, or error if a conflicting namespace was set in the object
+	requestNamespace, ok := genericapirequest.NamespaceFrom(ctx)
+	if !ok {
+		return nil, false, errors.NewInternalError(fmt.Errorf("no namespace information found in request context"))
+	}
+	if err = rest.EnsureObjectNamespaceMatchesRequestNamespace(rest.ExpectedNamespaceForScope(requestNamespace, rs.application.NamespaceScoped()), &app.ObjectMeta); err != nil {
 		return nil, false, errors.NewConflict(applicationapi.Resource("apps"), app.Namespace, fmt.Errorf("App.Namespace does not match the provided context"))
 	}
+	// if !rest.ValidNamespace(ctx, &app.ObjectMeta) {
+	// 	return nil, false, errors.NewConflict(applicationapi.Resource("apps"), app.Namespace, fmt.Errorf("App.Namespace does not match the provided context"))
+	// }
 
 	// check chart permission
 	// check value format

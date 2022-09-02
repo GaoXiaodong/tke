@@ -20,6 +20,7 @@ package filter
 import (
 	"context"
 	"fmt"
+	"k8s.io/apiserver/pkg/audit"
 	"net/http"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	genericfilters "k8s.io/apiserver/pkg/endpoints/filters"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
-	"k8s.io/apiserver/pkg/endpoints/request"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 )
 
@@ -63,7 +63,8 @@ func (i *clusterInspector) Inspect(handler http.Handler, c *genericapiserver.Con
 			handler.ServeHTTP(w, req)
 			return
 		}
-		ae := request.AuditEventFrom(ctx)
+		// ae := request.AuditEventFrom(ctx)
+		ae := audit.AuditEventFrom(ctx)
 		attributes, err := genericfilters.GetAuthorizerAttributes(ctx)
 		if err != nil {
 			responsewriters.InternalError(w, req, err)

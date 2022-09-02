@@ -21,6 +21,7 @@ package action
 import (
 	"context"
 
+	"strings"
 	appconfig "tkestack.io/tke/pkg/application/config"
 
 	"helm.sh/helm/v3/pkg/release"
@@ -51,9 +52,11 @@ func Uninstall(ctx context.Context,
 		ReleaseName: app.Spec.Name,
 		Timeout:     clientTimeOut,
 	})
-	if err != nil {
+
+	if err != nil && !strings.Contains(err.Error(), "release: not found") {
 		return resp, err
 	}
+
 	err = hooks.PostUninstall(ctx, applicationClient, platformClient, app, repo)
 	return resp, err
 }
