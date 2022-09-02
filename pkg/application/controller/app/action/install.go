@@ -149,7 +149,7 @@ func Install(ctx context.Context,
 		}
 	}
 
-	if updateStatusFunc != nil && err == nil {
+	if updateStatusFunc != nil {
 		newStatus := newApp.Status.DeepCopy()
 		var updateStatusErr error
 		newStatus.Phase = applicationv1.AppPhaseSucceeded

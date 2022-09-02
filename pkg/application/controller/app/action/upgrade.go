@@ -132,29 +132,38 @@ func Upgrade(ctx context.Context,
 	if newApp.Status.Message == "" || newApp.Status.Message == "hook post upgrade app failed" {
 		err = hooks.PostUpgrade(ctx, applicationClient, platformClient, app, repo, updateStatusFunc)
 		// 先走完hook，在更新app状态为succeed
-		if updateStatusFunc != nil {
-			newStatus := newApp.Status.DeepCopy()
-			var updateStatusErr error
-			if err != nil {
+		if err != nil {
+			if updateStatusFunc != nil {
+				newStatus := newApp.Status.DeepCopy()
+				var updateStatusErr error
 				newStatus.Phase = applicationv1.AppPhaseUpgradFailed
 				newStatus.Message = "hook post upgrade app failed"
 				newStatus.Reason = err.Error()
 				newStatus.LastTransitionTime = metav1.Now()
 				metrics.GaugeApplicationUpgradeFailed.WithLabelValues(app.Spec.TargetCluster, app.Name).Set(1)
-			} else {
-				newStatus.Phase = applicationv1.AppPhaseSucceeded
-				newStatus.Message = ""
-				newStatus.Reason = ""
-				newStatus.LastTransitionTime = metav1.Now()
-				metrics.GaugeApplicationInstallFailed.WithLabelValues(app.Spec.TargetCluster, app.Name).Set(0)
-				metrics.GaugeApplicationUpgradeFailed.WithLabelValues(app.Spec.TargetCluster, app.Name).Set(0)
-				metrics.GaugeApplicationRollbackFailed.WithLabelValues(app.Spec.TargetCluster, app.Name).Set(0)
+				newApp, updateStatusErr = updateStatusFunc(ctx, newApp, &newApp.Status, newStatus)
+				if updateStatusErr != nil {
+					return newApp, updateStatusErr
+				}
 			}
-			newApp, updateStatusErr = updateStatusFunc(ctx, newApp, &newApp.Status, newStatus)
-			if updateStatusErr != nil {
-				return newApp, updateStatusErr
-			}
+			return newApp, err
 		}
 	}
-	return newApp, err
+
+	if updateStatusFunc != nil {
+		newStatus := newApp.Status.DeepCopy()
+		var updateStatusErr error
+		newStatus.Phase = applicationv1.AppPhaseSucceeded
+		newStatus.Message = ""
+		newStatus.Reason = ""
+		newStatus.LastTransitionTime = metav1.Now()
+		metrics.GaugeApplicationInstallFailed.WithLabelValues(app.Spec.TargetCluster, app.Name).Set(0)
+		metrics.GaugeApplicationUpgradeFailed.WithLabelValues(app.Spec.TargetCluster, app.Name).Set(0)
+		metrics.GaugeApplicationRollbackFailed.WithLabelValues(app.Spec.TargetCluster, app.Name).Set(0)
+		newApp, updateStatusErr = updateStatusFunc(ctx, newApp, &newApp.Status, newStatus)
+		if updateStatusErr != nil {
+			return newApp, updateStatusErr
+		}
+	}
+	return newApp, nil
 }
