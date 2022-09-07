@@ -109,20 +109,6 @@ func (c *Client) InstallWithLocal(options *InstallOptions, chartLocalFile string
 				log.Infof("Release %s is already exist. igonre it now.", options.ReleaseName)
 				return nil, nil
 			}
-			if rel.Info.Status == release.StatusFailed {
-				// release 记录已存在，状态为failed，upgrade一下
-				log.Infof("Release %s is already exist. upgrade it now.", options.ReleaseName)
-				return c.Upgrade(&UpgradeOptions{
-					DryRun:           options.DryRun,
-					DependencyUpdate: options.DependencyUpdate,
-					Timeout:          options.Timeout,
-					Namespace:        options.Namespace,
-					ReleaseName:      options.ReleaseName,
-					Description:      options.Description,
-					ChartPathOptions: options.ChartPathOptions,
-					Values:           options.Values,
-				})
-			}
 			// release 记录已存在，状态为其他，删除重试
 			log.Infof("Release %s is already exist, status is %s. delete it now.", options.ReleaseName, rel.Info.Status)
 			c.Uninstall(&UninstallOptions{
