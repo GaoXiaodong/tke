@@ -88,7 +88,7 @@ func Upgrade(ctx context.Context,
 		return nil, err
 	}
 
-	if newApp.Status.Message == "" || newApp.Status.Message == "upgrade app failed" {
+	if newApp.Status.Message == "" || newApp.Status.Message == "hook pre upgrade app failed" || newApp.Status.Message == "upgrade app failed" {
 		client, err := util.NewHelmClient(ctx, platformClient, app.Spec.TargetCluster, app.Spec.TargetNamespace)
 		if err != nil {
 			return nil, err
@@ -110,6 +110,8 @@ func Upgrade(ctx context.Context,
 			Values:           values,
 			Timeout:          clientTimeOut,
 			ChartPathOptions: chartPathBasicOptions,
+			Wait:             true,
+			WaitForJobs:      true,
 		})
 		if err != nil {
 			if updateStatusFunc != nil {
@@ -129,7 +131,7 @@ func Upgrade(ctx context.Context,
 		}
 	}
 
-	if newApp.Status.Message == "" || newApp.Status.Message == "hook post upgrade app failed" {
+	if newApp.Status.Message == "" || newApp.Status.Message == "hook pre upgrade app failed" || newApp.Status.Message == "upgrade app failed" || newApp.Status.Message == "hook post upgrade app failed" {
 		err = hooks.PostUpgrade(ctx, applicationClient, platformClient, app, repo, updateStatusFunc)
 		// 先走完hook，在更新app状态为succeed
 		if err != nil {

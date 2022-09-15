@@ -68,7 +68,7 @@ func Rollback(ctx context.Context,
 		}
 	}
 
-	if newApp.Status.Message == "" || newApp.Status.Message == "rollback app failed" {
+	if newApp.Status.Message == "" || newApp.Status.Message == "hook pre rollback app failed" || newApp.Status.Message == "rollback app failed" {
 		client, err := util.NewHelmClient(ctx, platformClient, app.Spec.TargetCluster, app.Spec.TargetNamespace)
 		if err != nil {
 			return nil, err
@@ -101,7 +101,7 @@ func Rollback(ctx context.Context,
 		}
 	}
 
-	if newApp.Status.Message == "" || newApp.Status.Message == "hook post rollback app failed" {
+	if newApp.Status.Message == "" || newApp.Status.Message == "hook pre rollback app failed" || newApp.Status.Message == "rollback app failed" || newApp.Status.Message == "hook post rollback app failed" {
 		err = hooks.PostRollback(ctx, applicationClient, platformClient, app, repo, updateStatusFunc)
 		// 先走完hook，在更新app状态为succeed
 		if err != nil {

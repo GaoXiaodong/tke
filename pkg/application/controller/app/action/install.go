@@ -21,6 +21,7 @@ package action
 import (
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 	applicationv1 "tkestack.io/tke/api/application/v1"
 	applicationversionedclient "tkestack.io/tke/api/client/clientset/versioned/typed/application/v1"
 	platformversionedclient "tkestack.io/tke/api/client/clientset/versioned/typed/platform/v1"
@@ -88,7 +89,7 @@ func Install(ctx context.Context,
 		return nil, err
 	}
 
-	if newApp.Status.Message == "" || newApp.Status.Message == "install app failed" {
+	if newApp.Status.Message == "" || newApp.Status.Message == "hook pre install app failed" || newApp.Status.Message == "install app failed" {
 		client, err := util.NewHelmClient(ctx, platformClient, app.Spec.TargetCluster, app.Spec.TargetNamespace)
 		if err != nil {
 			return nil, err
@@ -102,6 +103,10 @@ func Install(ctx context.Context,
 			return nil, err
 		}
 		chartPathBasicOptions.ExistedFile = destfile
+		wait := true
+		if app.Spec.Chart.ChartName != "eniipamd" && time.Now().After(app.CreationTimestamp.Add(15*time.Minute)) {
+			wait = false
+		}
 		_, err = client.Install(&helmaction.InstallOptions{
 			Namespace:        newApp.Spec.TargetNamespace,
 			ReleaseName:      newApp.Spec.Name,
@@ -109,6 +114,8 @@ func Install(ctx context.Context,
 			Values:           values,
 			Timeout:          clientTimeOut,
 			ChartPathOptions: chartPathBasicOptions,
+			Wait:             wait,
+			WaitForJobs:      wait,
 		})
 		if err != nil {
 			if updateStatusFunc != nil {
@@ -128,7 +135,7 @@ func Install(ctx context.Context,
 		}
 	}
 
-	if newApp.Status.Message == "" || newApp.Status.Message == "hook post install app failed" {
+	if newApp.Status.Message == "" || newApp.Status.Message == "hook pre install app failed" || newApp.Status.Message == "install app failed" || newApp.Status.Message == "hook post install app failed" {
 		err = hooks.PostInstall(ctx, applicationClient, platformClient, app, repo, updateStatusFunc)
 		// 先走完hook，在更新app状态为succeed
 		if err != nil {

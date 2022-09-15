@@ -48,6 +48,9 @@ type InstallOptions struct {
 	// Used by helm template to render charts with .Release.IsUpgrade. Ignored if Dry-Run is false
 	IsUpgrade bool
 
+	Wait        bool
+	WaitForJobs bool
+
 	Values map[string]interface{}
 }
 
@@ -127,8 +130,8 @@ func (c *Client) InstallWithLocal(options *InstallOptions, chartLocalFile string
 	client.ReleaseName = options.ReleaseName
 	client.Description = options.Description
 	client.IsUpgrade = options.IsUpgrade
-	client.Wait = true
-	client.WaitForJobs = true
+	client.Wait = options.Wait
+	client.WaitForJobs = options.WaitForJobs
 
 	options.ChartPathOptions.ApplyTo(&client.ChartPathOptions)
 
