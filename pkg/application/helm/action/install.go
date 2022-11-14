@@ -132,8 +132,8 @@ func (c *Client) InstallWithLocal(options *InstallOptions, chartLocalFile string
 	client.IsUpgrade = options.IsUpgrade
 	client.Atomic = true
 	client.CreateNamespace = true
-	client.Wait = options.Wait
-	client.WaitForJobs = options.WaitForJobs
+	client.Atomic = options.Atomic
+	client.CreateNamespace = options.CreateNamespace
 
 	options.ChartPathOptions.ApplyTo(&client.ChartPathOptions)
 
