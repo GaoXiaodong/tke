@@ -116,6 +116,7 @@ func Upgrade(ctx context.Context,
 			ChartPathOptions: chartPathBasicOptions,
 			Wait:             wait,
 			WaitForJobs:      wait,
+			MaxHistory:       10,
 		})
 		if err != nil {
 			if updateStatusFunc != nil {
