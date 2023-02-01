@@ -42,7 +42,6 @@ type InstallOptions struct {
 
 	DryRun           bool
 	DependencyUpdate bool
-	Atomic           bool
 	CreateNamespace  bool
 	Timeout          time.Duration
 	Namespace        string
@@ -51,6 +50,7 @@ type InstallOptions struct {
 	// Used by helm template to render charts with .Release.IsUpgrade. Ignored if Dry-Run is false
 	IsUpgrade bool
 
+	Atomic      bool
 	Wait        bool
 	WaitForJobs bool
 

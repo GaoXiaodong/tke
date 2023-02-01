@@ -23,5 +23,5 @@ import (
 )
 
 // use helm --wait, so set long timeout
-const clientTimeOut = 600 * time.Second
+const defualtClientTimeOut = 600 * time.Second
 const clientMaxHistory = 10
