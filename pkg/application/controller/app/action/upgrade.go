@@ -20,6 +20,7 @@ package action
 
 import (
 	"context"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applicationv1 "tkestack.io/tke/api/application/v1"
 	applicationversionedclient "tkestack.io/tke/api/client/clientset/versioned/typed/application/v1"
@@ -101,20 +102,34 @@ func Upgrade(ctx context.Context,
 			return nil, err
 		}
 		chartPathBasicOptions.ExistedFile = destfile
-		wait := true
-		if app.Annotations != nil && app.Annotations["ignore-upgrade-wait"] == "true" {
-			wait = false
+		//* provide compatibility with online tke addon apps */
+		if app.Annotations != nil && app.Annotations[applicationprovider.AnnotationProviderNameKey] == "managecontrolplane" {
+			app.Spec.Chart.UpgradePara.Atomic = false
+			app.Spec.Chart.UpgradePara.Wait = true
+			app.Spec.Chart.UpgradePara.WaitForJobs = true
+			if app.Annotations["ignore-upgrade-wait"] == "true" {
+				app.Spec.Chart.UpgradePara.Wait = false
+				app.Spec.Chart.UpgradePara.WaitForJobs = false
+			}
 		}
+		//* compatibility over, above code need to be deleted atfer the online addon apps are migrated */
+
+		var clientTimeout = defualtClientTimeOut
+		if app.Spec.Chart.UpgradePara.ClientTimeout > 0 {
+			clientTimeout = app.Spec.Chart.UpgradePara.ClientTimeout
+		}
+
 		_, err = client.Upgrade(ctx, &helmaction.UpgradeOptions{
 			Namespace:        app.Spec.TargetNamespace,
 			ReleaseName:      app.Spec.Name,
 			DependencyUpdate: true,
 			Install:          true,
 			Values:           values,
-			Timeout:          clientTimeOut,
+			Timeout:          clientTimeout,
 			ChartPathOptions: chartPathBasicOptions,
-			Wait:             wait,
-			WaitForJobs:      wait,
+			Atomic:           app.Spec.Chart.UpgradePara.Atomic,
+			Wait:             app.Spec.Chart.UpgradePara.Wait,
+			WaitForJobs:      app.Spec.Chart.UpgradePara.WaitForJobs,
 			MaxHistory:       clientMaxHistory,
 		})
 		if err != nil {
