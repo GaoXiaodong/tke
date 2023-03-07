@@ -54,6 +54,10 @@ func Upgrade(ctx context.Context,
 		err = hooks.PreUpgrade(ctx, applicationClient, platformClient, app, repo, updateStatusFunc)
 		if err != nil {
 			if updateStatusFunc != nil {
+				newApp, err := applicationClient.Apps(app.Namespace).Get(ctx, app.Name, metav1.GetOptions{})
+				if err != nil {
+					return nil, err
+				}
 				newStatus := newApp.Status.DeepCopy()
 				var updateStatusErr error
 				newStatus.Phase = applicationv1.AppPhaseUpgradFailed
@@ -72,6 +76,10 @@ func Upgrade(ctx context.Context,
 
 	destfile, err := Pull(ctx, applicationClient, platformClient, app, repo, updateStatusFunc)
 	if err != nil {
+		newApp, err := applicationClient.Apps(app.Namespace).Get(ctx, app.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
 		newStatus := newApp.Status.DeepCopy()
 		var updateStatusErr error
 		if updateStatusFunc != nil {
@@ -120,6 +128,10 @@ func Upgrade(ctx context.Context,
 		})
 		if err != nil {
 			if updateStatusFunc != nil {
+				newApp, err := applicationClient.Apps(app.Namespace).Get(ctx, app.Name, metav1.GetOptions{})
+				if err != nil {
+					return nil, err
+				}
 				newStatus := newApp.Status.DeepCopy()
 				var updateStatusErr error
 				newStatus.Phase = applicationv1.AppPhaseUpgradFailed
@@ -141,6 +153,10 @@ func Upgrade(ctx context.Context,
 		// 先走完hook，在更新app状态为succeed
 		if err != nil {
 			if updateStatusFunc != nil {
+				newApp, err := applicationClient.Apps(app.Namespace).Get(ctx, app.Name, metav1.GetOptions{})
+				if err != nil {
+					return nil, err
+				}
 				newStatus := newApp.Status.DeepCopy()
 				var updateStatusErr error
 				newStatus.Phase = applicationv1.AppPhaseUpgradFailed
@@ -158,6 +174,10 @@ func Upgrade(ctx context.Context,
 	}
 
 	if updateStatusFunc != nil {
+		newApp, err := applicationClient.Apps(app.Namespace).Get(ctx, app.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
 		newStatus := newApp.Status.DeepCopy()
 		var updateStatusErr error
 		newStatus.Phase = applicationv1.AppPhaseSucceeded
