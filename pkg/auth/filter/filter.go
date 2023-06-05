@@ -21,7 +21,6 @@ package filter
 import (
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 	"strings"
 	"unicode"
 
@@ -75,11 +74,6 @@ func ExtractClusterNames(ctx context.Context, req *http.Request, resource string
 	}
 
 	clusterNames.Insert(cluster.NamePattern.FindAllString(resource, -1)...)
-
-	data, err := httputil.DumpRequest(req, true)
-	if err == nil {
-		clusterNames.Insert(cluster.NamePattern.FindAllString(string(data), -1)...)
-	}
 
 	return clusterNames.List()
 }
