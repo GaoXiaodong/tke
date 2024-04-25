@@ -23,8 +23,6 @@ import (
 	"errors"
 	"fmt"
 
-	"tkestack.io/tke/pkg/util/log"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applicationv1 "tkestack.io/tke/api/application/v1"
 	applicationversionedclient "tkestack.io/tke/api/client/clientset/versioned/typed/application/v1"
@@ -35,6 +33,7 @@ import (
 	applicationprovider "tkestack.io/tke/pkg/application/provider/application"
 	"tkestack.io/tke/pkg/application/util"
 	chartpath "tkestack.io/tke/pkg/application/util/chartpath/v1"
+	"tkestack.io/tke/pkg/util/log"
 	"tkestack.io/tke/pkg/util/metrics"
 )
 
@@ -96,7 +95,7 @@ func Upgrade(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		chartPathBasicOptions, err := chartpath.BuildChartPathBasicOptions(repo, app.Spec.Chart)
+		chartPathBasicOptions, err := chartpath.BuildChartPathBasicOptions(repo, app)
 		if err != nil {
 			return nil, err
 		}
