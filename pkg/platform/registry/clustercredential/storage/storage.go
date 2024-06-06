@@ -143,7 +143,8 @@ func (r *REST) DeleteCollection(ctx context.Context, deleteValidation rest.Valid
 	if !authentication.IsAdministrator(ctx, r.privilegedUsername) {
 		return nil, errors.NewMethodNotSupported(platform.Resource("clustercredentials"), "delete collection")
 	}
-	return r.Store.DeleteCollection(ctx, deleteValidation, options, listOptions)
+	wrappedOptions := apiserverutil.PredicateListOptions(ctx, listOptions)
+	return r.Store.DeleteCollection(ctx, deleteValidation, options, wrappedOptions)
 }
 
 // Get finds a resource in the storage by name and returns it.

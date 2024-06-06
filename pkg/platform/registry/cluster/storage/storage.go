@@ -243,7 +243,8 @@ func (r *REST) DeleteCollection(ctx context.Context, deleteValidation rest.Valid
 	if !authentication.IsAdministrator(ctx, r.privilegedUsername) {
 		return nil, apierrors.NewMethodNotSupported(platform.Resource("clusters"), "delete collection")
 	}
-	return r.Store.DeleteCollection(ctx, deleteValidation, options, listOptions)
+	wrappedOptions := apiserverutil.PredicateListOptions(ctx, listOptions)
+	return r.Store.DeleteCollection(ctx, deleteValidation, options, wrappedOptions)
 }
 
 // Get finds a resource in the storage by name and returns it.
@@ -395,7 +396,6 @@ func (r *StatusREST) New() runtime.Object {
 
 // Get retrieves the object from the storage. It is required to support Patch.
 func (r *StatusREST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
-	log.Infof("---tao-----status")
 	return ValidateGetObjectAndTenantID(ctx, r.store, name, options)
 }
 
